@@ -1,10 +1,11 @@
 import functools
-from gym.spaces import Discrete
+from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
 from pettingzoo.utils import from_parallel
 import numpy as np
 
+np.random.seed(0)
 
 ROCK = 0
 PAPER = 1
@@ -55,7 +56,7 @@ def raw_env():
 class parallel_env(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
-    def __init__(self, num_leaders = 2, num_followers = 8, map_size = np.array([1000,1000])):
+    def __init__(self, num_leaders = 2, num_followers = 10, map_size = np.array([10,10]), radius_repulsion = 1, radius_orientation = 2, radius_attraction = 10, max_velocity = 10):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -64,19 +65,58 @@ class parallel_env(ParallelEnv):
 
         These attributes should not be changed after initialization.
         '''
-        self.possible_agents = ["agent_" + str(r) + "_lead" for r in range(num_leaders)] + ["agent_" + str(r+num_leaders) + "_follow" for r in range(num_followers)]
-        # self.num_agents = num_leaders + num_followers
+        # Double check radii are valid
+        if radius_repulsion < radius_orientation and radius_orientation < radius_attraction \
+            and np.all(np.array([radius_repulsion, radius_orientation, radius_attraction]) > 0):
+                pass
+        else:
+            raise Exception("Double check that radius_repulsion < radius_orientation < radius_attraction. All radii must be > 0.")
+
+        # Save input variables to internal variables
+        self.max_velocity = max_velocity
+        self.radius_repulsion = radius_repulsion
+        self.radius_orientation = radius_orientation
+        self.radius_attraction = radius_attraction
+
+        # Only leaders are included in self.possible_agents
+        # because they are the learners
+        self.possible_agents = ["leader_" + str(r) for r in range(num_leaders)]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
 
-        # Agents can change velocity instantaneously
-        # Agents can change heading instantaneously
-        # Agent position is the agent state - Position is randomized within map bounds
+        self.total_agents = num_leaders + num_followers
+
+        # Agent positions are randomized within map bounds
         self.positions = np.hstack((
-            np.random.uniform(map_size[0]+1, size=(1,self.num_agents)),
-            np.random.uniform(map_size[1]+1, size=(1,self.num_agents))
+            np.random.uniform(map_size[0], size=(self.total_agents,1)),
+            np.random.uniform(map_size[1], size=(self.total_agents,1))
         ))
 
-        print(self.positions)
+        # Agent headings are randomized from -π to +π
+        self.headings = np.random.uniform(-np.pi, np.pi, size=(self.total_agents,1))
+        print("self.headings:\n", self.headings)
+
+        # Agents can change velocity instantaneously
+        # Agents set a desired heading and move towards it according to a proportional constant
+
+        # Setup underlying map structure for observations
+        self.bin_size = self.radius_attraction
+        num_bins = np.ceil(map_size/self.bin_size).astype(int)
+        self.bins = np.frompyfunc(list, 0, 1)(np.empty(num_bins, dtype=object)).T
+        # self.bins[x][y] gives a list of indicies for agents in that bin
+        print("Setup bins:\n",self.bins)
+
+        # Place agent indicies in appropriate bins
+        self.positions[0] = [10,10]
+        for ind, pos in enumerate(self.positions):
+            # Calculate bin location for this agent with no bound (nb)
+            bin_location_nb = (pos/self.bin_size).astype(int)
+            # Bound bin location for edge case where agent is on top and/or right edge of map
+            bin_location = np.minimum(bin_location_nb, num_bins-1)
+            # Put the index in the bin
+            self.bins[bin_location[0], bin_location[1]].append(ind)
+
+
+        print(self.bins)
 
 
     # this cache ensures that same space object is returned for the same agent
@@ -84,11 +124,23 @@ class parallel_env(ParallelEnv):
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
         # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
-        return Discrete(4)
+
+        # [distance to goal, theta to goal, distance to swarm centroid, theta to swarm centroid]
+        # All thetas are from agent's own reference frame
+        return Box(
+            low=np.array([-np.inf, -np.pi, -np.inf, np.pi]),
+            high=np.array([np.inf, np.pi, np.inf, np.pi]),
+            dtype=np.float32)
 
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
-        return Discrete(3)
+        # Action space is velocity and desired heading
+        # Desired heading is relative to agent's own reference frame
+        return Box(
+            low=np.array([0, -np.pi],
+            high=np.array[self.max_velocity, np.pi]),
+            dtype=np.float32
+        )
 
     def render(self, mode="human"):
         '''
