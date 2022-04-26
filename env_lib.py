@@ -5,6 +5,8 @@ from pettingzoo.utils import wrappers
 from pettingzoo.utils import from_parallel
 import numpy as np
 
+from map_utils import Map
+
 np.random.seed(0)
 
 ROCK = 0
@@ -93,31 +95,9 @@ class parallel_env(ParallelEnv):
 
         # Agent headings are randomized from -π to +π
         self.headings = np.random.uniform(-np.pi, np.pi, size=(self.total_agents,1))
-        print("self.headings:\n", self.headings)
-
-        # Agents can change velocity instantaneously
-        # Agents set a desired heading and move towards it according to a proportional constant
 
         # Setup underlying map structure for observations
-        self.bin_size = self.radius_attraction
-        num_bins = np.ceil(map_size/self.bin_size).astype(int)
-        self.bins = np.frompyfunc(list, 0, 1)(np.empty(num_bins, dtype=object)).T
-        # self.bins[x][y] gives a list of indicies for agents in that bin
-        print("Setup bins:\n",self.bins)
-
-        # Place agent indicies in appropriate bins
-        self.positions[0] = [10,10]
-        for ind, pos in enumerate(self.positions):
-            # Calculate bin location for this agent with no bound (nb)
-            bin_location_nb = (pos/self.bin_size).astype(int)
-            # Bound bin location for edge case where agent is on top and/or right edge of map
-            bin_location = np.minimum(bin_location_nb, num_bins-1)
-            # Put the index in the bin
-            self.bins[bin_location[0], bin_location[1]].append(ind)
-
-
-        print(self.bins)
-
+        self.map = Map(self.map_size, self.radius_attraction, self.positions)
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
