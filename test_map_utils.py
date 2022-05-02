@@ -66,5 +66,27 @@ class TestMap(unittest.TestCase):
                 ]
                 self.assertTrue(np.array_equal(adj_bins, exp_bins))
 
+    def test_get_adj_agent_inds(self):
+        map_size = np.array([10,10])
+        positions = np.array([
+            [0,1],
+            [1,1],
+            [2,2],
+            [8,9],
+            [9,8],
+            [9,9],
+            [10,10]
+        ])
+        observation_radius = 1
+        boid_map = Map(map_size, observation_radius, positions)
+        # Test [0,1]
+        adj_agent_inds  = boid_map.get_adj_agent_inds(np.array([0,1]))
+        exp_inds = [0,1,2]
+        self.assertTrue(adj_agent_inds == exp_inds)
+        # Test [8,9]
+        adj_agent_inds = boid_map.get_adj_agent_inds(np.array([8,9]))
+        exp_inds = [3,5,4]
+        self.assertTrue(adj_agent_inds == exp_inds)
+
 if __name__ == '__main__':
     unittest.main()
