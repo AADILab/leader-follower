@@ -5,7 +5,7 @@ from pettingzoo.utils import wrappers
 from pettingzoo.utils import from_parallel
 import numpy as np
 
-from map_utils import Map
+from boids_manager import BoidsManager
 
 np.random.seed(0)
 
@@ -67,37 +67,12 @@ class parallel_env(ParallelEnv):
 
         These attributes should not be changed after initialization.
         '''
-        # Double check radii are valid
-        if radius_repulsion < radius_orientation and radius_orientation < radius_attraction \
-            and np.all(np.array([radius_repulsion, radius_orientation, radius_attraction]) > 0):
-                pass
-        else:
-            raise Exception("Double check that radius_repulsion < radius_orientation < radius_attraction. All radii must be > 0.")
-
-        # Save input variables to internal variables
-        self.max_velocity = max_velocity
-        self.radius_repulsion = radius_repulsion
-        self.radius_orientation = radius_orientation
-        self.radius_attraction = radius_attraction
-
         # Only leaders are included in self.possible_agents
         # because they are the learners
         self.possible_agents = ["leader_" + str(r) for r in range(num_leaders)]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
 
-        self.total_agents = num_leaders + num_followers
-
-        # Agent positions are randomized within map bounds
-        self.positions = np.hstack((
-            np.random.uniform(map_size[0], size=(self.total_agents,1)),
-            np.random.uniform(map_size[1], size=(self.total_agents,1))
-        ))
-
-        # Agent headings are randomized from -π to +π
-        self.headings = np.random.uniform(-np.pi, np.pi, size=(self.total_agents,1))
-
-        # Setup underlying map structure for observations
-        self.map = Map(self.map_size, self.radius_attraction, self.positions)
+        # boids = BoidsManager(max_velocity, angular_velocity=)
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
@@ -169,6 +144,9 @@ class parallel_env(ParallelEnv):
         if not actions:
             self.agents = []
             return {}, {}, {}, {}
+
+        # Step forward all of the follower boids
+
 
         # rewards for all agents are placed in the rewards dictionary to be returned
         rewards = {}
