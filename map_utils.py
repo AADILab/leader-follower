@@ -29,19 +29,11 @@ class Map():
 
     def populate_bins(self, positions):
         bins = self.create_bins()
-        print("bins:\n", bins)
         for ind, position in enumerate(positions):
-            print("position: ", position)
             # Calculate the bin location of this position
             bin_location = self.calculate_bin_location(position)
-            print("bin_location: ", bin_location)
-            # print(position)
-            # print(bins.shape)
-            # print(bin_location)
-            # print(bins[bin_location[0], bin_location[1]])
             # Put the index in the bin
             bins[bin_location[0], bin_location[1]].append(ind)
-            print("bins:\n", bins)
         return bins
 
     def get_adj_bins(self, bin_location):
@@ -56,11 +48,16 @@ class Map():
             [-1,0],
             [-1,1]
         ])
+        # print("adj_bins:\n", adj_bins)
         # Make sure returned bins are valid through logic operations
-        above_origin = np.greater(adj_bins, 0)
-        below_bounds = np.less(adj_bins, self.bins.shape)
+        above_origin = np.all(np.greater(adj_bins, -1), axis=1)
+        # print("above_origin:\n", above_origin)
+        below_bounds = np.all(np.less(adj_bins, self.bins.shape), axis=1)
+        # print("below_bounds:\n", below_bounds)
         valid_ind = np.logical_and(above_origin, below_bounds)
+        # print("valid_ind:\n", valid_ind)
         valid_adj_bins = adj_bins[valid_ind]
+        # print("valid_adj_bins:\n", valid_adj_bins)
         return valid_adj_bins
 
     def get_adj_agent_inds(self, position):
