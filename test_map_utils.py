@@ -1,5 +1,3 @@
-from tkinter import FALSE
-from turtle import pos
 import unittest
 import numpy as np
 
@@ -87,6 +85,24 @@ class TestMap(unittest.TestCase):
         adj_agent_inds = boid_map.get_adj_agent_inds(np.array([8,9]))
         exp_inds = [3,5,4]
         self.assertTrue(adj_agent_inds == exp_inds)
+
+    def test_get_observable_agent_inds(self):
+        map_size = np.array([10,10])
+        positions = np.array([
+            [0,1],
+            [1,1],
+            [2,2],
+            [8,9],
+            [9,8],
+            [9,9],
+            [10,10]
+        ])
+        observation_radius = 1
+        boid_map = Map(map_size, observation_radius, positions)
+        # Test [1,1]
+        observable_agent_inds = boid_map.get_observable_agent_inds(np.array([1,1]), positions)
+        exp_inds = [0,1]
+        self.assertTrue(observable_agent_inds == exp_inds)
 
 if __name__ == '__main__':
     unittest.main()
