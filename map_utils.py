@@ -22,9 +22,9 @@ class Map():
         # Calculate bin location for this agent with no bound (nb)
         bin_location_nb = (position/self.observation_radius).astype(int)-1
         # Bound bin location for edge case where agent is on top and/or right edge of map
-        print("self.num_bins-1: ", self.num_bins-1)
-        print("bin_location_nb: ", bin_location_nb)
         bin_location = np.minimum(bin_location_nb, self.num_bins-1)
+        # Bound bin location for edge case where agent is on bottom and/or left edge of map
+        bin_location = np.maximum(bin_location_nb, [0,0])
         return bin_location
 
     def populate_bins(self, positions):
@@ -41,6 +41,7 @@ class Map():
             # print(bins[bin_location[0], bin_location[1]])
             # Put the index in the bin
             bins[bin_location[0], bin_location[1]].append(ind)
+            print("bins:\n", bins)
         return bins
 
     def get_adj_bins(self, bin_location):
