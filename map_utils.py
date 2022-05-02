@@ -1,3 +1,4 @@
+from turtle import pos
 import numpy as np
 
 class Map():
@@ -14,25 +15,30 @@ class Map():
         return np.ceil(self.map_size/self.observation_radius).astype(int)
 
     def create_bins(self):
-        bins = np.frompyfunc(list, 0, 1)(np.empty(self.num_bins, dtype=object)).T
+        bins = np.frompyfunc(list, 0, 1)(np.empty(self.num_bins, dtype=object))
         return bins
 
     def calculate_bin_location(self, position):
         # Calculate bin location for this agent with no bound (nb)
-        bin_location_nb = (position/self.observation_radius).astype(int)
+        bin_location_nb = (position/self.observation_radius).astype(int)-1
         # Bound bin location for edge case where agent is on top and/or right edge of map
+        print("self.num_bins-1: ", self.num_bins-1)
+        print("bin_location_nb: ", bin_location_nb)
         bin_location = np.minimum(bin_location_nb, self.num_bins-1)
         return bin_location
 
     def populate_bins(self, positions):
         bins = self.create_bins()
+        print("bins:\n", bins)
         for ind, position in enumerate(positions):
+            print("position: ", position)
             # Calculate the bin location of this position
             bin_location = self.calculate_bin_location(position)
-            print(position)
-            print(bins.shape)
-            print(bin_location)
-            print(bins[bin_location[0], bin_location[1]])
+            print("bin_location: ", bin_location)
+            # print(position)
+            # print(bins.shape)
+            # print(bin_location)
+            # print(bins[bin_location[0], bin_location[1]])
             # Put the index in the bin
             bins[bin_location[0], bin_location[1]].append(ind)
         return bins

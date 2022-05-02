@@ -6,7 +6,7 @@ import numpy as np
 from map_utils import Map
 
 class TestMap(unittest.TestCase):
-    def test_map_object(self):
+    def test_edge_cases(self):
         map_size = np.array([10,20])
         positions = np.array([
         [10,10],
@@ -17,7 +17,6 @@ class TestMap(unittest.TestCase):
         ])
         observation_radius = 5
         boid_map = Map(map_size, observation_radius, positions)
-        # self.assertTrue(False)
 
 if __name__ == '__main__':
     unittest.main()
