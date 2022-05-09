@@ -93,13 +93,13 @@ class TestBoidsManager(unittest.TestCase):
                 positions=positions, headings=headings, velocities=velocities)
         # Step the simulation forward one timestep. Go step by step
         # Update observations
-        repulsion_boids, orientation_boids, attraction_boids = bm.update_follower_observations()
+        all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos = bm.update_follower_observations()
         # Check that Boid 0's observations are as expected
-        self.assertTrue(np.all(repulsion_boids[0]==np.asarray([[50, 48]])))
-        self.assertTrue(orientation_boids[0]==np.asarray([[np.pi/2]]))
-        self.assertTrue(np.all(attraction_boids[0]==np.asarray([[60,50]])))
+        self.assertTrue(np.all(all_obs_rep_boids_pos[0]==np.asarray([[50, 48]])))
+        self.assertTrue(all_obs_orient_boids_head[0]==np.asarray([[np.pi/2]]))
+        self.assertTrue(np.all(all_obs_attract_boids_pos[0]==np.asarray([[60,50]])))
         # Update desired actions
-        desired_headings, desired_velocities = bm.update_follower_actions(repulsion_boids, orientation_boids, attraction_boids)
+        desired_headings, desired_velocities = bm.update_follower_actions(all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos)
         print("desired_headings:\n",desired_headings)
         print("velocities:\n",desired_velocities)
 
