@@ -72,7 +72,7 @@ class parallel_env(ParallelEnv):
         self.possible_agents = ["leader_" + str(r) for r in range(num_leaders)]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
 
-        # boids = BoidsManager(max_velocity, angular_velocity=)
+        # boids = BoidsManager(max_velocity, angular_velocity)
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
