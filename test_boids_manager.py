@@ -32,11 +32,13 @@ class TestBoidsManager(unittest.TestCase):
         self.assertTrue(bm.headings.shape == (num_leaders+num_followers, 1))
 
         # Update the observations
-        repulsion_boids, orientation_boids, attraction_boids = bm.update_follower_observations()
+        repulsion_boids, orientation_boids, attraction_boids = bm.get_follower_observations()
+
         # Each output is a list where the index corresponds to a particular boid
         self.assertTrue(type(repulsion_boids)==list)
         self.assertTrue(type(orientation_boids)==list)
         self.assertTrue(type(attraction_boids)==list)
+
         # Each element of each list is an array of boids that repulse, orient, or attract
         # the boid with the matching index
         self.assertTrue(self.is_list_of_arrays(repulsion_boids))
@@ -44,14 +46,14 @@ class TestBoidsManager(unittest.TestCase):
         self.assertTrue(self.is_list_of_arrays(attraction_boids))
 
         # Update the actions
-        desired_headings, velocities = bm.update_follower_actions(repulsion_boids, orientation_boids, attraction_boids)
+        desired_headings, velocities = bm.calculate_follower_desired_actions(repulsion_boids, orientation_boids, attraction_boids)
         self.assertTrue(type(desired_headings)==np.ndarray)
         self.assertTrue(type(velocities)==np.ndarray)
         self.assertTrue(desired_headings.shape == (num_followers,1))
         self.assertTrue(velocities.shape == (num_followers,1))
 
         # Apply actions
-        bm.apply_follower_actions(desired_headings, velocities)
+        bm.update_follower_states(desired_headings, velocities)
 
     def test_boid_behavior(self):
         """Test if a boid behaves as expected when acted upon by
@@ -72,7 +74,7 @@ class TestBoidsManager(unittest.TestCase):
             [50,48],
             [55,50],
             [60,50]
-        ])
+        ], dtype=np.float64)
         # All boids facing right except for 2nd boid, which is facing up
         headings = np.array([
             [0],
@@ -80,30 +82,45 @@ class TestBoidsManager(unittest.TestCase):
             [np.pi/2],
             [0]
         ])
-        # All boids start at rest
-        velocities = np.array([
-            [0],
-            [0],
-            [0],
-            [0]
-        ])
         bm = BoidsManager(max_velocity, angular_velocity, \
             radius_repulsion, radius_orientation, radius_attraction, \
                 num_followers, num_leaders, map_size,
-                positions=positions, headings=headings, velocities=velocities)
+                positions=positions, headings=headings)
+
         # Step the simulation forward one timestep. Go step by step
         # Update observations
-        all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos = bm.update_follower_observations()
-        # Check that Boid 0's observations are as expected
-        self.assertTrue(np.all(all_obs_rep_boids_pos[0]==np.asarray([[50, 48]])))
-        self.assertTrue(all_obs_orient_boids_head[0]==np.asarray([[np.pi/2]]))
-        self.assertTrue(np.all(all_obs_attract_boids_pos[0]==np.asarray([[60,50]])))
-        # Update desired actions
-        desired_headings, desired_velocities = bm.update_follower_actions(all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos)
-        print("desired_headings:\n",desired_headings)
-        print("velocities:\n",desired_velocities)
+        all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos = bm.get_follower_observations()
 
-        pass
+        # Check that Boid 0's observations are as expected
+        self.assertTrue(np.all(all_obs_rep_boids_pos[0]==np.array([[50, 48]])))
+        self.assertTrue(all_obs_orient_boids_head[0]==np.array([[np.pi/2]]))
+        self.assertTrue(np.all(all_obs_attract_boids_pos[0]==np.array([[60,50]])))
+
+        # Update desired actions
+        all_desired_headings, all_desired_velocities, all_sum_vectors, \
+            all_repulsion_vectors, all_orientation_vectors, all_attraction_vectors \
+                = bm.calculate_follower_desired_actions(all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos, debug=True)
+
+        # Check that Boid 0's repulsion, orientation, and attraction vectors are as expected
+        self.assertTrue(np.all(all_repulsion_vectors[0]==np.array([[0,1]])))
+        self.assertTrue(np.allclose(all_orientation_vectors[0],np.array([[0,1]])))
+        self.assertTrue(np.all(all_attraction_vectors[0]==np.array([[1,0]])))
+
+        # Check that Boid 0's total vector is as expected
+        self.assertTrue(np.all(all_sum_vectors[0]==np.array([[1,2]])))
+
+        # Check that Boid 0's desired velocity and heading are as expected
+        expected_desired_heading = np.arctan2(2,1)
+        expected_desired_velocity = np.sqrt(1**2 + 2**2)
+        self.assertTrue(all_desired_headings[0]==[expected_desired_heading])
+        self.assertTrue(all_desired_velocities[0]==[expected_desired_velocity])
+
+        # Update states of all boids with desired headings and velocities
+        bm.update_follower_states(all_desired_headings, all_desired_velocities)
+
+        # Check that Boid 0 has moved accordingly
+        self.assertTrue(bm.headings[0]==[np.pi/32])
+        self.assertTrue(np.all(bm.positions[0]==[50+np.cos(np.pi/32), 50+np.sin(np.pi/32)]))
 
     def test_boid_behavior_many(self):
         """Test if a boid behaves as expected when acted upon by
