@@ -1,4 +1,3 @@
-import enum
 import numpy as np
 
 from map_utils import Map
@@ -260,7 +259,7 @@ class BoidsManager():
         # Update the actions
         desired_headings, velocities = self.update_follower_actions(repulsion_boids, orientation_boids, attraction_boids)
         # Apply actions
-        self.apply_follower_actions(desired_headings, velocities)
+        self.update_follower_states(desired_headings, velocities)
         # Apply boundary conditions on positions
         self.bound_positions()
         # Reset the map with the new positions
