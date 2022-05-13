@@ -58,7 +58,7 @@ def raw_env():
 class parallel_env(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, map_size = np.array([10,10]), radius_repulsion = 1, radius_orientation = 2, radius_attraction = 10, max_velocity = 10):
+    def __init__(self, num_leaders = 2, num_followers = 10):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -72,7 +72,7 @@ class parallel_env(ParallelEnv):
         self.possible_agents = ["leader_" + str(r) for r in range(num_leaders)]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
 
-        # boids = BoidsManager(max_velocity, angular_velocity)
+        self.bm = BoidsManager(max_velocity=10, max_angular_velocity=np.pi/32, radius_repulsion=20, radius_orientation=30, radius_attraction=50, map_size=[500,500])
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
