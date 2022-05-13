@@ -1,3 +1,4 @@
+from ctypes import pointer
 import numpy as np
 import pygame
 
@@ -11,7 +12,7 @@ class Renderer():
         self.pixels_per_unit = pixels_per_unit
 
         # Set useful variables
-        self.follower_color = (0,0,255)
+        self.follower_color = (0,120,250)
         self.leader_color = (250, 120, 0)
         self.boid_radius = 1 # unit, not pixel
         self.boid_pixel_radius = self.getPixels(self.boid_radius)
@@ -32,8 +33,6 @@ class Renderer():
         else:
             p = np.zeros(unit_coords.shape)
             p[:,0] = self.getPixels(unit_coords[:, 0])
-            print(self.map_size[1])
-            print( - unit_coords[:, 1])
             p[:,1] = self.getPixels(self.map_size[1] - unit_coords[:, 1])
         return p
 
@@ -51,9 +50,9 @@ class Renderer():
             [np.cos(angle), -np.sin(angle)],
             [np.sin(angle),  np.cos(angle)]
         ])
-        # print(R.shape, points.shape)
         def rotateFunc(point):
-            return point.dot(R)
+            return R.dot(point.T).T
+            # return point.dot(R)
         return np.apply_along_axis(rotateFunc, 1, points)
 
     def translatePoints(self, points, translation_vec):
@@ -62,13 +61,14 @@ class Renderer():
 
     def generateBoidTrianglePix(self, position, heading):
         pts = self.createTrianglePoints()
-        # print(pts.shape)
-        print("pts:\n", pts)
         r_pts = self.rotatePoints(pts, heading)
-        print("r_pts:\n", r_pts)
         t_pts = self.translatePoints(r_pts, position)
-        print("t_pts:\n", t_pts)
         return self.getPixelCoords(t_pts)
+
+    def renderBoid(self, position, heading, color):
+        pix_coords = self.generateBoidTrianglePix(position, heading)
+        pygame.draw.polygon(self.screen, color, pix_coords)
+        pygame.draw.polygon(self.screen, (0,0,0), pix_coords, width=1)
 
     def renderBoids(self, positions, headings):
         for boid_id in range(self.total_agents):
@@ -76,9 +76,7 @@ class Renderer():
                 color = self.follower_color
             else:
                 color = self.leader_color
-            pixel_coords_2 = self.generateBoidTrianglePix(positions[boid_id], headings[boid_id][0])
-            print(pixel_coords_2)
-            pygame.draw.polygon(self.screen, color, pixel_coords_2)
+            self.renderBoid(positions[boid_id], headings[boid_id][0], color)
 
     def renderFrame(self, positions, headings):
         self.screen.fill((255,255,255))

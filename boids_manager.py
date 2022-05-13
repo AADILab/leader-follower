@@ -255,9 +255,9 @@ class BoidsManager():
 
     def step(self):
         # Update the observations
-        repulsion_boids, orientation_boids, attraction_boids = self.update_follower_observations()
+        repulsion_boids, orientation_boids, attraction_boids = self.get_follower_observations()
         # Update the actions
-        desired_headings, velocities = self.update_follower_actions(repulsion_boids, orientation_boids, attraction_boids)
+        desired_headings, velocities = self.calculate_follower_desired_actions(repulsion_boids, orientation_boids, attraction_boids)
         # Apply actions
         self.update_follower_states(desired_headings, velocities)
         # Apply boundary conditions on positions

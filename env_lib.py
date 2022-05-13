@@ -6,6 +6,7 @@ from pettingzoo.utils import from_parallel
 import numpy as np
 
 from boids_manager import BoidsManager
+from renderer import Renderer
 
 np.random.seed(0)
 
@@ -72,7 +73,10 @@ class parallel_env(ParallelEnv):
         self.possible_agents = ["leader_" + str(r) for r in range(num_leaders)]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
 
-        self.bm = BoidsManager(max_velocity=10, max_angular_velocity=np.pi/32, radius_repulsion=20, radius_orientation=30, radius_attraction=50, map_size=[500,500])
+        # np.pi/32
+        map_size = np.array([50,50])
+        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=0.5, max_angular_velocity=np.pi/32, radius_repulsion=3, radius_orientation=5, radius_attraction=10, map_size=map_size)
+        self.renderer = Renderer(num_leaders, num_followers, map_size, 10)
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
@@ -102,11 +106,7 @@ class parallel_env(ParallelEnv):
         Renders the environment. In human mode, it can print to terminal, open
         up a graphical window, or open up some other display that a human can see and understand.
         '''
-        if len(self.agents) == 2:
-            string = ("Current state: Agent1: {} , Agent2: {}".format(MOVES[self.state[self.agents[0]]], MOVES[self.state[self.agents[1]]]))
-        else:
-            string = "Game over"
-        print(string)
+        self.renderer.renderFrame(self.bm.positions, self.bm.headings)
 
     def close(self):
         '''
@@ -140,12 +140,15 @@ class parallel_env(ParallelEnv):
         - infos
         dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
         '''
+
+        # Step forward all of the follower boids
+        self.bm.step()
+
         # If a user passes in actions with no agents, then just return empty observations, etc.
         if not actions:
             self.agents = []
             return {}, {}, {}, {}
 
-        # Step forward all of the follower boids
 
 
         # rewards for all agents are placed in the rewards dictionary to be returned
