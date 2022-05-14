@@ -4,7 +4,7 @@ from map_utils import Map
 
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
-        num_followers, num_leaders, map_size, positions = None, headings = None) -> None:
+        num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, avoid_walls = False, ghost_density = 1) -> None:
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
@@ -26,6 +26,7 @@ class BoidsManager():
         self.num_followers = num_followers
         self.num_leaders = num_leaders
         self.map_size = map_size
+        self.ghost_density = ghost_density
 
         # Setup boid positions
         self.positions = self.setup_positions(positions)
@@ -35,6 +36,27 @@ class BoidsManager():
 
         # Setup underlying map structure for observations
         self.map = Map(self.map_size, self.radius_attraction, self.positions)
+
+        # Setup counterfactual ghost boids for wall avoidance
+        self.ghost_positions = self.generate_ghost_positions()
+        self.ghost_map = Map(self.map_size, self.radius_repulsion, self.ghost_positions)
+
+    def generate_ghost_positions(self):
+        """Generate ghost positions along the edges of the map, spaced out by the ghost density."""
+        # Simplify variables for indexing
+        M, N = self.map_size
+        i, j = M+1, N-1
+        num_ghosts = 2*self.ghost_density*(i) + 2*self.ghost_density*(j)
+        ghost_positions = np.zeros((num_ghosts, 2))
+        # Populate ghosts along top and bottom edge
+        ghost_positions[:i,0] = np.linspace(0,M,i*self.ghost_density,endpoint=True)
+        ghost_positions[i:2*i,0] = ghost_positions[:i,0]
+        ghost_positions[i:2*i,1] = N
+        # Populate ghosts along left and right edge
+        ghost_positions[2*i:2*i+j,1] = np.linspace(1,j,j*self.ghost_density,endpoint=True)
+        ghost_positions[2*i+j:,1] = ghost_positions[2*i:2*i+j,1]
+        ghost_positions[2*i+j:,0] = M
+        return ghost_positions
 
     def setup_velocities(self, velocities):
         if velocities is None:

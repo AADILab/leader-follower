@@ -122,6 +122,57 @@ class TestBoidsManager(unittest.TestCase):
         self.assertTrue(bm.headings[0]==[np.pi/32])
         self.assertTrue(np.all(bm.positions[0]==[50+np.cos(np.pi/32), 50+np.sin(np.pi/32)]))
 
+    def test_ghost_boids(self):
+        """Test that counterfactual ghost boids are generated correctly
+        and that boids avoid them as expected.
+        """
+        max_velocity = 1 # 1 unit/step
+        angular_velocity = np.pi/32 # rad/step
+        radius_repulsion = 1 # units
+        radius_orientation = 2 # units
+        radius_attraction = 3 # units
+        num_followers = 4
+        num_leaders = 0
+        map_size = np.array([3,2])
+        positions = np.array([
+            [1,1],
+            [2,1],
+            [3,1],
+            [4,1]
+        ], dtype=np.float64)
+        # All boids facing right except for 2nd boid, which is facing up
+        headings = np.array([
+            [0],
+            [0],
+            [np.pi/2],
+            [0]
+        ])
+        bm_1 = BoidsManager(max_velocity, angular_velocity, \
+            radius_repulsion, radius_orientation, radius_attraction, \
+            num_followers, num_leaders, map_size,
+            positions=positions, headings=headings, \
+            avoid_walls=True, ghost_density=1)
+        exp_ghost_positions = np.array([
+            [0, 0],
+            [1, 0],
+            [2, 0],
+            [3, 0],
+            [0, 2],
+            [1, 2],
+            [2, 2],
+            [3, 2],
+            [0, 1],
+            [3, 1]
+        ])
+        self.assertTrue(np.all(bm_1.ghost_positions==exp_ghost_positions))
+        bm_1 = BoidsManager(max_velocity, angular_velocity, \
+            radius_repulsion, radius_orientation, radius_attraction, \
+            num_followers, num_leaders, map_size,
+            positions=positions, headings=headings, \
+            avoid_walls=True, ghost_density=2)
+        print(bm_1.ghost_positions)
+        pass
+
     def test_boid_behavior_many(self):
         """Test if a boid behaves as expected when acted upon by
         a three boids repulsing

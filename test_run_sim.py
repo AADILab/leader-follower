@@ -6,10 +6,10 @@ from env_lib import parallel_env, ROCK
 def policy(observation, agent):
     return ROCK
 
-env = parallel_env(num_leaders = 0, num_followers = 20)
+env = parallel_env(num_leaders = 0, num_followers = 100)
 observations = env.reset()
 
-delay_time = 0.1
+delay_time = 1/60
 last_time = None
 
 # pygame.init()
@@ -21,7 +21,7 @@ while not shutdown:
             shutdown = True
     current_time = time()
     if last_time is None or current_time - last_time >= delay_time:
-        print(current_time, last_time, delay_time)
+        if last_time is not None: print(current_time-last_time-delay_time)
         last_time = current_time
         env.step({})
         env.render()
