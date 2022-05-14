@@ -4,7 +4,7 @@ from map_utils import Map
 
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
-        num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, avoid_walls = False, ghost_density = 1) -> None:
+        num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, avoid_walls = True, ghost_density = 1) -> None:
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
@@ -26,6 +26,7 @@ class BoidsManager():
         self.num_followers = num_followers
         self.num_leaders = num_leaders
         self.map_size = map_size
+        self.avoid_walls = avoid_walls
         self.ghost_density = ghost_density
 
         # Setup boid positions
@@ -40,20 +41,21 @@ class BoidsManager():
         # Setup counterfactual ghost boids for wall avoidance
         self.ghost_positions = self.generate_ghost_positions()
         self.ghost_map = Map(self.map_size, self.radius_repulsion, self.ghost_positions)
+        print("self.ghost_positions:\n", self.ghost_positions)
 
     def generate_ghost_positions(self):
         """Generate ghost positions along the edges of the map, spaced out by the ghost density."""
         # Simplify variables for indexing
         M, N = self.map_size
-        i, j = M+1, N-1
-        num_ghosts = 2*self.ghost_density*(i) + 2*self.ghost_density*(j)
+        i, j = (M*self.ghost_density)+1, (N*self.ghost_density)-1
+        num_ghosts = 2*i + 2*j
         ghost_positions = np.zeros((num_ghosts, 2))
         # Populate ghosts along top and bottom edge
-        ghost_positions[:i,0] = np.linspace(0,M,i*self.ghost_density,endpoint=True)
+        ghost_positions[:i,0] = np.linspace(0,M,i,endpoint=True)
         ghost_positions[i:2*i,0] = ghost_positions[:i,0]
         ghost_positions[i:2*i,1] = N
         # Populate ghosts along left and right edge
-        ghost_positions[2*i:2*i+j,1] = np.linspace(1,j,j*self.ghost_density,endpoint=True)
+        ghost_positions[2*i:2*i+j,1] = np.linspace(1/self.ghost_density,N-1/self.ghost_density,j,endpoint=True)
         ghost_positions[2*i+j:,1] = ghost_positions[2*i:2*i+j,1]
         ghost_positions[2*i+j:,0] = M
         return ghost_positions
@@ -131,6 +133,14 @@ class BoidsManager():
         attraction_bool = np.logical_and(in_attraction_radius_bool, out_orientation_radius_bool)
         return observable_positions[attraction_bool]
 
+    def get_rep_ghost_positions(self, position):
+        print("get_rep_ghost_positions()")
+        adj_ghost_inds = self.ghost_map.get_adj_agent_inds(position)
+        print(adj_ghost_inds)
+        obs_ghost_inds = self.ghost_map.get_observable_agent_inds(position, self.ghost_positions)
+        print(obs_ghost_inds)
+        return self.ghost_positions[obs_ghost_inds]
+
     def get_follower_observations(self):
         all_obs_rep_boids_pos = []      # all observable repulsion boid positions
         all_obs_orient_boids_head = []   # all observable orientation boid headings
@@ -144,7 +154,15 @@ class BoidsManager():
             # Get distance of observable boids to current boid
             obs_distances = self.get_distances(obs_positions, boid_id)
             # Get observable boid positions within repulsion radius
-            rep_positions = self.get_repulsion_boid_positions(obs_distances, obs_positions)
+            rep_positions_obs = self.get_repulsion_boid_positions(obs_distances, obs_positions)
+            # If boids are avoiding walls, then include ghost positions at the edges in repulsion
+            if self.avoid_walls:
+                rep_positions_ghosts = self.get_rep_ghost_positions(self.positions[boid_id])
+                print(rep_positions_ghosts.shape)
+                rep_positions = np.vstack((rep_positions_obs, rep_positions_ghosts))
+                print(rep_positions.shape)
+            else:
+                rep_positions = rep_positions_obs
             # Get observable boid positions within orientation radius and outside repulsion radius
             orient_headings = self.get_orientation_boid_headings(obs_distances, obs_headings)
             # Get observable boid positions within attraction radius and outside orientation radius

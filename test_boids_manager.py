@@ -126,33 +126,28 @@ class TestBoidsManager(unittest.TestCase):
         """Test that counterfactual ghost boids are generated correctly
         and that boids avoid them as expected.
         """
+        # Define variables for creating boids managers
         max_velocity = 1 # 1 unit/step
         angular_velocity = np.pi/32 # rad/step
         radius_repulsion = 1 # units
         radius_orientation = 2 # units
         radius_attraction = 3 # units
-        num_followers = 4
+        num_followers = 1
         num_leaders = 0
         map_size = np.array([3,2])
         positions = np.array([
-            [1,1],
-            [2,1],
-            [3,1],
-            [4,1]
+            [1,1]
         ], dtype=np.float64)
-        # All boids facing right except for 2nd boid, which is facing up
         headings = np.array([
-            [0],
-            [0],
-            [np.pi/2],
             [0]
         ])
-        bm_1 = BoidsManager(max_velocity, angular_velocity, \
+        # Create a boids mananger with a ghost density of 1
+        bm_1_density = BoidsManager(max_velocity, angular_velocity, \
             radius_repulsion, radius_orientation, radius_attraction, \
             num_followers, num_leaders, map_size,
             positions=positions, headings=headings, \
             avoid_walls=True, ghost_density=1)
-        exp_ghost_positions = np.array([
+        exp_ghost_positions_1 = np.array([
             [0, 0],
             [1, 0],
             [2, 0],
@@ -164,14 +159,44 @@ class TestBoidsManager(unittest.TestCase):
             [0, 1],
             [3, 1]
         ])
-        self.assertTrue(np.all(bm_1.ghost_positions==exp_ghost_positions))
-        bm_1 = BoidsManager(max_velocity, angular_velocity, \
+        # Check that ghost boids are correctly generated with ghost density of 1
+        self.assertTrue(np.all(bm_1_density.ghost_positions==exp_ghost_positions_1))
+
+        # Create a boids manager with a ghost density of 2
+        bm_2_density = BoidsManager(max_velocity, angular_velocity, \
             radius_repulsion, radius_orientation, radius_attraction, \
             num_followers, num_leaders, map_size,
             positions=positions, headings=headings, \
             avoid_walls=True, ghost_density=2)
-        print(bm_1.ghost_positions)
-        pass
+        exp_ghost_positions_2 = np.array([
+            [0. , 0. ],
+            [0.5, 0. ],
+            [1. , 0. ],
+            [1.5, 0. ],
+            [2. , 0. ],
+            [2.5, 0. ],
+            [3. , 0. ],
+            [0. , 2. ],
+            [0.5, 2. ],
+            [1. , 2. ],
+            [1.5, 2. ],
+            [2. , 2. ],
+            [2.5, 2. ],
+            [3. , 2. ],
+            [0. , 0.5],
+            [0. , 1. ],
+            [0. , 1.5],
+            [3. , 0.5],
+            [3. , 1. ],
+            [3. , 1.5]
+        ])
+        # Check that ghost boids are correctly generated with ghost density of 2
+        self.assertTrue(np.all(bm_2_density.ghost_positions==exp_ghost_positions_2))
+
+        # Check that the non-ghost boid is repulsed by the ghost boids
+        # The boid is at [1,1] with radius of repulsion of 1.
+        # The ghost boids at [0,1] and [1,0] should repulse the non-ghost boid.
+
 
     def test_boid_behavior_many(self):
         """Test if a boid behaves as expected when acted upon by
