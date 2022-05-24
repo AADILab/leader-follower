@@ -63,11 +63,9 @@ class Map():
         return agent_inds
 
     def get_observable_agent_inds(self, position, positions):
-        print("get_observable_agent_inds()")
         # Get indicies of all agents in adjacent bins
         adj_agent_inds = np.array(self.get_adj_agent_inds(position),dtype=int)
         # Calculate how far away all of those agents are from specified position
-        print(adj_agent_inds, adj_agent_inds.dtype)
         delta_pos = positions[adj_agent_inds] - position # Vectors from position to positions
         r = np.sqrt(delta_pos[:,0]**2 + delta_pos[:,1]**2)
         # Keep only the ones that are within the observation radius

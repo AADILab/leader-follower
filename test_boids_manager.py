@@ -195,8 +195,17 @@ class TestBoidsManager(unittest.TestCase):
 
         # Check that the non-ghost boid is repulsed by the ghost boids
         # The boid is at [1,1] with radius of repulsion of 1.
-        # The ghost boids at [0,1] and [1,0] should repulse the non-ghost boid.
-
+        # The ghost boids at [1,0], [0,1], [1,2] should repulse the non-ghost boid.
+        all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos = bm_2_density.get_follower_observations()
+        # Check that ghosts were observed only in repulsion
+        self.assertTrue(all_obs_orient_boids_head[0].size == 0)
+        self.assertTrue(all_obs_attract_boids_pos[0].size == 0)
+        exp_obs_rep_boid_pos = np.array([
+            [1,0],
+            [0,1],
+            [1,2]
+        ])
+        self.assertTrue(np.all(all_obs_rep_boids_pos[0]==exp_obs_rep_boid_pos))
 
     def test_boid_behavior_many(self):
         """Test if a boid behaves as expected when acted upon by

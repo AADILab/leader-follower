@@ -75,7 +75,7 @@ class parallel_env(ParallelEnv):
 
         # np.pi/32
         map_size = np.array([50,50])
-        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=0.1, max_angular_velocity=np.pi/2, radius_repulsion=5, radius_orientation=8, radius_attraction=10, map_size=map_size)
+        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=0.1, max_angular_velocity=np.pi/2, radius_repulsion=5, radius_orientation=8, radius_attraction=10, map_size=map_size, ghost_density=1000)
         self.renderer = Renderer(num_leaders, num_followers, map_size, 10)
 
     # this cache ensures that same space object is returned for the same agent

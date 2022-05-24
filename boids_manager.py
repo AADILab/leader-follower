@@ -41,7 +41,6 @@ class BoidsManager():
         # Setup counterfactual ghost boids for wall avoidance
         self.ghost_positions = self.generate_ghost_positions()
         self.ghost_map = Map(self.map_size, self.radius_repulsion, self.ghost_positions)
-        print("self.ghost_positions:\n", self.ghost_positions)
 
     def generate_ghost_positions(self):
         """Generate ghost positions along the edges of the map, spaced out by the ghost density."""
@@ -134,11 +133,8 @@ class BoidsManager():
         return observable_positions[attraction_bool]
 
     def get_rep_ghost_positions(self, position):
-        print("get_rep_ghost_positions()")
-        adj_ghost_inds = self.ghost_map.get_adj_agent_inds(position)
-        print(adj_ghost_inds)
+        # This gets all ghost positions within the radius of repulsion of the input position
         obs_ghost_inds = self.ghost_map.get_observable_agent_inds(position, self.ghost_positions)
-        print(obs_ghost_inds)
         return self.ghost_positions[obs_ghost_inds]
 
     def get_follower_observations(self):
@@ -158,9 +154,7 @@ class BoidsManager():
             # If boids are avoiding walls, then include ghost positions at the edges in repulsion
             if self.avoid_walls:
                 rep_positions_ghosts = self.get_rep_ghost_positions(self.positions[boid_id])
-                print(rep_positions_ghosts.shape)
                 rep_positions = np.vstack((rep_positions_obs, rep_positions_ghosts))
-                print(rep_positions.shape)
             else:
                 rep_positions = rep_positions_obs
             # Get observable boid positions within orientation radius and outside repulsion radius
