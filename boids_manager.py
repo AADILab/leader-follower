@@ -4,7 +4,8 @@ from map_utils import Map
 
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
-        num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, avoid_walls = True, ghost_density = 1) -> None:
+        num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, \
+            avoid_walls = True, ghost_density = 1, dt = 1, max_acceleration = 1) -> None:
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
@@ -18,6 +19,7 @@ class BoidsManager():
 
         # Save input variables to internal variables
         self.max_velocity = max_velocity
+        self.max_acceleration = max_acceleration
         self.max_angular_velocity = max_angular_velocity
         self.radius_repulsion = radius_repulsion
         self.radius_orientation = radius_orientation
@@ -28,12 +30,16 @@ class BoidsManager():
         self.map_size = map_size
         self.avoid_walls = avoid_walls
         self.ghost_density = ghost_density
+        self.dt = dt
 
         # Setup boid positions
         self.positions = self.setup_positions(positions)
 
         # Setup boid headings. Headings are represented in map frame.
         self.headings = self.setup_headings(headings)
+
+        # Setup boid velocities. Velocities range from 0 to max velocity
+        self.velocities = self.setup_velocities(velocities)
 
         # Setup underlying map structure for observations
         self.map = Map(self.map_size, self.radius_attraction, self.positions)
@@ -195,7 +201,7 @@ class BoidsManager():
         else:
             return np.array([0,0])
 
-    def calculate_follower_desired_actions(self, all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos, debug=False):
+    def calculate_follower_desired_states(self, all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos, debug=False):
         # Calculate repulsion vectors for all follower boids
         all_repulsion_vectors = np.zeros((self.num_followers, 2))
         for boid_id, rep_boids_pos in enumerate(all_obs_rep_boids_pos[:self.num_followers]):
@@ -251,30 +257,46 @@ class BoidsManager():
             # Save calculated delta heading
             delta_headings[boid_id, 0] = delta_heading
 
-        # Bound delta headings according to max angular velocity constraint
-        delta_headings[delta_headings > self.max_angular_velocity] = self.max_angular_velocity
-        delta_headings[delta_headings < -self.max_angular_velocity] = -self.max_angular_velocity
-
         return delta_headings
 
-    def update_follower_states(self, all_desired_headings, all_desired_velocities):
-        # Bound velocities
-        self.bound_velocities(all_desired_velocities)
-        # Calculate delta applied to headings
-        delta_headings = self.calculate_delta_headings(all_desired_headings)
-        # Apply that delta to headings
-        self.headings[:self.num_followers] += delta_headings
-        # Apply circular cutoff to headings
-        self.headings[:self.num_followers] %= (2*np.pi)
-        # Apply velocities to new positions
-        self.positions[:self.num_followers][:,0] += all_desired_velocities[:,0] * np.cos(self.headings[:self.num_followers][:,0])
-        self.positions[:self.num_followers][:,1] += all_desired_velocities[:,0] * np.sin(self.headings[:self.num_followers][:,0])
-        return None
+    def calculate_delta_velocities(self, all_desired_velocities):
+        return all_desired_velocities - self.velocities
 
-    def bound_velocities(self, velocities):
-        # Bounds velocities as an in-place operation
-        over_max_bool = velocities > self.max_velocity
-        velocities[over_max_bool] = self.max_velocity
+    def calculate_follower_deltas(self, all_desired_headings, all_desired_velocities):
+        """Calculate delta headings and delta velocities based on current follower
+        headings and velocities and their DESIRED headings and velocities. Do not apply
+        any bounding logic."""
+        delta_headings = self.calculate_delta_headings(all_desired_headings)
+        delta_velocities = self.calculate_delta_velocities(all_desired_velocities)
+        return delta_headings, delta_velocities
+
+    def calculate_follower_kinematics(self, delta_headings, delta_velocities):
+        """Turn deltas for heading and velocity into angular velocities
+        and linear acclerations. Bound kinematics according to specified
+        boundaries. Ex: max acceleration, max angular velocity
+        """
+        angular_velocities = delta_headings/self.dt
+        angular_velocities[angular_velocities > self.max_angular_velocity] = self.max_angular_velocity
+        angular_velocities[angular_velocities < -self.max_angular_velocity] = -self.max_angular_velocity
+        accelerations = delta_velocities/self.dt
+        accelerations[accelerations > self.max_acceleration] = self.max_acceleration
+        accelerations[accelerations < -self.max_acceleration] = -self.max_acceleration
+        return angular_velocities, accelerations
+
+    def update_follower_states(self, angular_velocities, accelerations):
+        """Update follower states with the input kinematics using Euler integration.
+        Bound kinematics according to specified boundaries. Ex: max velocity
+        """
+        # Update headings
+        self.headings[:self.num_followers] += angular_velocities*self.dt
+        # Apply circular cutoff
+        self.headings[:self.num_followers] %= (2*np.pi)
+        # Update velocities
+        self.velocities[:self.num_followers] += accelerations*self.dt
+        self.velocities[:self.num_followers][self.velocities > self.max_velocity] = self.max_velocity
+        # Update positions
+        self.positions[:self.num_followers][:,0] += self.velocities[:self.num_followers][:,0] * np.cos(self.headings[:self.num_followers][:,0]) * self.dt
+        self.positions[:self.num_followers][:,1] += self.velocities[:self.num_followers][:,0] * np.sin(self.headings[:self.num_followers][:,0]) * self.dt
         return None
 
     def bound_positions(self):
@@ -290,11 +312,13 @@ class BoidsManager():
     def step(self):
         # Update the observations
         repulsion_boids, orientation_boids, attraction_boids = self.get_follower_observations()
-        # Update the actions
-        desired_headings, velocities = self.calculate_follower_desired_actions(repulsion_boids, orientation_boids, attraction_boids)
-        # Apply actions
-        self.update_follower_states(desired_headings, velocities)
-        # Apply boundary conditions on positions
-        self.bound_positions()
+        # Update the desired states
+        all_desired_headings, all_velocities = self.calculate_follower_desired_states(repulsion_boids, orientation_boids, attraction_boids)
+        # Calculate delta states
+        delta_headings, delta_velocities = self.calculate_follower_deltas(all_desired_headings, all_velocities)
+        # Turn delta states into kinematics commands
+        angular_velocities, accelerations = self.calculate_follower_kinematics(delta_headings, delta_velocities)
+        # Update follower states using kinematics
+        self.update_follower_states(angular_velocities, accelerations)
         # Reset the map with the new positions
         self.map.reset(self.positions)

@@ -59,7 +59,7 @@ def raw_env():
 class parallel_env(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10):
+    def __init__(self, num_leaders = 2, num_followers = 10, dt = 1/60):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -75,7 +75,7 @@ class parallel_env(ParallelEnv):
 
         # np.pi/32
         map_size = np.array([50,50])
-        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=0.1, max_angular_velocity=np.pi/2, radius_repulsion=5, radius_orientation=8, radius_attraction=10, map_size=map_size, ghost_density=1000)
+        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=5, max_angular_velocity=np.pi/2, radius_repulsion=5, radius_orientation=8, radius_attraction=10, map_size=map_size, ghost_density=10, dt=dt)
         self.renderer = Renderer(num_leaders, num_followers, map_size, 10)
 
     # this cache ensures that same space object is returned for the same agent
