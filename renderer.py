@@ -1,4 +1,3 @@
-from ctypes import pointer
 import numpy as np
 import pygame
 

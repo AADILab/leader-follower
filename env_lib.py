@@ -75,8 +75,8 @@ class parallel_env(ParallelEnv):
 
         # np.pi/32
         map_size = np.array([50,50])
-        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=5, max_angular_velocity=np.pi/2, radius_repulsion=5, radius_orientation=8, radius_attraction=10, map_size=map_size, ghost_density=10, dt=dt)
-        self.renderer = Renderer(num_leaders, num_followers, map_size, 10)
+        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=5, max_angular_velocity=np.pi*0.75, radius_repulsion=3, radius_orientation=6, radius_attraction=9, map_size=map_size, ghost_density=10, dt=dt)
+        self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=20)
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected

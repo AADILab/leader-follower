@@ -19,6 +19,7 @@ class BoidsManager():
 
         # Save input variables to internal variables
         self.max_velocity = max_velocity
+        self.min_velocity = 0.5*max_velocity
         self.max_acceleration = max_acceleration
         self.max_angular_velocity = max_angular_velocity
         self.radius_repulsion = radius_repulsion
@@ -67,8 +68,8 @@ class BoidsManager():
 
     def setup_velocities(self, velocities):
         if velocities is None:
-            # Boid velocities are randomized from 0 to the max velocity
-            return np.random.uniform(0, self.max_velocity, size=(self.total_agents,1))
+            # Boid velocities are randomized from min to the max velocity
+            return np.random.uniform(self.min_velocity, self.max_velocity, size=(self.total_agents,1))
         else:
             if type(velocities) != np.ndarray:
                 raise Exception("velocities must be input as numpy array")
@@ -294,6 +295,7 @@ class BoidsManager():
         # Update velocities
         self.velocities[:self.num_followers] += accelerations*self.dt
         self.velocities[:self.num_followers][self.velocities > self.max_velocity] = self.max_velocity
+        self.velocities[:self.num_followers][self.velocities < self.min_velocity] = self.min_velocity
         # Update positions
         self.positions[:self.num_followers][:,0] += self.velocities[:self.num_followers][:,0] * np.cos(self.headings[:self.num_followers][:,0]) * self.dt
         self.positions[:self.num_followers][:,1] += self.velocities[:self.num_followers][:,0] * np.sin(self.headings[:self.num_followers][:,0]) * self.dt

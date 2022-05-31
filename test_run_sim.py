@@ -6,10 +6,10 @@ from env_lib import parallel_env, ROCK
 def policy(observation, agent):
     return ROCK
 
-FPS = 60
+FPS = 30
 dt = 1/FPS
 
-env = parallel_env(num_leaders = 0, num_followers = 50)
+env = parallel_env(num_leaders = 0, num_followers = 100)
 observations = env.reset()
 
 last_time = None
