@@ -9,7 +9,7 @@ def policy(observation, agent):
 FPS = 30
 dt = 1/FPS
 
-env = parallel_env(num_leaders = 0, num_followers = 100)
+env = parallel_env(num_leaders = 0, num_followers = 20)
 observations = env.reset()
 
 last_time = None
@@ -23,7 +23,7 @@ while not shutdown:
             shutdown = True
     current_time = time()
     if last_time is None or current_time - last_time >= dt:
-        if last_time is not None: print(current_time-last_time-dt)
+        if last_time is not None: print("t:", current_time-last_time-dt)
         last_time = current_time
         env.step({})
         env.render()
