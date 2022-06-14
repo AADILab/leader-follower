@@ -9,7 +9,7 @@ def policy(observation, agent):
 FPS = 30
 dt = 1/FPS
 
-env = parallel_env(num_leaders = 0, num_followers = 20)
+env = parallel_env(num_leaders = 0, num_followers = 1)
 observations = env.reset()
 
 last_time = None
