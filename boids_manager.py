@@ -46,6 +46,8 @@ class BoidsManager():
         self.map = Map(self.map_size, self.radius_attraction, self.positions)
 
         # Setup counterfactual ghost boids for wall avoidance
+        # This isn't being used for anything right now,
+        # but I'm keeping it around in case I need it later.
         self.ghost_positions = self.generate_ghost_positions()
         self.ghost_map = Map(self.map_size, self.radius_repulsion, self.ghost_positions)
 

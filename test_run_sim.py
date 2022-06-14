@@ -1,5 +1,4 @@
 from time import time
-from turtle import position
 import pygame
 
 from env_lib import parallel_env, ROCK
