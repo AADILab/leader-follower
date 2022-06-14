@@ -8,8 +8,6 @@ import numpy as np
 from boids_manager import BoidsManager
 from renderer import Renderer
 
-np.random.seed(0)
-
 ROCK = 0
 PAPER = 1
 SCISSORS = 2
@@ -59,7 +57,7 @@ def raw_env():
 class parallel_env(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, dt = 1/60):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, r_ind = None):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -73,10 +71,10 @@ class parallel_env(ParallelEnv):
         self.possible_agents = ["leader_" + str(r) for r in range(num_leaders)]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
 
-        # np.pi/32
-        map_size = np.array([50,50])
-        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=2.5, max_angular_velocity=np.pi*0.5, radius_repulsion=3, radius_orientation=6, radius_attraction=9, map_size=map_size, ghost_density=10, dt=dt)
-        self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=20)
+        map_size = np.array([100,100])
+        rs = (2,3,5)
+        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=2.5, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=1/FPS, positions=positions)
+        self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=5, radii = rs, r_ind=r_ind)
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected

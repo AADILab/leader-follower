@@ -1,20 +1,29 @@
 from time import time
+from turtle import position
 import pygame
 
 from env_lib import parallel_env, ROCK
 
+import numpy as np
+np.random.seed(0)
+
 def policy(observation, agent):
     return ROCK
 
-FPS = 30
-dt = 1/FPS
+positions = np.vstack((
+    np.hstack((
+                np.random.uniform(50, size=(20,1)),
+                np.random.uniform(50, size=(20,1))
+            )),
+    np.ones((10,2))*25
+))
+positions = None
 
-env = parallel_env(num_leaders = 0, num_followers = 50)
+env = parallel_env(num_leaders = 10, num_followers = 100, FPS=30, positions=positions, r_ind=[0])
 observations = env.reset()
 
+dt = env.bm.dt
 last_time = None
-
-# pygame.init()
 
 shutdown = False
 while not shutdown:
@@ -23,7 +32,7 @@ while not shutdown:
             shutdown = True
     current_time = time()
     if last_time is None or current_time - last_time >= dt:
-        if last_time is not None: print("t:", current_time-last_time-dt)
+        # if last_time is not None: print("t:", current_time-last_time-dt)
         last_time = current_time
         env.step({})
         env.render()

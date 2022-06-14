@@ -3,13 +3,15 @@ import pygame
 import pygame.gfxdraw
 
 class Renderer():
-    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit) -> None:
+    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, r_ind=None) -> None:
         # Save variables
         self.num_leaders = num_leaders
         self.num_followers = num_followers
         self.total_agents = num_followers + num_leaders
         self.map_size = map_size
         self.pixels_per_unit = pixels_per_unit
+        self.radii = radii
+        self.r_ind = self.setupRInd(r_ind)
 
         # Set useful variables
         self.follower_color = (0,120,250)
@@ -24,6 +26,12 @@ class Renderer():
         # Initialize pygame display
         pygame.init()
         self.screen = pygame.display.set_mode(self.display_size)
+
+    def setupRInd(self, r_ind):
+        if r_ind is None:
+            return list(range(self.num_leaders+self.num_followers))
+        else:
+            return r_ind
 
     def getPixelCoords(self, unit_coords):
         if len(unit_coords.shape) == 1:
@@ -52,7 +60,6 @@ class Renderer():
         ])
         def rotateFunc(point):
             return R.dot(point.T).T
-            # return point.dot(R)
         return np.apply_along_axis(rotateFunc, 1, points)
 
     def translatePoints(self, points, translation_vec):
@@ -65,12 +72,18 @@ class Renderer():
         t_pts = self.translatePoints(r_pts, position)
         return self.getPixelCoords(t_pts)
 
-    def renderBoid(self, position, heading, color):
+    def renderBoid(self, position, heading, color, boid_id):
         pix_coords = self.generateBoidTrianglePix(position, heading)
-        # pygame.draw.polygon(self.screen, color, pix_coords)
-        # pygame.draw.polygon(self.screen, (0,0,0), pix_coords, width=1)
         pygame.gfxdraw.aapolygon(self.screen, pix_coords, color)
         pygame.gfxdraw.filled_polygon(self.screen, pix_coords, color)
+        if self.radii is not None and boid_id in self.r_ind:
+            center_pix_coord = self.getPixelCoords(position).astype(int)
+            self.renderCircle(center_pix_coord, self.getPixels(self.radii[0]), (100,0,0))
+            self.renderCircle(center_pix_coord, self.getPixels(self.radii[1]), (150,0,0))
+            self.renderCircle(center_pix_coord, self.getPixels(self.radii[2]), (200,0,0))
+
+    def renderCircle(self, center_pix_coord, pix_radius, color):
+        pygame.gfxdraw.aacircle(self.screen, center_pix_coord[0], center_pix_coord[1], pix_radius, color)
 
     def renderBoids(self, positions, headings):
         for boid_id in range(self.total_agents):
@@ -78,7 +91,7 @@ class Renderer():
                 color = self.follower_color
             else:
                 color = self.leader_color
-            self.renderBoid(positions[boid_id], headings[boid_id][0], color)
+            self.renderBoid(positions[boid_id], headings[boid_id][0], color, boid_id)
 
     def renderFrame(self, positions, headings):
         self.screen.fill((255,255,255))
@@ -86,4 +99,4 @@ class Renderer():
         pygame.display.flip()
 
     def getPixels(self, units):
-        return units * self.pixels_per_unit
+        return np.round(units * self.pixels_per_unit).astype(int)

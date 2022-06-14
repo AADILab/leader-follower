@@ -5,7 +5,7 @@ from map_utils import Map
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
         num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, \
-            avoid_walls = True, ghost_density = 1, dt = 1, max_acceleration = 1) -> None:
+            avoid_walls = True, ghost_density = 0, dt = 1, max_acceleration = 1) -> None:
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
@@ -231,22 +231,22 @@ class BoidsManager():
         # Get indicies of boids near bottom edge
         bool_bottom = self.positions[:self.num_followers,1] <= self.radius_repulsion
         # Set up wall avoidance vectors for bottom edge
-        all_wall_avoidance_vectors[:,1][bool_bottom] = self.radius_repulsion - self.positions[:,1][bool_bottom]
+        all_wall_avoidance_vectors[:,1][bool_bottom] = self.radius_repulsion - self.positions[:self.num_followers][:,1][bool_bottom]
 
         # Get indices of boids near left edge
         bool_left = self.positions[:self.num_followers,0] <= self.radius_repulsion
         # Set up wall avoidanve vectors for left edge
-        all_wall_avoidance_vectors[:,0][bool_left] = self.radius_repulsion - self.positions[:,0][bool_left]
+        all_wall_avoidance_vectors[:,0][bool_left] = self.radius_repulsion - self.positions[:self.num_followers][:,0][bool_left]
 
         # Get indices of boids near top edge
         bool_top = self.positions[:self.num_followers,1] >= self.map_size[1] - self.radius_repulsion
         # Set up wall avoidance vectors for top edge
-        all_wall_avoidance_vectors[:,1][bool_top] = self.map_size[1] - self.radius_repulsion - self.positions[:,1][bool_top]
+        all_wall_avoidance_vectors[:,1][bool_top] = self.map_size[1] - self.radius_repulsion - self.positions[:self.num_followers][:,1][bool_top]
 
         # Get indices of boids near right edge
         bool_right = self.positions[:self.num_followers,0] >= self.map_size[0] - self.radius_repulsion
         # Set up wall avoidance vectors for right edge
-        all_wall_avoidance_vectors[:,0][bool_right] = self.map_size[0] - self.radius_repulsion - self.positions[:,0][bool_right]
+        all_wall_avoidance_vectors[:,0][bool_right] = self.map_size[0] - self.radius_repulsion - self.positions[:self.num_followers][:,0][bool_right]
 
         return all_wall_avoidance_vectors
 
@@ -270,13 +270,12 @@ class BoidsManager():
 
         # Calculate wall avoidance vector if wall avoidance is on
         if self.avoid_walls:
-            all_wall_avoidance_vectors = self.calculate_all_wall_avoidance_vectors()
+            all_wall_avoidance_vectors = self.total_agents/25 * self.calculate_all_wall_avoidance_vectors()
         else:
             all_wall_avoidance_vectors = np.zeros((self.num_followers, 2))
 
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors
-
         all_desired_headings = np.expand_dims(np.arctan2(all_sum_vectors[:,1], all_sum_vectors[:,0]), axis=1)
         all_desired_velocities = np.expand_dims(np.linalg.norm(all_sum_vectors , axis=1), axis=1)
 
@@ -324,7 +323,7 @@ class BoidsManager():
         return delta_headings
 
     def calculate_delta_velocities(self, all_desired_velocities):
-        return all_desired_velocities - self.velocities
+        return all_desired_velocities - self.velocities[:self.num_followers]
 
     def calculate_follower_deltas(self, all_desired_headings, all_desired_velocities):
         """Calculate delta headings and delta velocities based on current follower
@@ -357,8 +356,8 @@ class BoidsManager():
         self.headings[:self.num_followers] %= (2*np.pi)
         # Update velocities
         self.velocities[:self.num_followers] += accelerations*self.dt
-        self.velocities[:self.num_followers][self.velocities > self.max_velocity] = self.max_velocity
-        self.velocities[:self.num_followers][self.velocities < self.min_velocity] = self.min_velocity
+        self.velocities[:self.num_followers][self.velocities[:self.num_followers] > self.max_velocity] = self.max_velocity
+        self.velocities[:self.num_followers][self.velocities[:self.num_followers] < self.min_velocity] = self.min_velocity
         # Update positions
         self.positions[:self.num_followers][:,0] += self.velocities[:self.num_followers][:,0] * np.cos(self.headings[:self.num_followers][:,0]) * self.dt
         self.positions[:self.num_followers][:,1] += self.velocities[:self.num_followers][:,0] * np.sin(self.headings[:self.num_followers][:,0]) * self.dt
