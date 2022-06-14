@@ -158,14 +158,7 @@ class BoidsManager():
             # Get distance of observable boids to current boid
             obs_distances = self.get_distances(obs_positions, boid_id)
             # Get observable boid positions within repulsion radius
-            rep_positions_obs = self.get_repulsion_boid_positions(obs_distances, obs_positions)
-            # # If boids are avoiding walls, then include ghost positions at the edges in repulsion
-            # if self.avoid_walls:
-            #     rep_positions_ghosts = self.get_rep_ghost_positions(self.positions[boid_id])
-            #     rep_positions = np.vstack((rep_positions_obs, rep_positions_ghosts))
-            # else:
-                # rep_positions = rep_positions_obs
-            rep_positions = rep_positions_obs
+            rep_positions = self.get_repulsion_boid_positions(obs_distances, obs_positions)
             # Get observable boid positions within orientation radius and outside repulsion radius
             orient_headings = self.get_orientation_boid_headings(obs_distances, obs_headings)
             # Get observable boid positions within attraction radius and outside orientation radius
@@ -206,28 +199,6 @@ class BoidsManager():
         else:
             return np.array([0,0])
 
-    # def calculate_all_wall_avoidance_vector(self, boid_id):
-
-        # # Overwrite vectors for boids close to walls
-        # if self.avoid_walls:
-        #     # Get boids close to the walls
-        #     follower_ids_close = []
-        #     for boid_id, position in enumerate(self.positions[:self.num_followers]):
-        #         # Check if boid is close to right wall
-        #         if position[0] + self.radius_repulsion >= self.map_size[0]:
-        #             follower_ids_close.append(boid_id)
-        #         # Close to left wall
-        #         elif position[0] - self.radius_repulsion <= 0:
-        #             follower_ids_close.append(boid_id)
-        #         # Close to top wall
-        #         elif position[1] + self.radius_repulsion >= self.map_size[1]:
-        #             follower_ids_close.append(boid_id)
-        #         # Close to bottom wall
-        #         elif position[1] - self.radius_repulsion <= 0:
-        #             follower_ids_close.append(boid_id)
-        #     # Overwrite vectors
-        #     for boid_id in follower_ids_close:
-
     def get_no_forces_ind(self, no_boids_obs_inds, wall_avoidance_inds):
         no_forces_ind = []
         for id in no_boids_obs_inds:
@@ -259,27 +230,21 @@ class BoidsManager():
 
         # Get indicies of boids near bottom edge
         bool_bottom = self.positions[:self.num_followers,1] <= self.radius_repulsion
-        print("bool_bottom: ", bool_bottom)
         # Set up wall avoidance vectors for bottom edge
         all_wall_avoidance_vectors[:,1][bool_bottom] = self.radius_repulsion - self.positions[:,1][bool_bottom]
-        print("self.radius_repulsion - self.positions[bool_bottom][:,1]: ", self.radius_repulsion - self.positions[bool_bottom][:,1])
-        print("all_wall_avoidance_vectors[bool_bottom][:,1]: ", all_wall_avoidance_vectors[bool_bottom][:,1])
 
         # Get indices of boids near left edge
         bool_left = self.positions[:self.num_followers,0] <= self.radius_repulsion
-        print("bool_left: ", bool_left)
         # Set up wall avoidanve vectors for left edge
         all_wall_avoidance_vectors[:,0][bool_left] = self.radius_repulsion - self.positions[:,0][bool_left]
 
         # Get indices of boids near top edge
         bool_top = self.positions[:self.num_followers,1] >= self.map_size[1] - self.radius_repulsion
-        print("bool_top: ", bool_top)
         # Set up wall avoidance vectors for top edge
         all_wall_avoidance_vectors[:,1][bool_top] = self.map_size[1] - self.radius_repulsion - self.positions[:,1][bool_top]
 
         # Get indices of boids near right edge
         bool_right = self.positions[:self.num_followers,0] >= self.map_size[0] - self.radius_repulsion
-        print("bool_right: ", bool_right)
         # Set up wall avoidance vectors for right edge
         all_wall_avoidance_vectors[:,0][bool_right] = self.map_size[0] - self.radius_repulsion - self.positions[:,0][bool_right]
 
@@ -304,23 +269,10 @@ class BoidsManager():
         all_attraction_vectors = self.calculate_all_attraction_vectors(all_obs_attract_boids_pos)
 
         # Calculate wall avoidance vector if wall avoidance is on
-        print("self.avoid_walls: ", self.avoid_walls)
         if self.avoid_walls:
             all_wall_avoidance_vectors = self.calculate_all_wall_avoidance_vectors()
         else:
             all_wall_avoidance_vectors = np.zeros((self.num_followers, 2))
-        print("all_wall_avoidance_vectors:")
-        print(all_wall_avoidance_vectors)
-
-        # ind = self.positions[:,1] <= self.radius_repulsion
-        # all_wall_avoidance_vectors[ind][:,1] = self.radius_repulsion - self.positions[ind][:,1]
-        # if not np.allclose(all_wall_avoidance_vectors, np.zeros((self.num_followers, 2))):
-        #     print("all_wall_avoidance_vectors:")
-        #     print(all_wall_avoidance_vectors)
-
-        # if self.avoid_walls:
-        #     for boid_id in range(self.num_followers):
-        #         all_wall_avoidance_vectors[boid_id] = self.calculate_all_wall_avoidance_vector(boid_id)
 
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors
@@ -427,12 +379,8 @@ class BoidsManager():
     def step(self):
         # Update the observations
         repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds = self.get_follower_observations()
-        print("repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds:")
-        print(repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds)
         # Update the desired states
         all_desired_headings, all_velocities = self.calculate_follower_desired_states(repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds)
-        print("all_desired_headings, all_velocities:")
-        print(all_desired_headings, all_velocities)
         # Calculate delta states
         delta_headings, delta_velocities = self.calculate_follower_deltas(all_desired_headings, all_velocities)
         # Turn delta states into kinematics commands
