@@ -266,27 +266,32 @@ class BoidsManager():
         print("all_wall_avoidance_vectors[bool_bottom][:,1]: ", all_wall_avoidance_vectors[bool_bottom][:,1])
 
         # Get indices of boids near left edge
-        bool_left = np.nonzero(self.positions[:self.num_followers,0] <= self.radius_repulsion)
+        bool_left = self.positions[:self.num_followers,0] <= self.radius_repulsion
         print("bool_left: ", bool_left)
         # Set up wall avoidanve vectors for left edge
         all_wall_avoidance_vectors[:,0][bool_left] = self.radius_repulsion - self.positions[:,0][bool_left]
 
         # Get indices of boids near top edge
-        bool_top = np.nonzero(self.positions[:self.num_followers,1] >= self.map_size[1] - self.radius_repulsion)
+        bool_top = self.positions[:self.num_followers,1] >= self.map_size[1] - self.radius_repulsion
         print("bool_top: ", bool_top)
         # Set up wall avoidance vectors for top edge
-        all_wall_avoidance_vectors[:,1][bool_top] = self.positions[:,1][bool_top] - self.radius_repulsion
+        all_wall_avoidance_vectors[:,1][bool_top] = self.map_size[1] - self.radius_repulsion - self.positions[:,1][bool_top]
 
         # Get indices of boids near right edge
-        bool_right = np.nonzero(self.positions[:self.num_followers,0] >= self.map_size[0] - self.radius_repulsion)
+        bool_right = self.positions[:self.num_followers,0] >= self.map_size[0] - self.radius_repulsion
         print("bool_right: ", bool_right)
         # Set up wall avoidance vectors for right edge
-        all_wall_avoidance_vectors[:,0][bool_right] = self.positions[:,0][bool_right] - self.radius_repulsion
+        all_wall_avoidance_vectors[:,0][bool_right] = self.map_size[0] - self.radius_repulsion - self.positions[:,0][bool_right]
 
         return all_wall_avoidance_vectors
 
     def calculate_all_wall_avoidance_inds(self, all_wall_avoidance_vectors):
-        return np.nonzero( np.abs(all_wall_avoidance_vectors[:,0]) + np.abs(all_wall_avoidance_vectors[:,1]) )
+        inds = []
+        wall_sum = np.abs(all_wall_avoidance_vectors[:,0]) + np.abs(all_wall_avoidance_vectors[:,1])
+        for ind, ws in enumerate(wall_sum):
+            if ws > 0:
+                inds.append(ind)
+        return inds
 
     def calculate_follower_desired_states(self, all_obs_rep_boids_pos, all_obs_orient_boids_head, all_obs_attract_boids_pos, no_boid_obs_inds, debug=False):
         # Calculate repulsion vectors for all follower boids

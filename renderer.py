@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+import pygame.gfxdraw
 
 class Renderer():
     def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit) -> None:
@@ -66,8 +67,10 @@ class Renderer():
 
     def renderBoid(self, position, heading, color):
         pix_coords = self.generateBoidTrianglePix(position, heading)
-        pygame.draw.polygon(self.screen, color, pix_coords)
-        pygame.draw.polygon(self.screen, (0,0,0), pix_coords, width=1)
+        # pygame.draw.polygon(self.screen, color, pix_coords)
+        # pygame.draw.polygon(self.screen, (0,0,0), pix_coords, width=1)
+        pygame.gfxdraw.aapolygon(self.screen, pix_coords, color)
+        pygame.gfxdraw.filled_polygon(self.screen, pix_coords, color)
 
     def renderBoids(self, positions, headings):
         for boid_id in range(self.total_agents):
