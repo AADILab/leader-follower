@@ -1,7 +1,7 @@
 from time import time
 import pygame
 
-from env_lib import parallel_env, ROCK
+from env_lib import BoidsEnv, ROCK
 
 import numpy as np
 np.random.seed(0)
@@ -18,7 +18,7 @@ positions = np.vstack((
 ))
 positions = None
 
-env = parallel_env(num_leaders = 10, num_followers = 100, FPS=30, positions=positions, r_ind=[0])
+env = BoidsEnv(num_leaders = 10, num_followers = 100, FPS=30, positions=positions, r_ind=[0])
 observations = env.reset()
 
 dt = env.bm.dt
@@ -33,5 +33,5 @@ while not shutdown:
     if last_time is None or current_time - last_time >= dt:
         # if last_time is not None: print("t:", current_time-last_time-dt)
         last_time = current_time
-        env.step({})
+        observations, rewards, dones, infos = env.step({})
         env.render()

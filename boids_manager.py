@@ -9,6 +9,8 @@ class BoidsManager():
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
+        # Note: Boids do not make any distinction between leaders and followers in their observations.
+        # In the boid observations, a boid just shows up as a boid whether it's a leader or follower
 
         # Double check radii are valid
         if radius_repulsion < radius_orientation and radius_orientation < radius_attraction \
@@ -146,6 +148,44 @@ class BoidsManager():
         obs_ghost_inds = self.ghost_map.get_observable_agent_inds(position, self.ghost_positions)
         return self.ghost_positions[obs_ghost_inds]
 
+    @staticmethod
+    def calculate_centroid(positions):
+        if positions.size == 0:
+            return np.zeros(2)
+        else:
+            return np.average(positions, axis=0)
+
+    def get_leader_centroid_observations(self):
+        observations_np = np.zeros((self.num_leaders,2))
+        # For every leader
+        for boid_id in np.arange(self.num_leaders)+self.num_followers:
+            # Get observable boid ids
+            obs_boid_ids = self.get_observable_boid_ids(boid_id)
+            # Get observable boid positions
+            obs_positions = self.get_boid_positions(obs_boid_ids)
+            # Calculate centroid of observable boids
+            centroid = self.calculate_centroid(obs_positions)
+            # centroid relative to leader boid
+            relative_centroid = self.positions[boid_id] - centroid
+            # Calculate distance to centroid
+            distance = np.linalg.norm(relative_centroid)
+            # Calculate angle from leader to centroid
+            angle = np.arctan2(relative_centroid[1], relative_centroid[0])
+            # Save distance and angle as observation for that leader
+            observations_np[boid_id-self.num_followers,0] = distance
+            observations_np[boid_id-self.num_followers,1] = angle
+
+        return observations_np
+
+    def get_leader_distance_to_position(self, position):
+        return np.linalg.norm(self.positions[self.num_followers:] - position, axis=0)
+
+    def get_leader_distance_to_positions(self, positions):
+        all_distances = np.zeros((self.num_leaders*positions.shape[0],2))
+        for position in positions:
+            all_distances[self.num_followers:] = self.get_leader_distance_to_position(position)
+        return all_distances
+
     def get_follower_observations(self):
         all_obs_rep_boids_pos = []      # all observable repulsion boid positions
         all_obs_orient_boids_head = []   # all observable orientation boid headings
@@ -154,7 +194,7 @@ class BoidsManager():
         for boid_id in range(self.num_followers):
             # Get observable boid ids
             obs_boid_ids = self.get_observable_boid_ids(boid_id)
-            # Get positions of observable boids
+            # Get positions and headings of observable boids
             obs_positions = self.get_boid_positions(obs_boid_ids)
             obs_headings = self.get_boid_headings(obs_boid_ids)
             # Get distance of observable boids to current boid
@@ -377,8 +417,11 @@ class BoidsManager():
         # Apply upper bound
         self.positions[:,1][self.positions[:,1]>self.map.map_size[1]] = self.map.map_size[1]
 
+    def packageState(self):
+        return self.positions, self.headings, self.velocities
+
     def step(self):
-        # Update the observations
+        # Update the follower observations
         repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds = self.get_follower_observations()
         # Update the desired states
         all_desired_headings, all_velocities = self.calculate_follower_desired_states(repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds)
@@ -390,3 +433,5 @@ class BoidsManager():
         self.update_follower_states(angular_velocities, accelerations)
         # Reset the map with the new positions
         self.map.reset(self.positions)
+        # Get the new leader observations
+        return self.packageState()

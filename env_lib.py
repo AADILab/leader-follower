@@ -1,4 +1,5 @@
 import functools
+import enum
 from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
@@ -26,6 +27,11 @@ REWARD_MAP = {
     (SCISSORS, SCISSORS): (0, 0),
 }
 
+class OBSERVATION(enum.IntEnum):
+    GOAL_AND_CENTROID = 0
+
+class REWARD(enum.IntEnum):
+    DISTANCE_TO_GOAL = 0
 
 def env():
     '''
@@ -49,15 +55,15 @@ def raw_env():
     To support the AEC API, the raw_env() function just uses the from_parallel
     function to convert from a ParallelEnv to an AEC env
     '''
-    env = parallel_env()
+    env = BoidsEnv()
     env = from_parallel(env)
     return env
 
 
-class parallel_env(ParallelEnv):
+class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, r_ind = None):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, r_ind = None, observation_type = OBSERVATION.GOAL_AND_CENTROID, reward_type = REWARD.DISTANCE_TO_GOAL, goal_locations = np.array([[]])):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -68,13 +74,40 @@ class parallel_env(ParallelEnv):
         '''
         # Only leaders are included in self.possible_agents
         # because they are the learners
-        self.possible_agents = ["leader_" + str(r) for r in range(num_leaders)]
-        self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
+        self.possible_agents = ["leader_" + str(r) for r in np.arange(num_leaders)+1]
+        self.agent_name_mapping = dict(zip(self.possible_agents, list(np.arange(num_leaders)+1)))
+        print("self.agent_name_mapping:\n", self.agent_name_mapping)
 
         map_size = np.array([100,100])
         rs = (2,3,5)
         self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=2.5, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=1/FPS, positions=positions)
         self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=5, radii = rs, r_ind=r_ind)
+
+        # Setup methods for getting observations and rewards
+        self.getObservations = self.setupObservationsFunc(observation_type)
+        self.getRewards = self.setupRewardsFunc(reward_type)
+
+        # Save goal information
+        self.goal_locations = goal_locations
+
+    def setupObservationsFunc(self, observation_type):
+        if observation_type == OBSERVATION.GOAL_AND_CENTROID:
+            return self.getObservationsGoalAndCentroid
+
+    def getObservationsGoalAndCentroid(self):
+        centroids_np = self.bm.get_leader_centroid_observations()
+        if self.goal_locations.size > 0:
+            goals_np = self.bm.get_leader_distance_to_positions(self.goal_locations)
+        pass
+
+    def setupRewardsFunc(self, reward_type):
+        if reward_type == REWARD.DISTANCE_TO_GOAL:
+            return self.getRewardsDistanceToGoal
+
+    def getRewardsDistanceToGoal(self):
+        if self.goal_locations.size > 0:
+            distances_np = self.bm.get_leader_distance_to_positions(self.goal_locations)
+        pass
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
@@ -129,6 +162,13 @@ class parallel_env(ParallelEnv):
         observations = {agent: NONE for agent in self.agents}
         return observations
 
+    # def getObservations(self, state):
+
+    #     return {self.agents[i]: observations[i] for i in range(self.num_agents)}
+
+    def getRewards(self, actions):
+        return {self.agents[i]: 0 for i in range(self.num_agents)}
+
     def step(self, actions):
         '''
         step(action) takes in an action for each agent and should return the
@@ -139,15 +179,22 @@ class parallel_env(ParallelEnv):
         dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
         '''
 
-        # Step forward all of the follower boids
+        # Step forward all of the follower boids.
         self.bm.step()
+
+        # Get the observations of the leader boids
+        observations = self.getObservations()
+
+        # Get rewards for leaders
+        rewards = self.getRewards()
+
+        # Return observations of leader boids AKA "agents"
+        return observations, {}, {}, {}
 
         # If a user passes in actions with no agents, then just return empty observations, etc.
         if not actions:
             self.agents = []
             return {}, {}, {}, {}
-
-
 
         # rewards for all agents are placed in the rewards dictionary to be returned
         rewards = {}
