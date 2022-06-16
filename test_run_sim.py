@@ -34,4 +34,9 @@ while not shutdown:
         # if last_time is not None: print("t:", current_time-last_time-dt)
         last_time = current_time
         observations, rewards, dones, infos = env.step({})
+        print("leader 1:", observations["leader_1"])
+        print("leader 2:", observations["leader_2"])
+        print("leader 3:", observations["leader_3"])
+        print("leader 4:", observations["leader_4"])
+        print("leader 5:", observations["leader_5"])
         env.render()

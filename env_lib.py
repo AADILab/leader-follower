@@ -8,6 +8,7 @@ import numpy as np
 
 from boids_manager import BoidsManager
 from renderer import Renderer
+from learning_module_lib import LearningModule
 
 ROCK = 0
 PAPER = 1
@@ -63,7 +64,7 @@ def raw_env():
 class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, r_ind = None, observation_type = OBSERVATION.GOAL_AND_CENTROID, reward_type = REWARD.DISTANCE_TO_GOAL, goal_locations = np.array([[]])):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, r_ind = None, learning_module: LearningModule = None):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -83,44 +84,20 @@ class BoidsEnv(ParallelEnv):
         self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=2.5, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=1/FPS, positions=positions)
         self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=5, radii = rs, r_ind=r_ind)
 
-        # Setup methods for getting observations and rewards
-        self.getObservations = self.setupObservationsFunc(observation_type)
-        self.getRewards = self.setupRewardsFunc(reward_type)
+        # Setup learning module
+        self.lm = self.setupLearningModule(learning_module)
 
-        # Save goal information
-        self.goal_locations = goal_locations
-
-    def setupObservationsFunc(self, observation_type):
-        if observation_type == OBSERVATION.GOAL_AND_CENTROID:
-            return self.getObservationsGoalAndCentroid
-
-    def getObservationsGoalAndCentroid(self):
-        centroids_np = self.bm.get_leader_centroid_observations()
-        if self.goal_locations.size > 0:
-            goals_np = self.bm.get_leader_distance_to_positions(self.goal_locations)
-        pass
-
-    def setupRewardsFunc(self, reward_type):
-        if reward_type == REWARD.DISTANCE_TO_GOAL:
-            return self.getRewardsDistanceToGoal
-
-    def getRewardsDistanceToGoal(self):
-        if self.goal_locations.size > 0:
-            distances_np = self.bm.get_leader_distance_to_positions(self.goal_locations)
-        pass
+    def setupLearningModule(self, learning_module):
+        if learning_module is None:
+            return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
+        else:
+            return learning_module
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
-        # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
-
-        # [distance to goal, theta to goal, distance to swarm centroid, theta to swarm centroid]
-        # All thetas are from agent's own reference frame
-        return Box(
-            low=np.array([-np.inf, -np.pi, -np.inf, np.pi]),
-            high=np.array([np.inf, np.pi, np.inf, np.pi]),
-            dtype=np.float32)
+        return self.lm.observation_space()
 
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
@@ -162,12 +139,12 @@ class BoidsEnv(ParallelEnv):
         observations = {agent: NONE for agent in self.agents}
         return observations
 
-    # def getObservations(self, state):
-
-    #     return {self.agents[i]: observations[i] for i in range(self.num_agents)}
-
-    def getRewards(self, actions):
-        return {self.agents[i]: 0 for i in range(self.num_agents)}
+    def getObservations(self):
+        observations_lm = self.lm.getObservations(self.bm)
+        observations = {}
+        for agent_id, agent_observation in observations_lm.items():
+            observations[self.possible_agents[agent_id]] = agent_observation
+        return observations
 
     def step(self, actions):
         '''
@@ -186,10 +163,13 @@ class BoidsEnv(ParallelEnv):
         observations = self.getObservations()
 
         # Get rewards for leaders
-        rewards = self.getRewards()
+        rewards = self.lm.getRewards(self.bm, {})
+
+        dones = {}
+        infos = {}
 
         # Return observations of leader boids AKA "agents"
-        return observations, {}, {}, {}
+        return observations, rewards, dones, infos
 
         # If a user passes in actions with no agents, then just return empty observations, etc.
         if not actions:
