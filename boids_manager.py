@@ -174,10 +174,8 @@ class BoidsManager():
         centroids_obs_np = np.zeros((self.num_leaders,2))
         # For every leader
         for boid_id in np.arange(self.num_leaders)+self.num_followers:
-            print("heading: ", self.headings[boid_id])
             # Get observable boid ids
             obs_boid_ids = self.get_observable_boid_ids(boid_id)
-            # print(obs_boid_ids)
             # Get observable boid positions
             obs_positions = self.get_boid_positions(obs_boid_ids)
             # Calculate centroid of observable boids. Return own position if there are no observable boids.
@@ -203,9 +201,6 @@ class BoidsManager():
             # Save distance and angle as observation for that leader
             centroids_obs_np[boid_id-self.num_followers,0] = distance
             centroids_obs_np[boid_id-self.num_followers,1] = angle
-            # if centroid is not None:
-            #     print("centroid_obs: ", [distance, angle])
-            #     print(boid_id-self.num_followers)
         return centroids_obs_np
 
     def get_leader_relative_position_observations(self, positions):
@@ -213,7 +208,6 @@ class BoidsManager():
         for position in positions:
             relative_positions = position - self.positions[self.num_followers:]
             distances = np.linalg.norm(relative_positions, axis=1)
-            # print("d:", distances)
             angles = np.arctan2(relative_positions[:, 1], relative_positions[:, 0])
             position_obs = np.hstack((
                 np.expand_dims(distances, 1),

@@ -3,7 +3,7 @@ import pygame
 import pygame.gfxdraw
 
 class Renderer():
-    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, r_ind=None) -> None:
+    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, render_leader_observations = False) -> None:
         # Save variables
         self.num_leaders = num_leaders
         self.num_followers = num_followers
@@ -11,7 +11,8 @@ class Renderer():
         self.map_size = map_size
         self.pixels_per_unit = pixels_per_unit
         self.radii = radii
-        self.r_ind = self.setupRInd(r_ind)
+        self.follower_inds = self.setupFollowerInd(follower_inds)
+        self.render_leader_observations = render_leader_observations
 
         # Set useful variables
         self.follower_color = (0,120,250)
@@ -27,11 +28,11 @@ class Renderer():
         pygame.init()
         self.screen = pygame.display.set_mode(self.display_size)
 
-    def setupRInd(self, r_ind):
-        if r_ind is None:
+    def setupFollowerInd(self, follower_inds):
+        if follower_inds is None:
             return list(range(self.num_leaders+self.num_followers))
         else:
-            return r_ind
+            return follower_inds
 
     def getPixelCoords(self, unit_coords):
         if len(unit_coords.shape) == 1:
@@ -76,7 +77,7 @@ class Renderer():
         pix_coords = self.generateBoidTrianglePix(position, heading)
         pygame.gfxdraw.aapolygon(self.screen, pix_coords, color)
         pygame.gfxdraw.filled_polygon(self.screen, pix_coords, color)
-        if self.radii is not None and boid_id in self.r_ind:
+        if self.radii is not None and boid_id in self.follower_inds and boid_id < self.num_followers:
             center_pix_coord = self.getPixelCoords(position).astype(int)
             self.renderCircle(center_pix_coord, self.getPixels(self.radii[0]), (100,0,0))
             self.renderCircle(center_pix_coord, self.getPixels(self.radii[1]), (150,0,0))
@@ -93,9 +94,14 @@ class Renderer():
                 color = self.leader_color
             self.renderBoid(positions[boid_id], headings[boid_id][0], color, boid_id)
 
-    def renderFrame(self, positions, headings):
+    def renderFrame(self, positions, headings, bm = None, observations = None, all_obs_positions = None, possible_agents = None):
         self.screen.fill((255,255,255))
         self.renderBoids(positions, headings)
+        if self.render_leader_observations:
+            # This is a bit of a messy way of getting leader observations to show up here
+            # In the future, consider reworking this so Renderer doesn't access the BoidsManager directly
+            self.renderLeaderObservations(bm, observations, all_obs_positions, possible_agents)
+        pygame.display.flip()
 
     def getPixels(self, units):
         return np.round(units * self.pixels_per_unit).astype(int)
@@ -106,7 +112,6 @@ class Renderer():
             leader_heading = bm.headings[leader_id+self.num_followers][0]
             # Save the position of the leader in world frame
             leader_position = bm.positions[leader_id+self.num_followers]
-            print("renderLeaderOBservations(), heading: ", leader_heading)
             # Render a circle around the leader showing the leader's observation radius
             leader_pix_position = self.getPixelCoords(leader_position)
             pix_obs_radius = self.getPixels(self.radii[2])
@@ -116,16 +121,9 @@ class Renderer():
             centroid_obs = observations[possible_agents[leader_id]][0:2]
             centroid_distance = centroid_obs[0]
             centroid_angle = centroid_obs[1]
-            print("centroid distance: ", centroid_distance)
-            print("centroid angle: ", centroid_angle)
-            print(centroid_obs)
-            # x_centroid = centroid_obs[0] * np.cos(centroid_obs[1]+bm.headings[leader_id+self.num_followers][0])
-            # y_centroid = centroid_obs[0] * np.sin(centroid_obs[1]+bm.headings[leader_id+self.num_followers][0])
-            # x_centroid = centroid_obs[0] * -np.cos(centroid_obs[1])
-            # y_centroid = centroid_obs[0] * -np.sin(centroid_obs[1])
+
             x_centroid = centroid_distance * np.cos(leader_heading+centroid_angle)
             y_centroid = centroid_distance * np.sin(leader_heading+centroid_angle)
-            # print("x,y", x_centroid, y_centroid)
             centroid_unit_coords = np.array([x_centroid, y_centroid]) + leader_position
 
             centroid_pixel_coords = self.getPixelCoords(centroid_unit_coords)
@@ -142,11 +140,6 @@ class Renderer():
             y_heading_vector_units = np.sin(leader_heading)
             # Get the tip of the heading vector in world frame
             heading_vector_units = np.array([x_heading_vector_units, y_heading_vector_units]) + bm.positions[leader_id+self.num_followers]
-            print("bvu: ", heading_vector_units)
             heading_vector_pix = self.getPixelCoords(heading_vector_units)
-            print(heading_vector_pix[0].shape)
 
             pygame.gfxdraw.line(self.screen, leader_pix_position[0], leader_pix_position[1], heading_vector_pix[0], heading_vector_pix[1], (200,0,0))
-
-    def finishRender(self):
-        pygame.display.flip()
