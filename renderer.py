@@ -96,7 +96,57 @@ class Renderer():
     def renderFrame(self, positions, headings):
         self.screen.fill((255,255,255))
         self.renderBoids(positions, headings)
-        pygame.display.flip()
 
     def getPixels(self, units):
         return np.round(units * self.pixels_per_unit).astype(int)
+
+    def renderLeaderObservations(self, bm, observations, all_obs_positions, possible_agents):
+        for leader_id in range(self.num_leaders):
+            # Save the heading of the leader wrt world frame
+            leader_heading = bm.headings[leader_id+self.num_followers][0]
+            # Save the position of the leader in world frame
+            leader_position = bm.positions[leader_id+self.num_followers]
+            print("renderLeaderOBservations(), heading: ", leader_heading)
+            # Render a circle around the leader showing the leader's observation radius
+            leader_pix_position = self.getPixelCoords(leader_position)
+            pix_obs_radius = self.getPixels(self.radii[2])
+            pygame.gfxdraw.circle(self.screen, leader_pix_position[0], leader_pix_position[1], pix_obs_radius, (0,200,0))
+
+            # Get the pixel coordinate of the observed centroid of boids
+            centroid_obs = observations[possible_agents[leader_id]][0:2]
+            centroid_distance = centroid_obs[0]
+            centroid_angle = centroid_obs[1]
+            print("centroid distance: ", centroid_distance)
+            print("centroid angle: ", centroid_angle)
+            print(centroid_obs)
+            # x_centroid = centroid_obs[0] * np.cos(centroid_obs[1]+bm.headings[leader_id+self.num_followers][0])
+            # y_centroid = centroid_obs[0] * np.sin(centroid_obs[1]+bm.headings[leader_id+self.num_followers][0])
+            # x_centroid = centroid_obs[0] * -np.cos(centroid_obs[1])
+            # y_centroid = centroid_obs[0] * -np.sin(centroid_obs[1])
+            x_centroid = centroid_distance * np.cos(leader_heading+centroid_angle)
+            y_centroid = centroid_distance * np.sin(leader_heading+centroid_angle)
+            # print("x,y", x_centroid, y_centroid)
+            centroid_unit_coords = np.array([x_centroid, y_centroid]) + leader_position
+
+            centroid_pixel_coords = self.getPixelCoords(centroid_unit_coords)
+            pygame.gfxdraw.line(self.screen, leader_pix_position[0], leader_pix_position[1], centroid_pixel_coords[0], centroid_pixel_coords[1], (0,100,0))
+
+            # Render lines from the centers of all followers to the center of the observable centroid
+            obs_positions = all_obs_positions[leader_id]
+            for obs_position in obs_positions:
+                obs_pos_pix = self.getPixelCoords(obs_position)
+                pygame.gfxdraw.line(self.screen, centroid_pixel_coords[0], centroid_pixel_coords[1], obs_pos_pix[0], obs_pos_pix[1], (0,100,0))
+
+            # Draw a line that shows the leader's current heading wrt world frame
+            x_heading_vector_units = np.cos(leader_heading)
+            y_heading_vector_units = np.sin(leader_heading)
+            # Get the tip of the heading vector in world frame
+            heading_vector_units = np.array([x_heading_vector_units, y_heading_vector_units]) + bm.positions[leader_id+self.num_followers]
+            print("bvu: ", heading_vector_units)
+            heading_vector_pix = self.getPixelCoords(heading_vector_units)
+            print(heading_vector_pix[0].shape)
+
+            pygame.gfxdraw.line(self.screen, leader_pix_position[0], leader_pix_position[1], heading_vector_pix[0], heading_vector_pix[1], (200,0,0))
+
+    def finishRender(self):
+        pygame.display.flip()

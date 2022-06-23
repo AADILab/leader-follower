@@ -155,30 +155,51 @@ class BoidsManager():
         else:
             return np.average(positions, axis=0)
 
-    def get_leader_centroid_observations(self):
-        """Centroid observations are a 2d array organized as [distance, angle] for each leader"""
-        centroids_obs_np = np.zeros((self.num_leaders,2))
+    def get_leader_position_observations(self):
+        """Give the absolute x,y for each observable boid in leader's observation radius."""
+        all_obs_positions = []
         # For every leader
         for boid_id in np.arange(self.num_leaders)+self.num_followers:
             # Get observable boid ids
             obs_boid_ids = self.get_observable_boid_ids(boid_id)
             # Get observable boid positions
             obs_positions = self.get_boid_positions(obs_boid_ids)
+            # Store the position
+            all_obs_positions.append(obs_positions)
+        # Return observable positions for all leaders
+        return all_obs_positions
+
+    def get_leader_centroid_observations(self):
+        """Centroid observations are a 2d array organized as [distance, angle] for each leader"""
+        centroids_obs_np = np.zeros((self.num_leaders,2))
+        # For every leader
+        for boid_id in np.arange(self.num_leaders)+self.num_followers:
+            print("heading: ", self.headings[boid_id])
+            # Get observable boid ids
+            obs_boid_ids = self.get_observable_boid_ids(boid_id)
+            # print(obs_boid_ids)
+            # Get observable boid positions
+            obs_positions = self.get_boid_positions(obs_boid_ids)
             # Calculate centroid of observable boids. Return own position if there are no observable boids.
             centroid = self.calculate_centroid(obs_positions)
             if centroid is not None:
                 # centroid relative to leader boid
-                relative_centroid = self.positions[boid_id] - centroid
+                relative_centroid = centroid - self.positions[boid_id]
                 # Calculate distance to centroid
                 distance = np.linalg.norm(relative_centroid)
-                # Calculate angle from leader to centroid
-                angle = np.arctan2(relative_centroid[1], relative_centroid[0])
+                # Get leader heading as an angle from -pi to +pi
+                if self.headings[boid_id] > np.pi:
+                    leader_heading = self.headings[boid_id] - 2*np.pi
+                else:
+                    leader_heading = self.headings[boid_id]
+                # Calculate angle from leader heading to centroid
+                angle = np.arctan2(relative_centroid[1], relative_centroid[0]) - leader_heading
             else:
                 # There are no observable boids.
                 # Create abritrarily large distance.
                 # Create abritrary middle angle.
                 distance = 1000
-                angle = np.pi
+                angle = 0
             # Save distance and angle as observation for that leader
             centroids_obs_np[boid_id-self.num_followers,0] = distance
             centroids_obs_np[boid_id-self.num_followers,1] = angle

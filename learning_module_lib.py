@@ -20,7 +20,7 @@ class LearningModule():
         # [distance to goal, theta to goal, distance to swarm centroid, theta to swarm centroid]
         # All thetas are from agent's own reference frame. -pi to pi
         return Box(
-            low=np.array([-np.inf, -np.pi, -np.inf, np.pi]),
+            low=np.array([-np.inf, -np.pi, -np.inf, -np.pi]),
             high=np.array([np.inf, np.pi, np.inf, np.pi]),
             dtype=np.float32)
 
