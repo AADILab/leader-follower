@@ -185,13 +185,12 @@ class BoidsManager():
                 relative_centroid = centroid - self.positions[boid_id]
                 # Calculate distance to centroid
                 distance = np.linalg.norm(relative_centroid)
-                # Get leader heading as an angle from -pi to +pi
-                if self.headings[boid_id] > np.pi:
-                    leader_heading = self.headings[boid_id] - 2*np.pi
-                else:
-                    leader_heading = self.headings[boid_id]
+                # Get leader heading
+                leader_heading = self.headings[boid_id]
+                # Get angle from leader to centroid in world frame
+                centroid_angle = np.arctan2(relative_centroid[1], relative_centroid[0])
                 # Calculate angle from leader heading to centroid
-                angle = np.arctan2(relative_centroid[1], relative_centroid[0]) - leader_heading
+                angle = self.bound_heading_pi_to_pi(centroid_angle - leader_heading)
             else:
                 # There are no observable boids.
                 # Create abritrarily large distance.
@@ -203,18 +202,42 @@ class BoidsManager():
             centroids_obs_np[boid_id-self.num_followers,1] = angle
         return centroids_obs_np
 
+    @staticmethod
+    def bound_heading_pi_to_pi(heading):
+        print("bound_heading_pi_to_pi()")
+        print("heading: ", heading)
+        bounded_heading = heading
+        # Bound heading from [0,2pi]
+        if bounded_heading > 2*np.pi or bounded_heading < 0:
+            bounded_heading %= 2*np.pi
+        print("bounded_heading: ", bounded_heading)
+        # Bound heading from [-pi,+pi]
+        if bounded_heading > np.pi:
+            bounded_heading -= 2*np.pi
+        print("bounded_heading: ", bounded_heading)
+        return bounded_heading
+
     def get_leader_relative_position_observations(self, positions):
-        all_position_obs = []
-        for position in positions:
-            relative_positions = position - self.positions[self.num_followers:]
-            distances = np.linalg.norm(relative_positions, axis=1)
-            angles = np.arctan2(relative_positions[:, 1], relative_positions[:, 0])
-            position_obs = np.hstack((
-                np.expand_dims(distances, 1),
-                np.expand_dims(angles, 1)
-            ))
-            all_position_obs.append(position_obs)
-        return all_position_obs
+        all_leader_obs = []
+        for leader_ind in range(self.num_leaders):
+            leader_obs = np.zeros((positions.shape[0], 2))
+            for num_position, position in enumerate(positions):
+                # Calculate relative position from leader to position
+                relative_position = position - self.positions[self.num_followers+leader_ind]
+                # Calculate distance to position
+                distance = np.linalg.norm(relative_position)
+                # Get leader heading
+                leader_heading = self.headings[self.num_followers+leader_ind][0]
+                # Calculate angle to position in world frame
+                angle = np.arctan2(relative_position[1], relative_position[0])
+                # Get relative angle to position bounded from -pi to +pi
+                relative_angle = self.bound_heading_pi_to_pi(angle - leader_heading)
+                print("leader_heading: ", leader_heading, " | angle: ", angle, " | relative_angle: ", relative_angle, " | number: ", leader_ind+1)
+                # print(leader_obs.shape)
+                leader_obs[num_position] = [distance, relative_angle]
+            # Save this leader's observation to all leaders' observations
+            all_leader_obs.append(leader_obs)
+        return all_leader_obs
 
     def get_leader_distance_to_position(self, position):
         return np.linalg.norm(self.positions[self.num_followers:] - position, axis=0)

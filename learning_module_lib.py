@@ -29,7 +29,7 @@ class LearningModule():
         pass
 
     def getObservations(self, bm: BoidsManager):
-        """Get the observations for each agent."""
+        """Get the complete observations for each agent."""
         # Get the centroid of observable boids (leaders+followers) for each leader agent
         centroids_obs_np = bm.get_leader_centroid_observations()
         # Get the distances and angles of leader agents to the goal locations
@@ -37,8 +37,5 @@ class LearningModule():
 
         observations = {}
         for agent_id in range(bm.num_leaders):
-            goals_np = np.zeros(2*self.num_goals)
-            for i, goal_obs_agent in enumerate(all_goal_obs):
-                goals_np[2*i:2*i+2] = goal_obs_agent[i]
-            observations[agent_id] = np.hstack((centroids_obs_np[agent_id],goals_np))
+            observations[agent_id] = np.hstack((centroids_obs_np[agent_id], all_goal_obs[agent_id].flatten()))
         return observations
