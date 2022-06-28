@@ -150,6 +150,10 @@ class Renderer():
             pygame.gfxdraw.line(self.screen, leader_pix_position[0], leader_pix_position[1], heading_vector_pix[0], heading_vector_pix[1], (200,0,0))
 
     @staticmethod
+    def distanceHeadingToXY(distance, heading):
+        return distance*np.cos(heading), distance*np.sin(heading)
+
+    @staticmethod
     def generatePlusSign(position):
         plus_left = position.copy()
         plus_left[0] -= 0.5
@@ -172,6 +176,9 @@ class Renderer():
         pygame.gfxdraw.line(self.screen, left[0], left[1], right[0], right[1], color)
 
     def renderPOIObservations(self, bm, lm, observations, possible_agents):
+        poi_color = (200,0,200)
+        poi_line_color = (255, 0, 255)
+
         # Calculate the number of POIs based on POI observations
         num_pois = int( (observations[possible_agents[0]].size-2)/2 )
         print("num_pois: ", num_pois)
@@ -182,13 +189,25 @@ class Renderer():
             poi_position = lm.goal_locations[poi_id]
             # Render POI as plus sign
             self.renderPlusSign(poi_position, (200,0,200))
-
-
-            # Get poi pixel position
-            # poi_pix = self.getPixelCoords(poi_position)
-            # Render the POI
-
-            pass
+            # Go through each leader
+            for leader_id in range(self.num_leaders):
+                # Save the heading of the leader wrt world frame
+                leader_heading = bm.headings[leader_id+self.num_followers][0]
+                # Save the position of the leader wrt world frame
+                leader_position = bm.positions[leader_id+self.num_followers]
+                # Grab the POI distance and relative heading
+                poi_distance = observations[possible_agents[leader_id]][2*poi_id+2]
+                poi_relative_heading = observations[possible_agents[leader_id]][2*poi_id+3]
+                # Turn distance relative angle to POI into dx,dy relative to leader x,y in world frame
+                dx, dy = self.distanceHeadingToXY(poi_distance, poi_relative_heading+leader_heading)
+                # Turn dx,dy into x,y in world frame, calculated from leader's position
+                observed_poi_position = np.array([dx, dy]) + leader_position
+                # Turn observed position into pixel coordinates
+                poi_pix = self.getPixelCoords(observed_poi_position)
+                # Get leader pixel coordinates
+                leader_pix = self.getPixelCoords(leader_position)
+                # Render line from leader to poi
+                pygame.gfxdraw.line(self.screen, leader_pix[0], leader_pix[1], poi_pix[0], poi_pix[1], poi_line_color)
 
         # for leader_id in range(self.num_leaders):
         #     # Save the heading of the leader wrt world frame
