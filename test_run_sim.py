@@ -18,7 +18,7 @@ positions = np.vstack((
 ))
 positions = None
 
-env = BoidsEnv(num_leaders = 3, num_followers = 10, FPS=30, positions=positions, follower_inds=[0])
+env = BoidsEnv(num_leaders = 1, num_followers = 50, FPS=30, positions=positions, follower_inds=[0])
 observations = env.reset()
 
 dt = env.bm.dt

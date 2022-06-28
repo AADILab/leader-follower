@@ -3,7 +3,7 @@ import pygame
 import pygame.gfxdraw
 
 class Renderer():
-    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, render_leader_observations = False) -> None:
+    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, render_centroid_observations = False, render_POI_observations = False) -> None:
         # Save variables
         self.num_leaders = num_leaders
         self.num_followers = num_followers
@@ -12,7 +12,8 @@ class Renderer():
         self.pixels_per_unit = pixels_per_unit
         self.radii = radii
         self.follower_inds = self.setupFollowerInd(follower_inds)
-        self.render_leader_observations = render_leader_observations
+        self.render_centroid_observations = render_centroid_observations
+        self.render_POI_observations = render_POI_observations
 
         # Set useful variables
         self.follower_color = (0,120,250)
@@ -38,12 +39,14 @@ class Renderer():
         if len(unit_coords.shape) == 1:
             px = self.getPixels(unit_coords[0])
             py = self.getPixels(self.map_size[1] - unit_coords[1])
+            # print(px, py)
             return np.array([px, py])
         else:
-            p = np.zeros(unit_coords.shape)
+            p = np.zeros(unit_coords.shape, dtype=int)
             p[:,0] = self.getPixels(unit_coords[:, 0])
             p[:,1] = self.getPixels(self.map_size[1] - unit_coords[:, 1])
-        return p
+            # print(p)
+            return p
 
     def createTrianglePoints(self):
         """Generates points for boid triangle centered at the origin w. heading=0"""
@@ -94,19 +97,21 @@ class Renderer():
                 color = self.leader_color
             self.renderBoid(positions[boid_id], headings[boid_id][0], color, boid_id)
 
-    def renderFrame(self, positions, headings, bm = None, observations = None, all_obs_positions = None, possible_agents = None):
+    def renderFrame(self, positions, headings, bm = None, lm = None, observations = None, all_obs_positions = None, possible_agents = None):
         self.screen.fill((255,255,255))
         self.renderBoids(positions, headings)
-        if self.render_leader_observations:
+        if self.render_centroid_observations:
             # This is a bit of a messy way of getting leader observations to show up here
             # In the future, consider reworking this so Renderer doesn't access the BoidsManager directly
-            self.renderLeaderObservations(bm, observations, all_obs_positions, possible_agents)
+            self.renderCentroidObservations(bm, observations, all_obs_positions, possible_agents)
+        if self.render_POI_observations:
+            self.renderPOIObservations(bm, lm, observations, possible_agents)
         pygame.display.flip()
 
     def getPixels(self, units):
         return np.round(units * self.pixels_per_unit).astype(int)
 
-    def renderLeaderObservations(self, bm, observations, all_obs_positions, possible_agents):
+    def renderCentroidObservations(self, bm, observations, all_obs_positions, possible_agents):
         for leader_id in range(self.num_leaders):
             # Save the heading of the leader wrt world frame
             leader_heading = bm.headings[leader_id+self.num_followers][0]
@@ -143,3 +148,60 @@ class Renderer():
             heading_vector_pix = self.getPixelCoords(heading_vector_units)
 
             pygame.gfxdraw.line(self.screen, leader_pix_position[0], leader_pix_position[1], heading_vector_pix[0], heading_vector_pix[1], (200,0,0))
+
+    @staticmethod
+    def generatePlusSign(position):
+        plus_left = position.copy()
+        plus_left[0] -= 0.5
+        plus_right = position.copy()
+        plus_right[0] += 0.5
+        plus_top = position.copy()
+        plus_top[1] += 0.5
+        plus_bottom = position.copy()
+        plus_bottom[1] -= 0.5
+        return np.array([plus_left, plus_right, plus_top, plus_bottom])
+
+    def renderPlusSign(self, position, color):
+        # Generate plus sign endpoints
+        endpoints = self.generatePlusSign(position)
+        # Convert endpoints to pixel coordinates
+        left, right, top, bottom = self.getPixelCoords(endpoints)
+        print(left, right, top, bottom)
+        # Render lines connecting endpoints. Top to bottom. Left to right.
+        pygame.gfxdraw.line(self.screen, top[0], top[1], bottom[0], bottom[1], color)
+        pygame.gfxdraw.line(self.screen, left[0], left[1], right[0], right[1], color)
+
+    def renderPOIObservations(self, bm, lm, observations, possible_agents):
+        # Calculate the number of POIs based on POI observations
+        num_pois = int( (observations[possible_agents[0]].size-2)/2 )
+        print("num_pois: ", num_pois)
+
+        # Go through each POI
+        for poi_id in range(num_pois):
+            # Get the POI position
+            poi_position = lm.goal_locations[poi_id]
+            # Render POI as plus sign
+            self.renderPlusSign(poi_position, (200,0,200))
+
+
+            # Get poi pixel position
+            # poi_pix = self.getPixelCoords(poi_position)
+            # Render the POI
+
+            pass
+
+        # for leader_id in range(self.num_leaders):
+        #     # Save the heading of the leader wrt world frame
+        #     leader_heading = bm.headings[leader_id+self.num_followers][0]
+        #     # Save the position of the leader wrt world frame
+        #     leader_position = bm.positions[leader_id+self.num_followers]
+
+        #     # Go through each POI
+        #     for poi_id in range(num_pois):
+        #         # Grab the observation to POI
+        #         # Transform angle to POI to world frame
+        #         # Turn distance, relative angle to POI into x,y in world frame relative to leader x,y
+        #         # Make x,y relative to world frame 0,0
+        #         # Draw line from
+        #         pass
+        #     pass

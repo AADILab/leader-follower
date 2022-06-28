@@ -204,24 +204,28 @@ class BoidsManager():
 
     @staticmethod
     def bound_heading_pi_to_pi(heading):
-        print("bound_heading_pi_to_pi()")
-        print("heading: ", heading)
+        # print("bound_heading_pi_to_pi()")
+        # print("heading: ", heading)
         bounded_heading = heading
         # Bound heading from [0,2pi]
         if bounded_heading > 2*np.pi or bounded_heading < 0:
             bounded_heading %= 2*np.pi
-        print("bounded_heading: ", bounded_heading)
+        # print("bounded_heading: ", bounded_heading)
         # Bound heading from [-pi,+pi]
         if bounded_heading > np.pi:
             bounded_heading -= 2*np.pi
-        print("bounded_heading: ", bounded_heading)
+        # print("bounded_heading: ", bounded_heading)
         return bounded_heading
 
     def get_leader_relative_position_observations(self, positions):
+        """Get relative heading and distance to specified positions for all leaders."""
+        # print("get_leader_relative_position_observations()")
         all_leader_obs = []
         for leader_ind in range(self.num_leaders):
+            # print("leader_ind: ", leader_ind)
             leader_obs = np.zeros((positions.shape[0], 2))
             for num_position, position in enumerate(positions):
+                # print("num_positions: ", num_position)
                 # Calculate relative position from leader to position
                 relative_position = position - self.positions[self.num_followers+leader_ind]
                 # Calculate distance to position
@@ -232,7 +236,7 @@ class BoidsManager():
                 angle = np.arctan2(relative_position[1], relative_position[0])
                 # Get relative angle to position bounded from -pi to +pi
                 relative_angle = self.bound_heading_pi_to_pi(angle - leader_heading)
-                print("leader_heading: ", leader_heading, " | angle: ", angle, " | relative_angle: ", relative_angle, " | number: ", leader_ind+1)
+                # print("leader_heading: ", leader_heading, " | angle: ", angle, " | relative_angle: ", relative_angle, " | number: ", leader_ind+1)
                 # print(leader_obs.shape)
                 leader_obs[num_position] = [distance, relative_angle]
             # Save this leader's observation to all leaders' observations
