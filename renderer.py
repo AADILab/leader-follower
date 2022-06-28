@@ -155,6 +155,7 @@ class Renderer():
 
     @staticmethod
     def generatePlusSign(position):
+        print("position: ", position)
         plus_left = position.copy()
         plus_left[0] -= 0.5
         plus_right = position.copy()
@@ -188,7 +189,7 @@ class Renderer():
             # Get the POI position
             poi_position = lm.goal_locations[poi_id]
             # Render POI as plus sign
-            self.renderPlusSign(poi_position, (200,0,200))
+            self.renderPlusSign(poi_position, poi_color)
             # Go through each leader
             for leader_id in range(self.num_leaders):
                 # Save the heading of the leader wrt world frame

@@ -81,14 +81,15 @@ class BoidsEnv(ParallelEnv):
         map_size = np.array([50,50])
         rs = (2,3,5)
         self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=2.5, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=1/FPS, positions=positions)
-        self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_centroid_observations=True, render_POI_observations=True)
+        self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=[], render_centroid_observations=True, render_POI_observations=True)
 
         # Setup learning module
         self.lm = self.setupLearningModule(learning_module)
 
     def setupLearningModule(self, learning_module):
         if learning_module is None:
-            return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
+            # return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
+            return LearningModule(goal_locations=np.array([[10.,10.],[40.,40.]]))
         else:
             return learning_module
 
