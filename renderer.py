@@ -205,6 +205,13 @@ class Renderer():
                 # Render line from leader to poi
                 pygame.gfxdraw.line(self.screen, leader_pix[0], leader_pix[1], poi_pix[0], poi_pix[1], poi_line_color)
 
+    @staticmethod
+    def checkForPygameQuit():
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return True
+        return False
+
         # for leader_id in range(self.num_leaders):
         #     # Save the heading of the leader wrt world frame
         #     leader_heading = bm.headings[leader_id+self.num_followers][0]

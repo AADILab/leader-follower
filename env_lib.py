@@ -61,7 +61,7 @@ def raw_env():
 class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, follower_inds = None, learning_module: LearningModule = None, num_steps = None):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, follower_inds = None, learning_module: LearningModule = None, num_steps = None, render_mode = RENDERMODE.REALTIME):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -75,10 +75,12 @@ class BoidsEnv(ParallelEnv):
         self.possible_agents = ["leader_" + str(r) for r in np.arange(num_leaders)+1]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(np.arange(num_leaders)+1)))
 
+        self.FPS = FPS
+        self.dt = 1/float(FPS)
+
         map_size = np.array([50,50])
         rs = (2,3,5)
-        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=2.5, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=1/FPS, positions=positions)
-        print(self.bm.velocities[:, 0], self.bm.headings[:,0])
+        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=2.5, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions)
         self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_centroid_observations=True, render_POI_observations=True)
 
         # Setup learning module
@@ -87,6 +89,9 @@ class BoidsEnv(ParallelEnv):
         # Set total steps in simulation run
         # If None, simulation runs until closed
         self.num_steps = num_steps
+
+        # Render mode for running simulation
+        self.render_mode = render_mode
 
     def setupLearningModule(self, learning_module):
         if learning_module is None:
@@ -111,7 +116,7 @@ class BoidsEnv(ParallelEnv):
             dtype=np.float32
         )
 
-    def render(self, mode="human"):
+    def render(self):
         '''
         Renders the environment. In human mode, it can print to terminal, open
         up a graphical window, or open up some other display that a human can see and understand.
@@ -148,6 +153,12 @@ class BoidsEnv(ParallelEnv):
             observations[self.possible_agents[agent_id]] = agent_observation
         return observations
 
+    def convertActionsToBMActions(self, actions):
+        bm_actions = np.zeros((self.num_agents, 2))
+        for agent_id, agent_name in enumerate(self.possible_agents):
+            bm_actions[agent_id] = actions[agent_name]
+        return bm_actions
+
     def step(self, actions):
         '''
         step(action) takes in an action for each agent and should return the
@@ -157,9 +168,11 @@ class BoidsEnv(ParallelEnv):
         - infos
         dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
         '''
+        # Convert input env actions to correct format for boids manager
+        bm_actions = self.convertActionsToBMActions(actions)
 
         # Step forward all boids. Use input actions for leaders.
-        self.bm.step(None)
+        self.bm.step(bm_actions)
 
         # Get the observations of the leader boids
         observations = self.getObservations()
@@ -204,6 +217,3 @@ class BoidsEnv(ParallelEnv):
             self.agents = []
 
         return observations, rewards, dones, infos
-
-    def run(self, policy_function):
-        pass

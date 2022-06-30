@@ -7,8 +7,7 @@ import numpy as np
 np.random.seed(3)
 
 def policy(observation, agent):
-
-    return ROCK
+    return np.array([-np.pi,0])
 
 positions = np.vstack((
     np.hstack((
@@ -19,12 +18,12 @@ positions = np.vstack((
 ))
 positions = None
 
-env = BoidsEnv(num_leaders = 0, num_followers = 100, FPS=30, positions=positions, follower_inds=[7,8])
+env = BoidsEnv(num_leaders = 1, num_followers = 100, FPS=50, positions=positions, follower_inds=[7,8])
+# Set leader velocities to zero
+env.bm.velocities[env.bm.num_followers:] = 0
 observations = env.reset()
 
-dt = env.bm.dt
 last_time = None
-
 count = 0
 shutdown = False
 while not shutdown:
@@ -32,11 +31,11 @@ while not shutdown:
         if event.type == pygame.QUIT:
             shutdown = True
     current_time = time()
-    if last_time is None or current_time - last_time >= dt:
+    if last_time is None or current_time - last_time >= env.dt:
         # if last_time is not None: print("t:", current_time-last_time-dt)
         last_time = current_time
-        observations, rewards, dones, infos = env.step({})
+        actions = {agent: policy(observations[agent], agent) for agent in env.possible_agents}
+        # print("a: ", actions)
+        observations, rewards, dones, infos = env.step(actions)
         env.render()
     count += 1
-    # if count > 0:
-    #     shutdown = True
