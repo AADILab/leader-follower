@@ -39,13 +39,11 @@ class Renderer():
         if len(unit_coords.shape) == 1:
             px = self.getPixels(unit_coords[0])
             py = self.getPixels(self.map_size[1] - unit_coords[1])
-            # print(px, py)
             return np.array([px, py])
         else:
             p = np.zeros(unit_coords.shape, dtype=int)
             p[:,0] = self.getPixels(unit_coords[:, 0])
             p[:,1] = self.getPixels(self.map_size[1] - unit_coords[:, 1])
-            # print(p)
             return p
 
     def createTrianglePoints(self):
@@ -155,7 +153,6 @@ class Renderer():
 
     @staticmethod
     def generatePlusSign(position):
-        print("position: ", position)
         plus_left = position.copy()
         plus_left[0] -= 0.5
         plus_right = position.copy()
@@ -171,7 +168,6 @@ class Renderer():
         endpoints = self.generatePlusSign(position)
         # Convert endpoints to pixel coordinates
         left, right, top, bottom = self.getPixelCoords(endpoints)
-        print(left, right, top, bottom)
         # Render lines connecting endpoints. Top to bottom. Left to right.
         pygame.gfxdraw.line(self.screen, top[0], top[1], bottom[0], bottom[1], color)
         pygame.gfxdraw.line(self.screen, left[0], left[1], right[0], right[1], color)
@@ -182,7 +178,6 @@ class Renderer():
 
         # Calculate the number of POIs based on POI observations
         num_pois = int( (observations[possible_agents[0]].size-2)/2 )
-        print("num_pois: ", num_pois)
 
         # Go through each POI
         for poi_id in range(num_pois):

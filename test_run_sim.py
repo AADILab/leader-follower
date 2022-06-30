@@ -7,6 +7,7 @@ import numpy as np
 np.random.seed(3)
 
 def policy(observation, agent):
+
     return ROCK
 
 positions = np.vstack((
@@ -18,7 +19,7 @@ positions = np.vstack((
 ))
 positions = None
 
-env = BoidsEnv(num_leaders = 3, num_followers = 50, FPS=30, positions=positions, follower_inds=[0])
+env = BoidsEnv(num_leaders = 3, num_followers = 50, FPS=30, positions=positions, follower_inds=[])
 observations = env.reset()
 
 dt = env.bm.dt
