@@ -373,7 +373,6 @@ class BoidsManager():
             all_wall_avoidance_vectors = self.total_agents/25 * self.calculate_all_wall_avoidance_vectors()
         else:
             all_wall_avoidance_vectors = np.zeros((self.num_followers, 2))
-        # print("wall_vectors:\n", all_wall_avoidance_vectors)
 
         # Calculate a momentum for follower boids
         if self.use_momentum:
@@ -383,13 +382,11 @@ class BoidsManager():
             ))
         else:
             all_momentum_vectors = np.zeros((self.num_followers, 2))
-        print("m: ", all_momentum_vectors, self.headings[:self.num_followers], self.velocities[:self.num_followers])
 
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors
         all_desired_headings = np.expand_dims(np.arctan2(all_sum_vectors[:,1], all_sum_vectors[:,0]), axis=1)
         all_desired_velocities = np.expand_dims(np.linalg.norm(all_sum_vectors , axis=1), axis=1)
-        print("d1: ", all_desired_velocities[:,0], all_desired_headings[:,0])
 
         # Boids should maintain current heading and velocity if no repulsion, orientation, attraction, or
         # wall avoidance vectors are acting on them
@@ -444,7 +441,6 @@ class BoidsManager():
         any bounding logic."""
         delta_headings = self.calculate_delta_headings(follower_desired_headings, self.headings[:self.num_followers])
         delta_velocities = self.calculate_delta_velocities(follower_desired_velocities, self.velocities[:self.num_followers])
-        # print("dv: ", follower_desired_velocities[:,0], " | v:")
         return delta_headings, delta_velocities
 
     def calculate_follower_kinematics(self, delta_headings, delta_velocities):
@@ -541,4 +537,3 @@ class BoidsManager():
         self.update_all_states(angular_velocities, accelerations)
         # Reset the map with the new positions
         self.map.reset(self.positions)
-        print(self.velocities[:, 0], self.headings[:,0])
