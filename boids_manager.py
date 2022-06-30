@@ -384,7 +384,7 @@ class BoidsManager():
             all_momentum_vectors = np.zeros((self.num_followers, 2))
 
         # Calculate desired boid velocities and headings from vector sums
-        all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors
+        all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors + all_momentum_vectors
         all_desired_headings = np.expand_dims(np.arctan2(all_sum_vectors[:,1], all_sum_vectors[:,0]), axis=1)
         all_desired_velocities = np.expand_dims(np.linalg.norm(all_sum_vectors , axis=1), axis=1)
 
