@@ -9,11 +9,11 @@ np.random.seed(3)
 def policy(observation, agent):
     pressed_keys = pygame.key.get_pressed()
     if pressed_keys[pygame.K_UP]:
-        vel = 2.5
+        vel = 10
     elif pressed_keys[pygame.K_DOWN]:
         vel = 0
     else:
-        vel = 1.25
+        vel = 5
     if pressed_keys[pygame.K_RIGHT]:
         turn = -np.pi
     elif pressed_keys[pygame.K_LEFT]:
@@ -32,7 +32,7 @@ positions = np.vstack((
 ))
 positions = None
 
-env = BoidsEnv(num_leaders = 1, num_followers = 90, FPS=50, positions=positions, follower_inds=[])
+env = BoidsEnv(num_leaders = 1, num_followers = 90, FPS=60, positions=positions, follower_inds=[])
 # Set leader velocities to zero
 env.bm.velocities[env.bm.num_followers:] = 0
 observations = env.reset()

@@ -5,7 +5,7 @@ from map_utils import Map
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
         num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, \
-            avoid_walls = True, ghost_density = 0, use_momentum=False, dt = 1, max_acceleration = 1) -> None:
+            avoid_walls = True, ghost_density = 0, use_momentum=False, dt = 1/60, max_acceleration = 5) -> None:
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
