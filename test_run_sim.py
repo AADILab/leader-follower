@@ -25,6 +25,7 @@ observations = env.reset()
 dt = env.bm.dt
 last_time = None
 
+count = 0
 shutdown = False
 while not shutdown:
     for event in pygame.event.get():
@@ -36,3 +37,6 @@ while not shutdown:
         last_time = current_time
         observations, rewards, dones, infos = env.step({})
         env.render()
+    count += 1
+    # if count > 0:
+    #     shutdown = True

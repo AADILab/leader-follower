@@ -2,8 +2,16 @@ import functools
 from typing import Dict, List
 import numpy as np
 from gym.spaces import Box
+import enum
 
 from boids_manager import BoidsManager
+
+
+class OBSERVATION(enum.IntEnum):
+    GOAL_AND_CENTROID = 0
+
+class REWARD(enum.IntEnum):
+    DISTANCE_TO_GOAL = 0
 
 class LearningModule():
     """This class will contain methods for getting the observations and rewards for leader agents.
@@ -26,7 +34,7 @@ class LearningModule():
 
     def getRewards(self, bm: BoidsManager, actions: Dict):
         """Get the rewards for each agent based on the simulation state and the agents' actions."""
-        pass
+        return {}
 
     def getObservations(self, bm: BoidsManager):
         """Get the complete observations for each agent."""

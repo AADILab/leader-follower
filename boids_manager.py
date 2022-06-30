@@ -391,15 +391,17 @@ class BoidsManager():
 
         return all_desired_headings, all_desired_velocities
 
-    def calculate_delta_headings(self, all_desired_headings):
+    def calculate_delta_headings(self, desired_headings, current_headings):
         """ Calculate delta headings such that delta is the shortest path from
         current heading to the desired heading. Ensure delta headings fit within
         maximum angular velocity bounds.
         """
-        delta_headings = np.zeros((self.num_followers, 1))
-        for boid_id in range(self.num_followers):
-            desired_heading = all_desired_headings[boid_id, 0]
-            current_heading = self.headings[boid_id, 0]
+        num_headings = current_headings.shape[0]
+        print("num_headings: ", num_headings)
+        delta_headings = np.zeros((num_headings, 1))
+        for heading_id in range(num_headings):
+            desired_heading = desired_headings[heading_id, 0]
+            current_heading = current_headings[heading_id, 0]
             # Case 0: Desired heading is current heading
             if desired_heading == current_heading:
                 delta_heading = 0
@@ -417,20 +419,33 @@ class BoidsManager():
                 which_delta = np.argmin([np.abs(delta0), np.abs(delta1)])
                 delta_heading = np.array([delta0, delta1])[which_delta]
             # Save calculated delta heading
-            delta_headings[boid_id, 0] = delta_heading
+            delta_headings[heading_id, 0] = delta_heading
 
         return delta_headings
 
-    def calculate_delta_velocities(self, all_desired_velocities):
-        return all_desired_velocities - self.velocities[:self.num_followers]
+    def calculate_delta_velocities(self, all_desired_velocities, all_current_velocities):
+        return all_desired_velocities - all_current_velocities
 
-    def calculate_follower_deltas(self, all_desired_headings, all_desired_velocities):
+    def calculate_follower_deltas(self, follower_desired_headings, follower_desired_velocities):
         """Calculate delta headings and delta velocities based on current follower
         headings and velocities and their DESIRED headings and velocities. Do not apply
         any bounding logic."""
-        delta_headings = self.calculate_delta_headings(all_desired_headings)
-        delta_velocities = self.calculate_delta_velocities(all_desired_velocities)
+        print("calculate_follower_deltas()")
+        delta_headings = self.calculate_delta_headings(follower_desired_headings, self.headings[:self.num_followers])
+        print("delta_headings: ", delta_headings.shape)
+        delta_velocities = self.calculate_delta_velocities(follower_desired_velocities, self.headings[:self.num_followers])
         return delta_headings, delta_velocities
+
+    def calculate_all_deltas(self, all_desired_headings, all_desired_velocities):
+        pass
+
+    # def calculate_follower_deltas(self, all_desired_headings, all_desired_velocities):
+    #     """Calculate delta headings and delta velocities based on current follower
+    #     headings and velocities and their DESIRED headings and velocities. Do not apply
+    #     any bounding logic."""
+    #     delta_headings = self.calculate_delta_headings(all_desired_headings)
+    #     delta_velocities = self.calculate_delta_velocities(all_desired_velocities)
+    #     return delta_headings, delta_velocities
 
     def calculate_follower_kinematics(self, delta_headings, delta_velocities):
         """Turn deltas for heading and velocity into angular velocities
@@ -444,6 +459,25 @@ class BoidsManager():
         accelerations[accelerations > self.max_acceleration] = self.max_acceleration
         accelerations[accelerations < -self.max_acceleration] = -self.max_acceleration
         return angular_velocities, accelerations
+
+    def update_all_states(self, angular_velocities, accelerations):
+        """Update all leader and follower states with the input kinematics using Euler integration.
+        Bound kinematics according to specified boundaries. Ex: max_velocity
+        """
+        # Update headings
+        self.headings += angular_velocities*self.dt
+        # Apply circular cutoff
+        self.headings %= (2*np.pi)
+        # Update velocities
+        self.velocities += accelerations*self.dt
+        self.velocities[self.velocities > self.max_velocity] = self.max_velocity
+        self.velocities[self.velocities < self.min_velocity] = self.min_velocity
+        # Update positions
+        self.positions[:,0] += self.velocities[:,0] * np.cos(self.headings[:,0]) * self.dt
+        self.positions[:,1] += self.velocities[:,0] * np.sin(self.headings[:,0]) * self.dt
+        # Bound positions
+        self.bound_positions()
+        return None
 
     def update_follower_states(self, angular_velocities, accelerations):
         """Update follower states with the input kinematics using Euler integration.
@@ -474,21 +508,40 @@ class BoidsManager():
         # Apply upper bound
         self.positions[:,1][self.positions[:,1]>self.map.map_size[1]] = self.map.map_size[1]
 
-    def packageState(self):
-        return self.positions, self.headings, self.velocities
+    def unpack_leader_actions(self, leader_actions):
+        if leader_actions is None:
+            return np.zeros((self.num_leaders,1)), self.velocities[self.num_followers:]
+        else:
+            return np.expand_dims(leader_actions[:,0], axis=0), np.expand_dims(leader_actions[:,1], axis=0)
 
-    def step(self):
+    def get_leader_velocities(self):
+        return self.velocities[self.num_followers:]
+
+    def step(self, leader_actions=None):
+        """Step forward the simulation
+        leader_actions is Nx2. Left side is delta headings. Right side is desired velocities.
+        If leader actions is None, then leaders remain in current state.
+        """
+        print("leader_velocities\n", self.get_leader_velocities())
+        # Unpack leader actions
+        leader_delta_headings, leader_desired_velocities = self.unpack_leader_actions(leader_actions)
+        print("leader_desired_velocities:\n", leader_desired_velocities)
         # Update the follower observations
         repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds = self.get_follower_observations()
-        # Update the desired states
-        all_desired_headings, all_velocities = self.calculate_follower_desired_states(repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds)
-        # Calculate delta states
-        delta_headings, delta_velocities = self.calculate_follower_deltas(all_desired_headings, all_velocities)
+        # Update follower desired states
+        follower_desired_headings, follower_desired_velocities = self.calculate_follower_desired_states(repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds)
+        # print("follower_desired_headings: ",follower_desired_headings.shape)
+        # Calculate follower delta states
+        follower_delta_headings, follower_delta_velocities = self.calculate_follower_deltas(follower_desired_headings, follower_desired_velocities)
+        # Calculate leader delta velocities
+        leader_delta_velocities = self.calculate_delta_velocities(leader_desired_velocities, self.get_leader_velocities())
+        # Package together follower delta states and leader delta states
+        all_delta_headings = np.vstack((follower_delta_headings, leader_delta_headings))
+        all_delta_velocities = np.vstack((follower_delta_velocities, leader_delta_velocities))
+        print("leader_delta_velocities:\n", leader_delta_velocities)
         # Turn delta states into kinematics commands
-        angular_velocities, accelerations = self.calculate_follower_kinematics(delta_headings, delta_velocities)
-        # Update follower states using kinematics
-        self.update_follower_states(angular_velocities, accelerations)
+        angular_velocities, accelerations = self.calculate_follower_kinematics(all_delta_headings, all_delta_velocities)
+        # Update leader and follower states using kinematics
+        self.update_all_states(angular_velocities, accelerations)
         # Reset the map with the new positions
         self.map.reset(self.positions)
-        # Get the new leader observations
-        return self.packageState()

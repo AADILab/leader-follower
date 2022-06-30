@@ -28,11 +28,8 @@ REWARD_MAP = {
     (SCISSORS, SCISSORS): (0, 0),
 }
 
-class OBSERVATION(enum.IntEnum):
-    GOAL_AND_CENTROID = 0
-
-class REWARD(enum.IntEnum):
-    DISTANCE_TO_GOAL = 0
+class RENDERMODE(enum.IntEnum):
+    REALTIME = 0
 
 def env():
     '''
@@ -64,7 +61,7 @@ def raw_env():
 class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, follower_inds = None, learning_module: LearningModule = None):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, follower_inds = None, learning_module: LearningModule = None, num_steps = None):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -85,6 +82,10 @@ class BoidsEnv(ParallelEnv):
 
         # Setup learning module
         self.lm = self.setupLearningModule(learning_module)
+
+        # Set total steps in simulation run
+        # If None, simulation runs until closed
+        self.num_steps = num_steps
 
     def setupLearningModule(self, learning_module):
         if learning_module is None:
@@ -135,8 +136,8 @@ class BoidsEnv(ParallelEnv):
         Returns the observations for each agent
         '''
         self.agents = self.possible_agents[:]
-        self.num_moves = 0
-        observations = {agent: NONE for agent in self.agents}
+        self.step_count = 0
+        observations = self.getObservations()
         return observations
 
     def getObservations(self):
@@ -156,8 +157,8 @@ class BoidsEnv(ParallelEnv):
         dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
         '''
 
-        # Step forward all of the follower boids.
-        self.bm.step()
+        # Step forward all boids. Use input actions for leaders.
+        self.bm.step(None)
 
         # Get the observations of the leader boids
         observations = self.getObservations()
@@ -166,8 +167,11 @@ class BoidsEnv(ParallelEnv):
         rewards = self.lm.getRewards(self.bm, actions)
 
         # Step forward and check if simulation is done
-        self.num_moves += 1
-        env_done = self.num_moves >= NUM_ITERS
+        self.step_count += 1
+        if self.num_steps is not None:
+            env_done = self.step_count >= self.num_steps
+        else:
+            env_done = False
 
         dones = {}
         infos = {}
@@ -199,3 +203,6 @@ class BoidsEnv(ParallelEnv):
             self.agents = []
 
         return observations, rewards, dones, infos
+
+    def run(self, policy_function):
+        pass
