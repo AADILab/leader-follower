@@ -98,11 +98,11 @@ class Renderer():
     def renderFrame(self, positions, headings, bm = None, lm = None, observations = None, all_obs_positions = None, possible_agents = None):
         self.screen.fill((255,255,255))
         self.renderBoids(positions, headings)
-        if self.render_centroid_observations:
+        if self.render_centroid_observations and self.num_leaders > 0:
             # This is a bit of a messy way of getting leader observations to show up here
             # In the future, consider reworking this so Renderer doesn't access the BoidsManager directly
             self.renderCentroidObservations(bm, observations, all_obs_positions, possible_agents)
-        if self.render_POI_observations:
+        if self.render_POI_observations and self.num_leaders > 0:
             self.renderPOIObservations(bm, lm, observations, possible_agents)
         pygame.display.flip()
 

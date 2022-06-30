@@ -21,7 +21,7 @@ class BoidsManager():
 
         # Save input variables to internal variables
         self.max_velocity = max_velocity
-        self.min_velocity = 0.5*max_velocity
+        self.min_velocity = 0#.5*max_velocity
         self.max_acceleration = max_acceleration
         self.max_angular_velocity = max_angular_velocity
         self.radius_repulsion = radius_repulsion
@@ -369,9 +369,10 @@ class BoidsManager():
 
         # Calculate wall avoidance vector if wall avoidance is on
         if self.avoid_walls:
-            all_wall_avoidance_vectors = self.total_agents/25 * self.calculate_all_wall_avoidance_vectors()
+            all_wall_avoidance_vectors = self.total_agents/2 * self.calculate_all_wall_avoidance_vectors()
         else:
             all_wall_avoidance_vectors = np.zeros((self.num_followers, 2))
+        # print("wall_vectors:\n", all_wall_avoidance_vectors)
 
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors
@@ -382,7 +383,8 @@ class BoidsManager():
         # wall avoidance vectors are acting on them
         no_forces_ind = self.get_no_forces_ind(no_boid_obs_inds, self.calculate_all_wall_avoidance_inds(all_wall_avoidance_vectors))
         all_desired_headings[no_forces_ind] = self.headings[no_forces_ind]
-        all_desired_velocities[no_forces_ind] = self.headings[no_forces_ind]
+        all_desired_velocities[no_forces_ind] = self.velocities[no_forces_ind]
+        # print("d: ", all_desired_velocities[:,0], all_desired_headings[:,0])
 
         # Return all the data calculated if we're interested in debugging results of in-between steps
         if debug:
@@ -397,7 +399,6 @@ class BoidsManager():
         maximum angular velocity bounds.
         """
         num_headings = current_headings.shape[0]
-        print("num_headings: ", num_headings)
         delta_headings = np.zeros((num_headings, 1))
         for heading_id in range(num_headings):
             desired_heading = desired_headings[heading_id, 0]
@@ -430,22 +431,10 @@ class BoidsManager():
         """Calculate delta headings and delta velocities based on current follower
         headings and velocities and their DESIRED headings and velocities. Do not apply
         any bounding logic."""
-        print("calculate_follower_deltas()")
         delta_headings = self.calculate_delta_headings(follower_desired_headings, self.headings[:self.num_followers])
-        print("delta_headings: ", delta_headings.shape)
-        delta_velocities = self.calculate_delta_velocities(follower_desired_velocities, self.headings[:self.num_followers])
+        delta_velocities = self.calculate_delta_velocities(follower_desired_velocities, self.velocities[:self.num_followers])
+        # print("dv: ", follower_desired_velocities[:,0], " | v:")
         return delta_headings, delta_velocities
-
-    def calculate_all_deltas(self, all_desired_headings, all_desired_velocities):
-        pass
-
-    # def calculate_follower_deltas(self, all_desired_headings, all_desired_velocities):
-    #     """Calculate delta headings and delta velocities based on current follower
-    #     headings and velocities and their DESIRED headings and velocities. Do not apply
-    #     any bounding logic."""
-    #     delta_headings = self.calculate_delta_headings(all_desired_headings)
-    #     delta_velocities = self.calculate_delta_velocities(all_desired_velocities)
-    #     return delta_headings, delta_velocities
 
     def calculate_follower_kinematics(self, delta_headings, delta_velocities):
         """Turn deltas for heading and velocity into angular velocities
@@ -522,15 +511,12 @@ class BoidsManager():
         leader_actions is Nx2. Left side is delta headings. Right side is desired velocities.
         If leader actions is None, then leaders remain in current state.
         """
-        print("leader_velocities\n", self.get_leader_velocities())
         # Unpack leader actions
         leader_delta_headings, leader_desired_velocities = self.unpack_leader_actions(leader_actions)
-        print("leader_desired_velocities:\n", leader_desired_velocities)
         # Update the follower observations
         repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds = self.get_follower_observations()
         # Update follower desired states
         follower_desired_headings, follower_desired_velocities = self.calculate_follower_desired_states(repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds)
-        # print("follower_desired_headings: ",follower_desired_headings.shape)
         # Calculate follower delta states
         follower_delta_headings, follower_delta_velocities = self.calculate_follower_deltas(follower_desired_headings, follower_desired_velocities)
         # Calculate leader delta velocities
@@ -538,10 +524,10 @@ class BoidsManager():
         # Package together follower delta states and leader delta states
         all_delta_headings = np.vstack((follower_delta_headings, leader_delta_headings))
         all_delta_velocities = np.vstack((follower_delta_velocities, leader_delta_velocities))
-        print("leader_delta_velocities:\n", leader_delta_velocities)
         # Turn delta states into kinematics commands
         angular_velocities, accelerations = self.calculate_follower_kinematics(all_delta_headings, all_delta_velocities)
         # Update leader and follower states using kinematics
         self.update_all_states(angular_velocities, accelerations)
         # Reset the map with the new positions
         self.map.reset(self.positions)
+        # print(self.velocities[:, 0], self.headings[:,0])
