@@ -5,7 +5,7 @@ from map_utils import Map
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
         num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, \
-            avoid_walls = True, ghost_density = 0, dt = 1, max_acceleration = 1) -> None:
+            avoid_walls = True, ghost_density = 0, use_momentum=False, dt = 1, max_acceleration = 1) -> None:
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
@@ -33,6 +33,7 @@ class BoidsManager():
         self.map_size = map_size
         self.avoid_walls = avoid_walls
         self.ghost_density = ghost_density
+        self.use_momentum = use_momentum
         self.dt = dt
 
         # Setup boid positions
@@ -369,22 +370,32 @@ class BoidsManager():
 
         # Calculate wall avoidance vector if wall avoidance is on
         if self.avoid_walls:
-            all_wall_avoidance_vectors = self.total_agents/2 * self.calculate_all_wall_avoidance_vectors()
+            all_wall_avoidance_vectors = self.total_agents/25 * self.calculate_all_wall_avoidance_vectors()
         else:
             all_wall_avoidance_vectors = np.zeros((self.num_followers, 2))
         # print("wall_vectors:\n", all_wall_avoidance_vectors)
+
+        # Calculate a momentum for follower boids
+        if self.use_momentum:
+            all_momentum_vectors = np.hstack((
+                self.velocities[:self.num_followers]*np.cos(self.headings[:self.num_followers]),
+                self.velocities[:self.num_followers]*np.sin(self.headings[:self.num_followers])
+            ))
+        else:
+            all_momentum_vectors = np.zeros((self.num_followers, 2))
+        print("m: ", all_momentum_vectors, self.headings[:self.num_followers], self.velocities[:self.num_followers])
 
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors
         all_desired_headings = np.expand_dims(np.arctan2(all_sum_vectors[:,1], all_sum_vectors[:,0]), axis=1)
         all_desired_velocities = np.expand_dims(np.linalg.norm(all_sum_vectors , axis=1), axis=1)
+        print("d1: ", all_desired_velocities[:,0], all_desired_headings[:,0])
 
         # Boids should maintain current heading and velocity if no repulsion, orientation, attraction, or
         # wall avoidance vectors are acting on them
         no_forces_ind = self.get_no_forces_ind(no_boid_obs_inds, self.calculate_all_wall_avoidance_inds(all_wall_avoidance_vectors))
         all_desired_headings[no_forces_ind] = self.headings[no_forces_ind]
         all_desired_velocities[no_forces_ind] = self.velocities[no_forces_ind]
-        # print("d: ", all_desired_velocities[:,0], all_desired_headings[:,0])
 
         # Return all the data calculated if we're interested in debugging results of in-between steps
         if debug:
@@ -530,4 +541,4 @@ class BoidsManager():
         self.update_all_states(angular_velocities, accelerations)
         # Reset the map with the new positions
         self.map.reset(self.positions)
-        # print(self.velocities[:, 0], self.headings[:,0])
+        print(self.velocities[:, 0], self.headings[:,0])
