@@ -508,7 +508,7 @@ class BoidsManager():
         if leader_actions is None:
             return np.zeros((self.num_leaders,1)), self.velocities[self.num_followers:]
         else:
-            return np.expand_dims(leader_actions[:,0], axis=0), np.expand_dims(leader_actions[:,1], axis=0)
+            return np.expand_dims(leader_actions[:,0], axis=1), np.expand_dims(leader_actions[:,1], axis=1)
 
     def get_leader_velocities(self):
         return self.velocities[self.num_followers:]
