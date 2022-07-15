@@ -5,7 +5,7 @@ from map_utils import Map
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
         num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, \
-            avoid_walls = True, ghost_density = 0, use_momentum=False, dt = 1/60, max_acceleration = 5) -> None:
+            avoid_walls = True, ghost_density = 0, use_momentum=False, dt = 1/60, max_acceleration = 5, wall_avoidance_multiplier = 1, repulsion_mulitplier = 3) -> None:
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
@@ -21,7 +21,7 @@ class BoidsManager():
 
         # Save input variables to internal variables
         self.max_velocity = max_velocity
-        self.min_velocity = 0#.5*max_velocity
+        self.min_velocity = 0.25*max_velocity
         self.max_acceleration = max_acceleration
         self.max_angular_velocity = max_angular_velocity
         self.radius_repulsion = radius_repulsion
@@ -32,6 +32,8 @@ class BoidsManager():
         self.num_leaders = num_leaders
         self.map_size = map_size
         self.avoid_walls = avoid_walls
+        self.wall_avoidance_multiplier = wall_avoidance_multiplier
+        self.repulsion_multiplier = repulsion_mulitplier
         self.ghost_density = ghost_density
         self.use_momentum = use_momentum
         self.dt = dt
@@ -275,7 +277,7 @@ class BoidsManager():
     def calculate_repulsion_vector(self, boid_id, repulsion_positions):
         # Repulsion vector is average vector from repulsion boids to current boid, normalized by radius of repulsion
         if np.shape(repulsion_positions)[0] != 0:
-            return (self.positions[boid_id] - np.average(repulsion_positions, axis=0))/self.radius_repulsion
+            return (self.positions[boid_id] - np.average(repulsion_positions, axis=0))/self.radius_repulsion * self.repulsion_multiplier
         else:
             return np.array([0,0])
 
@@ -370,7 +372,7 @@ class BoidsManager():
 
         # Calculate wall avoidance vector if wall avoidance is on
         if self.avoid_walls:
-            all_wall_avoidance_vectors = self.total_agents/25 * self.calculate_all_wall_avoidance_vectors()
+            all_wall_avoidance_vectors = self.total_agents * self.calculate_all_wall_avoidance_vectors() * self.wall_avoidance_multiplier
         else:
             all_wall_avoidance_vectors = np.zeros((self.num_followers, 2))
 
@@ -386,7 +388,13 @@ class BoidsManager():
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors + all_momentum_vectors
         all_desired_headings = np.expand_dims(np.arctan2(all_sum_vectors[:,1], all_sum_vectors[:,0]), axis=1)
-        all_desired_velocities = np.expand_dims(np.linalg.norm(all_sum_vectors , axis=1), axis=1)
+
+        # Calculate desired velocity depending on how aligned the desired and current headings are
+        all_delta_headings = self.calculate_delta_headings(all_desired_headings, self.headings[:self.num_followers])
+        # all_desired_velocities = np.expand_dims(np.linalg.norm(all_sum_vectors , axis=1), axis=1)
+        all_desired_velocities = np.expand_dims(np.zeros(self.num_followers), axis=1)
+        all_desired_velocities[np.abs(all_delta_headings) < np.pi/2] = np.expand_dims(np.linalg.norm(all_sum_vectors , axis=1), axis=1)[np.abs(all_delta_headings) < np.pi/2]
+        all_desired_velocities[np.abs(all_delta_headings) >= np.pi/2] = self.min_velocity
 
         # Boids should maintain current heading and velocity if no repulsion, orientation, attraction, or
         # wall avoidance vectors are acting on them
