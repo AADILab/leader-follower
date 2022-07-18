@@ -32,9 +32,31 @@ class LearningModule():
             high=np.array([np.inf, np.pi, np.inf, np.pi]),
             dtype=np.float32)
 
-    def getRewards(self, bm: BoidsManager, actions: Dict):
+    def getRewards(self, bm: BoidsManager, actions: Dict, step_count: int, total_steps: int, posisble_agents: List[str]):
         """Get the rewards for each agent based on the simulation state and the agents' actions."""
-        return {}
+        # For now, I'm going to return a list of team-wide rewards with no agent-based breakdown
+        # This function takes in possible_agents so I can assign agent-based rewards later if I want to
+
+        # Calculate temporal weight
+        wt = 1 - np.cos(np.pi * step_count/total_steps)
+
+        # Calculate average distance with temporal weight
+        reward_list = []
+        follower_positions = bm.get_follower_positions()
+        for goal_location in self.goal_locations:
+            # Calculate distance between the goal location and all followers
+            distances = np.linalg.norm(goal_location - follower_positions)
+
+            # Weight these distances by the temporal weight and overall steps
+            weighted_distances = distances * wt / total_steps
+
+            # Average the distances for this timestep
+            avg_distance = np.average(weighted_distances)
+
+            # Append the average distance for this particular goal location
+            reward_list.append(avg_distance)
+
+        return {"team": reward_list}
 
     def getObservations(self, bm: BoidsManager):
         """Get the complete observations for each agent."""

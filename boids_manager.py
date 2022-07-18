@@ -120,6 +120,9 @@ class BoidsManager():
         observable_boid_ids.remove(boid_id)
         return observable_boid_ids
 
+    def get_follower_positions(self):
+        return self.positions[:self.num_followers]
+
     def get_boid_positions(self, ids):
         return self.positions[ids]
 

@@ -39,7 +39,7 @@ def raw_env():
 class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "boids"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, follower_inds = None, learning_module: LearningModule = None, num_steps = None, render_mode = 'human'):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, follower_inds = None, learning_module: LearningModule = None, num_steps = 20000, render_mode = 'human'):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -56,7 +56,7 @@ class BoidsEnv(ParallelEnv):
         self.FPS = FPS
         self.dt = 1/float(FPS)
 
-        map_size = np.array([100,100])
+        map_size = np.array([50,50])
         rs = (2,3,5)
         self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=10, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions)
         self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_centroid_observations=False, render_POI_observations=False)
@@ -64,8 +64,7 @@ class BoidsEnv(ParallelEnv):
         # Setup learning module
         self.lm = self.setupLearningModule(learning_module)
 
-        # Set total steps in simulation run
-        # If None, simulation runs until closed
+        # Set total steps in simulation run. Necessary for reward calculations
         self.num_steps = num_steps
 
         # Render mode for running simulation
@@ -74,7 +73,7 @@ class BoidsEnv(ParallelEnv):
     def setupLearningModule(self, learning_module):
         if learning_module is None:
             # return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
-            return LearningModule(goal_locations=np.array([[10.,10.],[40.,40.]]))
+            return LearningModule(goal_locations=np.array([[0.,0.]]))
         else:
             return learning_module
 
@@ -158,7 +157,8 @@ class BoidsEnv(ParallelEnv):
         observations = self.getObservations()
 
         # Get rewards for leaders
-        rewards = self.lm.getRewards(self.bm, actions)
+        rewards = self.lm.getRewards(self.bm, actions, self.step_count, self.num_steps, self.possible_agents)
+        print(rewards["team"])
 
         # Step forward and check if simulation is done
         self.step_count += 1

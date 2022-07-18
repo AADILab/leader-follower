@@ -32,7 +32,7 @@ positions = np.vstack((
 ))
 positions = None
 
-env = BoidsEnv(num_leaders = 0, num_followers = 100, FPS=60, positions=positions, follower_inds=[])
+env = BoidsEnv(num_leaders = 1, num_followers = 1, FPS=60, positions=positions, follower_inds=[])
 # Set leader velocities to zero
 env.bm.velocities[env.bm.num_followers:] = 0
 observations = env.reset()
