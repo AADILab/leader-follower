@@ -37,7 +37,7 @@ def raw_env():
 
 
 class BoidsEnv(ParallelEnv):
-    metadata = {'render.modes': ['human'], "name": "boids"}
+    metadata = {'render.modes': ['human', 'none'], "name": "boids"}
 
     def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, follower_inds = None, learning_module: LearningModule = None, num_steps = 20000, render_mode = 'human'):
         '''
@@ -59,7 +59,12 @@ class BoidsEnv(ParallelEnv):
         map_size = np.array([50,50])
         rs = (2,3,5)
         self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=10, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions)
-        self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_centroid_observations=False, render_POI_observations=False)
+
+        self.render_mode = render_mode
+        if self.render_mode == 'none':
+            self.renderer = None
+        else:
+            self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_centroid_observations=False, render_POI_observations=False, render_mode=render_mode)
 
         # Setup learning module
         self.lm = self.setupLearningModule(learning_module)
@@ -67,13 +72,10 @@ class BoidsEnv(ParallelEnv):
         # Set total steps in simulation run. Necessary for reward calculations
         self.num_steps = num_steps
 
-        # Render mode for running simulation
-        self.render_mode = render_mode
-
     def setupLearningModule(self, learning_module):
         if learning_module is None:
             # return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
-            return LearningModule(goal_locations=np.array([[0.,0.]]))
+            return LearningModule(goal_locations=np.array([[10.,10.], [40.,40.]]))
         else:
             return learning_module
 
@@ -88,16 +90,20 @@ class BoidsEnv(ParallelEnv):
         # Action space is velocity and desired heading
         # Desired heading is relative to agent's own reference frame
         return Box(
-            low=np.array([0, -np.pi],
-            high=np.array[self.max_velocity, np.pi]),
+            low=np.array([self.bm.min_velocity, -np.pi],
+            high=np.array[self.bm.max_velocity, np.pi]),
             dtype=np.float32
         )
 
-    def render(self, mode='human'):
+    def render(self, mode=None):
         '''
         Renders the environment. In human mode, it can print to terminal, open
         up a graphical window, or open up some other display that a human can see and understand.
+
+        Default mode is whatever is set by default in the environment.
         '''
+        if mode is None:
+            mode = self.render_mode
         if mode == 'human':
             self.renderer.renderFrame(self.bm.positions, self.bm.headings, self.bm, self.lm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents)
 
@@ -148,7 +154,6 @@ class BoidsEnv(ParallelEnv):
         '''
         # Convert input env actions to correct format for boids manager
         bm_actions = self.convertActionsToBMActions(actions)
-        # print("bma: ",bm_actions)
 
         # Step forward all boids. Use input actions for leaders.
         self.bm.step(bm_actions)
@@ -158,7 +163,6 @@ class BoidsEnv(ParallelEnv):
 
         # Get rewards for leaders
         rewards = self.lm.getRewards(self.bm, actions, self.step_count, self.num_steps, self.possible_agents)
-        print(rewards["team"])
 
         # Step forward and check if simulation is done
         self.step_count += 1

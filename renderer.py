@@ -3,7 +3,7 @@ import pygame
 import pygame.gfxdraw
 
 class Renderer():
-    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, render_centroid_observations = False, render_POI_observations = False) -> None:
+    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, render_centroid_observations = False, render_POI_observations = False, render_mode = 'human') -> None:
         # Save variables
         self.num_leaders = num_leaders
         self.num_followers = num_followers
@@ -25,7 +25,6 @@ class Renderer():
         # Calculate display variables
         self.display_size = self.getPixels(map_size)
 
-        # Initialize pygame display
         pygame.init()
         self.screen = pygame.display.set_mode(self.display_size)
 

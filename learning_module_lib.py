@@ -47,8 +47,8 @@ class LearningModule():
             # Calculate distance between the goal location and all followers
             distances = np.linalg.norm(goal_location - follower_positions)
 
-            # Weight these distances by the temporal weight and overall steps
-            weighted_distances = distances * wt / total_steps
+            # Weight these distances by the temporal weight and overall steps and number of followers
+            weighted_distances = distances * wt / total_steps / bm.num_followers
 
             # Average the distances for this timestep
             avg_distance = np.average(weighted_distances)
