@@ -39,7 +39,7 @@ def raw_env():
 class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human', 'none'], "name": "boids"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, follower_inds = None, learning_module: LearningModule = None, num_steps = 20000, render_mode = 'human'):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, headings = None, follower_inds = None, learning_module: LearningModule = None, num_steps = 20000, render_mode = 'human', map_size = np.array([50,50])):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -56,9 +56,8 @@ class BoidsEnv(ParallelEnv):
         self.FPS = FPS
         self.dt = 1/float(FPS)
 
-        map_size = np.array([50,50])
         rs = (2,3,5)
-        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=10, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions)
+        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=10, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions, headings=headings)
 
         self.render_mode = render_mode
         if self.render_mode == 'none':
