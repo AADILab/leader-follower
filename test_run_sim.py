@@ -44,6 +44,7 @@ last_time = None
 count = 0
 shutdown = False
 # while not shutdown:
+print(env.num_steps)
 for _ in range(env.num_steps):
     if render_mode != 'none':
         for event in pygame.event.get():

@@ -175,3 +175,6 @@ class BoidsEnv(ParallelEnv):
 
         # Return observations of leader boids AKA "agents"
         return observations, rewards, dones, infos
+
+    def getRenderInfo(self):
+        return self.bm.positions, self.bm.headings
