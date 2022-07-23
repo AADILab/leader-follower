@@ -3,6 +3,7 @@ import random
 
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 
 from env_lib import BoidsEnv
 
@@ -49,7 +50,7 @@ class Learner():
         self.population = [self.randomGenome() for _ in range(self.population_size)]
 
         # Initialize environment
-        self.env = BoidsEnv(num_leaders = 5, num_followers = 5, FPS = FPS, num_steps = num_steps)
+        self.env = BoidsEnv(num_leaders = 5, num_followers = 5, FPS = FPS, num_steps = num_steps, render_mode='none')
 
     def createNet(self) -> FeedForwardNet:
         return FeedForwardNet(self.input_size, self.hidden_size, self.out_size)
@@ -74,7 +75,7 @@ class Learner():
             if draw:
                 self.env.render()
             # Collect actions for all agents with each agent using the same genome to guide its action
-            actions = {agent_name: net.run(torch.tensor([observations[agent_name]])) for agent_name in self.env.possible_agents}
+            actions = {agent_name: net.run(torch.tensor([observations[agent_name]], dtype=torch.float)) for agent_name in self.env.possible_agents}
             # Step forward the environment
             observations, rewards, dones, _  = self.env.step(actions)
             # Save done
@@ -116,7 +117,7 @@ class Learner():
     def train(self, num_generations: int):
         """Train the learner for a set number of generations. Save performance data."""
         score_list = []
-        for _ in num_generations:
+        for _ in tqdm(range(num_generations)):
             min_score = self.step()
             score_list.append(min_score)
         return score_list

@@ -74,7 +74,7 @@ class BoidsEnv(ParallelEnv):
     def setupLearningModule(self, learning_module):
         if learning_module is None:
             # return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
-            return LearningModule(goal_locations=np.array([[10.,10.], [40.,40.]]))
+            return LearningModule(goal_locations=np.array([[10.,10.]]))
         else:
             return learning_module
 
@@ -172,6 +172,8 @@ class BoidsEnv(ParallelEnv):
 
         dones = {agent: env_done for agent in self.possible_agents}
         infos = {agent: {} for agent in self.possible_agents}
+
+        # print(self.step_count)
 
         # Return observations of leader boids AKA "agents"
         return observations, rewards, dones, infos
