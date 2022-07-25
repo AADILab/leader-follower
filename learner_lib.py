@@ -1,3 +1,4 @@
+import queue
 from typing import List, Dict
 import random
 
@@ -5,12 +6,16 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 import numpy as np
-from multiprocessing import Process, Queue, Manager
+from multiprocessing import Event, Process, Queue, Manager
+from time import time
 
 from env_lib import BoidsEnv
 
 # Genome encodes weights of a network as list of tensors
 Genome = List[torch.TensorType]
+
+def generateSeed():
+    return int((time() % 1) * 1000000)
 
 class FeedForwardNet(nn.Module):
     def __init__(self, input_size, hid_size, out_size) -> None:
@@ -50,18 +55,39 @@ class Learner():
         self.out_size = 2
         self.population = [self.randomGenome() for _ in range(self.population_size)]
 
-        # self.work_queue = Queue(1000)
-        # self.fitness_queue = Queue(1000)
-        # self.workers = [
-        #     Process(
-        #         target=self.evalutationWorker,
-        #         args=(self.work_queue, self.fitness_queue, i, env_kwargs),
-        #     )
-        #     for i in range(num_workers)
-        # ]
-
         # Initialize environment
         self.env = BoidsEnv(**env_kwargs)
+
+        # Process event - set flag to True to turn off workers
+        self.stop_event = Event()
+
+        print("e: ", self.stop_event.is_set())
+
+        self.work_queue = Queue(1000)
+        self.fitness_queue = Queue(1000)
+        self.workers = [
+            Process(
+                target=self.evaluationWorker,
+                args=(self.work_queue, self.fitness_queue, i, env_kwargs),
+            )
+            for i in range(num_workers)
+        ]
+        for w in self.workers:
+            w.start()
+
+
+    def __del__(self):
+        self.cleanup()
+
+    def cleanup(self):
+        # End work processes on deletion
+        try:
+            self.stop_event.set()
+            print("e2: ", self.stop_event.is_set())
+            for w in self.workers:
+                w.join()
+        except:
+            pass
 
     def createNet(self) -> FeedForwardNet:
         return FeedForwardNet(self.input_size, self.hidden_size, self.out_size)
@@ -72,15 +98,33 @@ class Learner():
             torch.normal(mean=0.0, std=1.0, size=(self.out_size, self.hidden_size))
             ]
 
-    # def evaluationWorker(in_queue, out_queue, id=0, env_kwargs={}):
-    #     try:
-    #         env = BoidsEnv(**env_kwargs)
-    #         while True:
-    #             input = in_queue.
-    #     except KeyboardInterrupt:
-    #         print(f"Interrupt! Exiting {id}")
+    def evaluationWorker(self, in_queue, out_queue, id=0, env_kwargs={}):
+        try:
+            while not self.stop_event.is_set():
+                try:
+                    input = in_queue.get(timeout=0.01)
+                except queue.Empty:
+                    continue
 
-    def evaluateGenome(self, genome: Genome, draw: bool = False) -> float:
+                genome = input["genome"]
+                seed = input["seed"]
+
+                try:
+                    fitness = self.evaluateGenome(genome, seed, False)
+
+                except AttributeError as e:
+                    print(e)
+                    fitness = np.inf
+
+                output = {"id": input["id"], "fitness": fitness}
+                out_queue.put(output)
+
+        except KeyboardInterrupt:
+            print(f"Interrupt on {id}!")
+        finally:
+            print(f"Exiting {id}")
+
+    def evaluateGenome(self, genome: Genome, seed: int = 0, draw: bool = False) -> float:
         """Load genome into boids environment and calculate a fitness score."""
         # Load network with weights from genome
         net = self.createNet()
@@ -114,8 +158,14 @@ class Learner():
 
     def mutatePopulation(self, scores) -> List[Genome]:
         """Generate a new population based on the fitness scores of the genomes in the population."""
+        print("scores: ", scores)
+        if scores[0] == scores[1]:
+            print('f')
+        # print("G: ", type(genome))
         # Sort population so that lowest scoring genomes are at the front of the list
-        sorted_population = [genome for _, genome in sorted(zip(scores, self.population))]
+        sorted_population = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population))]
+        # sorted_population = [genome for _, genome in sorted(self.population, key=scores)]
+
         # Trying to minimize distance of swarm to objective, so lower scores are better
         # Keep parents with lowest scores
         parents = sorted_population[:self.num_parents]
@@ -125,19 +175,49 @@ class Learner():
         mutated_population = parents + children
         return mutated_population
 
-    # def evaluatePopulation(self, population = None):
-    #     if population is None:
-    #         population = self.population
+    def evaluatePopulation(self, population = None):
+        if population is None:
+            population = self.population
 
+        # Queue genomes to be evaluated by workers
+        seed = generateSeed()
+        for i, genome in enumerate(population):
+            self.work_queue.put({"id": i, "genome": genome, "seed": seed})
 
+        # Keep track of which genomes' fitnesses have been received
+        received = [False for _ in population]
+        timeout = 10 # seconds
+        fitnesses = [np.inf for _ in population]
+
+        while not all (received):
+            try:
+                # Grab results from workers
+                rx = self.fitness_queue.get(timeout=timeout)
+
+                id = rx["id"]
+                fit = rx["fitness"]
+
+                # Match received fitness to the corresponding genome
+                received[id] = True
+                fitnesses[id] = fit
+            except queue.Empty:
+                print("Timeout reached on waiting for a response!")
+                print(
+                    f"Currently received {sum(received)} out of {len(received)} responses!"
+                )
+                print(
+                    f"Work: {self.work_queue.qsize()}, Fitnesses: {self.fitness_queue.qsize()}"
+                )
+        return fitnesses
 
     def step(self) -> float:
         """Step forward the learner by a generation and update the population."""
         # Evaluate all the genomes in the population
-        scores = [self.evaluateGenome(genome) for genome in self.population]
+        # scores = [self.evaluateGenome(genome) for genome in self.population]
+        fitnesses = self.evaluatePopulation()
         # Mutate the population according to the fitness scores
-        self.population = self.mutatePopulation(scores)
-        return min(scores)
+        self.population = self.mutatePopulation(fitnesses)
+        return min(fitnesses)
 
     def train(self, num_generations: int):
         """Train the learner for a set number of generations. Save performance data."""
