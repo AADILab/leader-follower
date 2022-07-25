@@ -1,9 +1,11 @@
-from typing import List
+from typing import List, Dict
 import random
 
 import torch
 import torch.nn as nn
 from tqdm import tqdm
+import numpy as np
+from multiprocessing import Process, Queue, Manager
 
 from env_lib import BoidsEnv
 
@@ -35,13 +37,12 @@ class FeedForwardNet(nn.Module):
         self.model.load_state_dict(d)
 
 class Learner():
-    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, num_steps: int, FPS : int) -> None:
+    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, num_workers: int = 4, env_kwargs: Dict = {"num_leaders": 10, "num_followers": 90, "FPS": 60, "num_steps": 60*60, "render_mode": 'none'}) -> None:
         # Set variables
         self.population_size = population_size
         self.num_parents = num_parents
         self.num_children = population_size - num_parents
         self.sigma_mutation = sigma_mutation
-        self.num_steps = num_steps
 
         # Initialize population
         self.input_size = 4
@@ -49,8 +50,18 @@ class Learner():
         self.out_size = 2
         self.population = [self.randomGenome() for _ in range(self.population_size)]
 
+        # self.work_queue = Queue(1000)
+        # self.fitness_queue = Queue(1000)
+        # self.workers = [
+        #     Process(
+        #         target=self.evalutationWorker,
+        #         args=(self.work_queue, self.fitness_queue, i, env_kwargs),
+        #     )
+        #     for i in range(num_workers)
+        # ]
+
         # Initialize environment
-        self.env = BoidsEnv(num_leaders = 5, num_followers = 5, FPS = FPS, num_steps = num_steps, render_mode='none')
+        self.env = BoidsEnv(**env_kwargs)
 
     def createNet(self) -> FeedForwardNet:
         return FeedForwardNet(self.input_size, self.hidden_size, self.out_size)
@@ -61,7 +72,15 @@ class Learner():
             torch.normal(mean=0.0, std=1.0, size=(self.out_size, self.hidden_size))
             ]
 
-    def scoreGenome(self, genome: Genome, draw: bool = False) -> float:
+    # def evaluationWorker(in_queue, out_queue, id=0, env_kwargs={}):
+    #     try:
+    #         env = BoidsEnv(**env_kwargs)
+    #         while True:
+    #             input = in_queue.
+    #     except KeyboardInterrupt:
+    #         print(f"Interrupt! Exiting {id}")
+
+    def evaluateGenome(self, genome: Genome, draw: bool = False) -> float:
         """Load genome into boids environment and calculate a fitness score."""
         # Load network with weights from genome
         net = self.createNet()
@@ -75,7 +94,7 @@ class Learner():
             if draw:
                 self.env.render()
             # Collect actions for all agents with each agent using the same genome to guide its action
-            actions = {agent_name: net.run(torch.tensor([observations[agent_name]], dtype=torch.float)) for agent_name in self.env.possible_agents}
+            actions = {agent_name: net.run(torch.tensor(np.array([observations[agent_name]]), dtype=torch.float)) for agent_name in self.env.possible_agents}
             # Step forward the environment
             observations, rewards, dones, _  = self.env.step(actions)
             # Save done
@@ -106,10 +125,16 @@ class Learner():
         mutated_population = parents + children
         return mutated_population
 
+    # def evaluatePopulation(self, population = None):
+    #     if population is None:
+    #         population = self.population
+
+
+
     def step(self) -> float:
         """Step forward the learner by a generation and update the population."""
         # Evaluate all the genomes in the population
-        scores = [self.scoreGenome(genome) for genome in self.population]
+        scores = [self.evaluateGenome(genome) for genome in self.population]
         # Mutate the population according to the fitness scores
         self.population = self.mutatePopulation(scores)
         return min(scores)
