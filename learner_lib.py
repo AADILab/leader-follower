@@ -196,13 +196,14 @@ class Learner():
                 received[id] = True
                 fitnesses[id] = fit
             except queue.Empty:
-                print("Timeout reached on waiting for a response!")
-                print(
-                    f"Currently received {sum(received)} out of {len(received)} responses!"
-                )
-                print(
-                    f"Work: {self.work_queue.qsize()}, Fitnesses: {self.fitness_queue.qsize()}"
-                )
+                pass
+                # print("Timeout reached on waiting for a response!")
+                # print(
+                #     f"Currently received {sum(received)} out of {len(received)} responses!"
+                # )
+                # print(
+                #     f"Work: {self.work_queue.qsize()}, Fitnesses: {self.fitness_queue.qsize()}"
+                # )
         if self.stop_event.is_set():
             print("Stop event detected. Exiting main program.")
             exit()
