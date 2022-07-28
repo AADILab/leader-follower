@@ -97,7 +97,7 @@ class Learner():
         self.iterations = 0
 
         # Initialize population
-        self.input_size = 4
+        self.input_size = 2
         self.hidden_size = 6
         self.out_size = 2
         self.population = [self.randomGenome() for _ in range(self.population_size)]

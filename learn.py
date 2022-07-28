@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 
 NUM_GENERATIONS = 100
-EXPERIMENT_NAME = "trial_2"
+EXPERIMENT_NAME = "trial_3"
 
 filename = EXPERIMENT_NAME + ".pkl"
 

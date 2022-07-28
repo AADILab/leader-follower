@@ -68,5 +68,6 @@ class LearningModule():
 
         observations = {}
         for agent_id in range(bm.num_leaders):
-            observations[agent_id] = np.hstack((centroids_obs_np[agent_id], all_goal_obs[agent_id].flatten()))
+            # observations[agent_id] = np.hstack((centroids_obs_np[agent_id], all_goal_obs[agent_id].flatten()))
+            observations[agent_id] = all_goal_obs[agent_id].flatten()
         return observations
