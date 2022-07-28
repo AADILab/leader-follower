@@ -8,16 +8,17 @@ from sys import exit
 import pygame
 
 
-PLOT_SCORES = False
+PLOT_SCORES = True
 PLAY_ENV = True
+FILENAME = "trial_3.pkl"
 
-save_data = pickle.load(open("trial_1.pkl", "rb"))
+save_data = pickle.load(open(FILENAME, "rb"))
 scores_list = save_data["scores_list"]
 final_scores = save_data["final_scores"]
 final_population = save_data["final_population"]
 env_kwargs = save_data["env_kwargs"]
 
-print("scores_list: ", scores_list)
+# print("scores_list: ", scores_list)
 if PLOT_SCORES:
     plt.plot(scores_list)
     plt.show()
@@ -28,7 +29,7 @@ if PLAY_ENV:
     env_kwargs["render_mode"] = "human"
     env = BoidsEnv(**env_kwargs)
     refresh_time = 1/env.FPS
-    for count, genome in enumerate(final_population[:1]):
+    for count, genome in enumerate(final_population[:]):
         print("Playing genome ",count)
         network = createNNfromWeights(genome)
         observations = env.reset()
