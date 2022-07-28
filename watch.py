@@ -2,6 +2,7 @@ import pickle
 import matplotlib.pyplot as plt
 from env_lib import BoidsEnv
 from network_lib import createNNfromWeights
+from learner_lib import computeAction
 from time import time, sleep
 from sys import exit
 
@@ -40,7 +41,7 @@ if PLAY_ENV:
                     print("Shutdown command recieved. Shutting down.")
                     shutdown = True
             if shutdown: exit()
-            actions = {agent: network.forward(observations[agent]) for agent in env.possible_agents}
+            actions = {agent: computeAction(network, observations[agent], env) for agent in env.possible_agents}
             observations, rewards, dones, infos = env.step(actions)
             env.render()
             loop_time = time() - start_time
