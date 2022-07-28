@@ -74,7 +74,8 @@ class Worker():
             if draw:
                 self.env.render()
             # Collect actions for all agents with each agent using the same genome to guide its action
-            actions = {agent_name: self.net.forward(np.array(observations[agent_name])) for agent_name in self.env.possible_agents}
+            # actions = {agent_name: self.net.forward(np.array(observations[agent_name])) for agent_name in self.env.possible_agents}
+            actions = {agent_name: self.calculateAction(observations[agent_name]) for agent_name in self.env.possible_agents}
             # Step forward the environment
             observations, rewards, dones, _  = self.env.step(actions)
             # Save done
@@ -85,6 +86,14 @@ class Worker():
         self.env.close()
 
         return rewards["team"][0]
+
+    def calculateAction(self, observation):
+        out = self.net.forward(observation)
+        # Map [-1,+1] to [-pi,+pi]
+        heading = out[0] * np.pi
+        # Map [-1,+1] to [0, max_velocity]
+        velocity = (out[1]+1.0)/2*self.env.bm.max_velocity
+        return np.array([heading, velocity])
 
 class Learner():
     def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, num_workers: int = 10, env_kwargs: Dict = {}) -> None:

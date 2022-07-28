@@ -125,7 +125,6 @@ class BoidsEnv(ParallelEnv):
         self.step_count = 0
         self.bm.reset()
         observations = self.getObservations()
-        print(observations)
         return observations
 
     def getObservations(self):
