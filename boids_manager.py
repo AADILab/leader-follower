@@ -38,23 +38,43 @@ class BoidsManager():
         self.use_momentum = use_momentum
         self.dt = dt
 
-        # Setup boid positions
-        self.positions = self.setup_positions(positions)
-
-        # Setup boid headings. Headings are represented in map frame.
-        self.headings = self.setup_headings(headings)
-
-        # Setup boid velocities. Velocities range from 0 to max velocity
-        self.velocities = self.setup_velocities(velocities)
-
-        # Setup underlying map structure for observations
-        self.map = Map(self.map_size, self.radius_attraction, self.positions)
-
         # Setup counterfactual ghost boids for wall avoidance
         # This isn't being used for anything right now,
         # but I'm keeping it around in case I need it later.
         self.ghost_positions = self.generate_ghost_positions()
         self.ghost_map = Map(self.map_size, self.radius_repulsion, self.ghost_positions)
+
+        self.init_positions = positions
+        self.init_headings = headings
+        self.init_velocities = velocities
+
+        # Setup boid positions
+        self.positions = self.setup_positions(self.init_positions)
+
+        # Setup boid headings. Headings are represented in map frame.
+        self.headings = self.setup_headings(self.init_headings)
+
+        # Setup boid velocities. Velocities range from 0 to max velocity
+        self.velocities = self.setup_velocities(self.init_velocities)
+
+        # Setup underlying map structure for observations
+        self.map = Map(self.map_size, self.radius_attraction, self.positions)
+
+    def reset(self):
+        """Reset simulation state with initial conditions. Random variables will be used for variables where no initial condition was specified."""
+        # Setup boid positions
+        self.positions = self.setup_positions(self.init_positions)
+
+        # Setup boid headings. Headings are represented in map frame.
+        self.headings = self.setup_headings(self.init_headings)
+
+        # Setup boid velocities. Velocities range from 0 to max velocity
+        self.velocities = self.setup_velocities(self.init_velocities)
+
+        # Reset the map with the new positions
+        self.map.reset(self.positions)
+
+        return None
 
     def generate_ghost_positions(self):
         """Generate ghost positions along the edges of the map, spaced out by the ghost density."""
@@ -83,7 +103,7 @@ class BoidsManager():
             elif velocities.shape != (self.total_agents, 1):
                 raise Exception("velocities must be shape (total agents, 1)")
             else:
-                return velocities
+                return velocities.copy()
 
     def setup_headings(self, headings):
         if headings is None:
@@ -95,7 +115,7 @@ class BoidsManager():
             elif headings.shape != (self.total_agents, 1):
                 raise Exception("headings must be shape (total agents, 1)")
             else:
-                return headings
+                return headings.copy()
 
     def setup_positions(self, positions):
         if positions is None:
@@ -111,7 +131,7 @@ class BoidsManager():
             elif positions.shape != (self.total_agents, 2):
                 raise Exception("positions must be shape (total agents, 1)")
             else:
-                return positions
+                return positions.copy()
 
     def get_observable_boid_ids(self, boid_id):
         # Grab the observable boids in that position

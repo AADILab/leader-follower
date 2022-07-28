@@ -119,13 +119,11 @@ class BoidsEnv(ParallelEnv):
         Reset needs to initialize the `agents` attribute and must set up the
         environment so that render(), and step() can be called without issues.
 
-        Here it initializes the `num_moves` variable which counts the number of
-        hands that are played.
-
         Returns the observations for each agent
         '''
         self.agents = self.possible_agents[:]
         self.step_count = 0
+        self.bm.reset()
         observations = self.getObservations()
         return observations
 
