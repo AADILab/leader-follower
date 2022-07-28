@@ -21,7 +21,7 @@ class BoidsManager():
 
         # Save input variables to internal variables
         self.max_velocity = max_velocity
-        self.min_velocity = 0.25*max_velocity
+        self.min_velocity = 0
         self.max_acceleration = max_acceleration
         self.max_angular_velocity = max_angular_velocity
         self.radius_repulsion = radius_repulsion

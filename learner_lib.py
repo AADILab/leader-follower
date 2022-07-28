@@ -92,7 +92,7 @@ class Worker():
         return rewards["team"][0]
 
 class Learner():
-    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, num_workers: int = 10, env_kwargs: Dict = {"num_leaders": 10, "num_followers": 90, "FPS": 60, "num_steps": 60*60, "render_mode": 'none'}) -> None:
+    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, num_workers: int = 10, env_kwargs: Dict = {}) -> None:
         # Set variables
         self.population_size = population_size
         self.num_parents = num_parents
