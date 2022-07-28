@@ -123,6 +123,10 @@ class BoidsManager():
     def get_follower_positions(self):
         return self.positions[:self.num_followers]
 
+    def get_leader_positions(self):
+        """Get positions of leader agents"""
+        return self.positions[self.num_followers:]
+
     def get_boid_positions(self, ids):
         return self.positions[ids]
 

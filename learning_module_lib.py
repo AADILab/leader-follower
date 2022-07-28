@@ -38,20 +38,21 @@ class LearningModule():
         # This function takes in possible_agents so I can assign agent-based rewards later if I want to
 
         # Calculate temporal weight
-        wt = 1 - np.cos(np.pi * step_count/total_steps)
+        # wt = 1 - np.cos(np.pi * step_count/total_steps)
 
         # Calculate average distance with temporal weight
         reward_list = []
-        follower_positions = bm.get_follower_positions()
+        # follower_positions = bm.get_follower_positions()
+        leader_positions = bm.get_leader_positions()
         for goal_location in self.goal_locations:
             # Calculate distance between the goal location and all followers
-            distances = np.linalg.norm(goal_location - follower_positions)
+            distances = np.linalg.norm(goal_location - leader_positions)
 
-            # Weight these distances by the temporal weight and overall steps and number of followers
-            weighted_distances = distances * wt / total_steps / bm.num_followers
+            # # Weight these distances by the temporal weight and overall steps and number of followers
+            # weighted_distances = distances * wt / total_steps / bm.num_leaders
 
             # Average the distances for this timestep
-            avg_distance = np.average(weighted_distances)
+            avg_distance = np.average(distances)
 
             # Append the average distance for this particular goal location
             reward_list.append(avg_distance)

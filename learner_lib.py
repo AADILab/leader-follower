@@ -59,6 +59,7 @@ class Worker():
 
         except KeyboardInterrupt:
             print(f"Interrupt on Worker {self.id}, Genome {self.genome_id} !")
+            self.stop_event.set()
         except Exception as e:
             print(f"Error on Worker {self.id}, Genome {self.genome_id}! Exiting program. Error: {e}\nFull Traceback:\n{traceback.format_exc()}")
             self.stop_event.set()
@@ -73,7 +74,7 @@ class Worker():
         # Run network on boids environment
         observations = self.env.reset()
         done = False
-        cumulative_reward = 0
+        # cumulative_reward = 0
         while not done:
             if draw:
                 self.env.render()
@@ -85,10 +86,10 @@ class Worker():
             done = True in dones.values()
             # Add the team reward to the cumulative reward
             # Need [0] index because rewards are an array of rewards. One for each objective.
-            cumulative_reward += rewards["team"][0]
+            # cumulative_reward += rewards["team"][0]
         self.env.close()
 
-        return cumulative_reward
+        return rewards["team"][0]
 
 class Learner():
     def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, num_workers: int = 10, env_kwargs: Dict = {"num_leaders": 10, "num_followers": 90, "FPS": 60, "num_steps": 60*60, "render_mode": 'none'}) -> None:
@@ -97,6 +98,7 @@ class Learner():
         self.num_parents = num_parents
         self.num_children = population_size - num_parents
         self.sigma_mutation = sigma_mutation
+        self.score_list = []
 
         # Initialize population
         self.input_size = 4
@@ -156,10 +158,14 @@ class Learner():
             new_genome.append(layer + np.random.normal(0.0, self.sigma_mutation, size=(layer.shape)))
         return new_genome
 
+    def sortPopulation(self, scores: List[float]):
+        """Sort population so that lower fitness policies are moved to the front"""
+        return [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population))]
+
     def mutatePopulation(self, scores) -> List[Genome]:
         """Generate a new population based on the fitness scores of the genomes in the population."""
         # Sort population so that lowest scoring genomes are at the front of the list
-        sorted_population = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population))]
+        sorted_population = self.sortPopulation(scores)
 
         # Trying to minimize distance of swarm to objective, so lower scores are better
         # Keep parents with lowest scores
@@ -197,13 +203,7 @@ class Learner():
                 fitnesses[id] = fit
             except queue.Empty:
                 pass
-                # print("Timeout reached on waiting for a response!")
-                # print(
-                #     f"Currently received {sum(received)} out of {len(received)} responses!"
-                # )
-                # print(
-                #     f"Work: {self.work_queue.qsize()}, Fitnesses: {self.fitness_queue.qsize()}"
-                # )
+
         if self.stop_event.is_set():
             print("Stop event detected. Exiting main program.")
             exit()
@@ -218,10 +218,16 @@ class Learner():
         self.population = self.mutatePopulation(fitnesses)
         return min(fitnesses)
 
+    def getFinalMetrics(self):
+        final_scores = self.evaluatePopulation()
+        final_scores_sorted = sorted(final_scores)
+        final_population_sorted = self.sortPopulation(final_scores)
+        return self.score_list, final_scores_sorted, final_population_sorted
+
     def train(self, num_generations: int):
         """Train the learner for a set number of generations. Save performance data."""
-        score_list = []
         for _ in tqdm(range(num_generations)):
             min_score = self.step()
-            score_list.append(min_score)
-        return score_list
+            self.score_list.append(min_score)
+
+        return None

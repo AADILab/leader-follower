@@ -48,7 +48,7 @@ positions[num_followers:, 1] += np.random.uniform(num_leaders, size=(num_leaders
 headings = np.random.uniform(0, 2*np.pi, size = (num_followers+num_leaders, 1))
 headings[num_followers:] = np.pi/2
 
-env = BoidsEnv(num_leaders = num_leaders, num_followers = num_followers, FPS=60, follower_inds=[], render_mode='human', map_size=map_size, positions = positions, headings = headings)
+env = BoidsEnv(num_leaders = num_leaders, num_followers = num_followers, FPS=60, num_steps= 60*60, follower_inds=[], render_mode='human', map_size=map_size, positions = positions, headings = headings)
 
 # Reset env for first round of observations
 observations = env.reset()
@@ -66,3 +66,4 @@ while not shutdown:
         actions = {agent: policy(observations[agent], agent) for agent in env.possible_agents}
         observations, rewards, dones, infos = env.step(actions)
         env.render()
+        print(rewards["team"])

@@ -48,6 +48,14 @@ class NN():
             np.random.normal(self.mean, self.std_dev, size=(self.num_hidden+1, self.num_outputs))
             ]
 
+def createNNfromWeights(weights: List[np.ndarray]):
+    num_inputs = weights[0].shape[0]-1
+    num_hidden = weights[0].shape[1]
+    num_outputs = weights[1].shape[1]
+    net = NN(num_inputs, num_hidden, num_outputs)
+    net.setWeights(weights)
+    return net
+
 if __name__ == "__main__":
     nn = NN(num_inputs=4, num_hidden=10, num_outputs=2)
     Y = nn.forward(np.array([1,2,3,4]))
