@@ -9,8 +9,8 @@ start_headings = np.array([[-np.pi/2]])
 num_generations = 100
 
 start = time()
-env_kwargs = {"num_leaders": 1, "num_followers": 0, "FPS": 60, "num_steps": 10*60, "render_mode": 'none'}
-learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.25, env_kwargs={"num_leaders": 1, "num_followers": 0, "FPS": 60, "num_steps": 5*60, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings})
+env_kwargs = {"num_leaders": 1, "num_followers": 0, "FPS": 60, "num_steps": 5*60, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
+learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.25, env_kwargs=env_kwargs)
 
 try:
     learner.train(num_generations=num_generations)
