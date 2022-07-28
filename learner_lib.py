@@ -1,22 +1,16 @@
-from ast import Call
 import queue
 from typing import List, Dict, Optional, Callable
 import random
 import traceback
-from sys import exit
-
-# import torch
-# import torch.nn as nn
 from tqdm import tqdm
 import numpy as np
-from multiprocessing import Event, Process, Queue, Manager
+from multiprocessing import Event, Process, Queue
 from time import time
 from network_lib import NN
 
 from env_lib import BoidsEnv
 
 # Genome encodes weights of a network as list of tensors
-# Genome = List[torch.TensorType]
 Genome = List[np.array]
 
 def generateSeed():
@@ -99,12 +93,14 @@ class Learner():
         self.num_children = population_size - num_parents
         self.sigma_mutation = sigma_mutation
         self.score_list = []
+        self.iterations = 0
 
         # Initialize population
         self.input_size = 4
         self.hidden_size = 6
         self.out_size = 2
         self.population = [self.randomGenome() for _ in range(self.population_size)]
+        self.fitnesses = [np.inf for _ in range(self.population_size)]
 
         # Initialize environment
         self.env_kwargs = env_kwargs
@@ -204,30 +200,31 @@ class Learner():
             except queue.Empty:
                 pass
 
-        if self.stop_event.is_set():
-            print("Stop event detected. Exiting main program.")
-            exit()
         return fitnesses
 
     def step(self) -> float:
         """Step forward the learner by a generation and update the population."""
         # Evaluate all the genomes in the population
         # scores = [self.evaluateGenome(genome) for genome in self.population]
-        fitnesses = self.evaluatePopulation()
+        self.fitnesses = self.evaluatePopulation()
         # Mutate the population according to the fitness scores
-        self.population = self.mutatePopulation(fitnesses)
-        return min(fitnesses)
+        self.population = self.mutatePopulation(self.fitnesses)
+        # Track times step() has been called
+        self.iterations += 1
+        return None
 
     def getFinalMetrics(self):
-        final_scores = self.evaluatePopulation()
-        final_scores_sorted = sorted(final_scores)
-        final_population_sorted = self.sortPopulation(final_scores)
-        return self.score_list, final_scores_sorted, final_population_sorted
+        final_scores_sorted = sorted(self.fitnesses)
+        final_population_sorted = self.sortPopulation(self.fitnesses)
+        finished_iterations = self.iterations
+        return self.score_list, final_scores_sorted, final_population_sorted, finished_iterations
 
     def train(self, num_generations: int):
-        """Train the learner for a set number of generations. Save performance data."""
+        """Train the learner for a set number of generations. Track performance data."""
         for _ in tqdm(range(num_generations)):
-            min_score = self.step()
+            self.step()
+            min_score = min(self.fitnesses)
+            # if self.stop_event.is_set():
+            #     print("Stop event was set. Shutting down main program. ")
             self.score_list.append(min_score)
-
         return None

@@ -11,7 +11,11 @@ import pygame
 PLOT_SCORES = False
 PLAY_ENV = True
 
-scores_list, final_scores, final_population, env_kwargs = pickle.load(open("trial_0.pkl", "rb"))
+save_data = pickle.load(open("trial_0.pkl", "rb"))
+scores_list = save_data["scores_list"]
+final_scores = save_data["final_scores"]
+final_population = save_data["final_population"]
+env_kwargs = save_data["env_kwargs"]
 
 print("scores_list: ", scores_list)
 if PLOT_SCORES:
