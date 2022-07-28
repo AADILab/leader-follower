@@ -6,6 +6,7 @@ from tqdm import tqdm
 import numpy as np
 from multiprocessing import Event, Process, Queue
 from time import time
+from copy import deepcopy
 from network_lib import NN
 
 from env_lib import BoidsEnv
@@ -142,6 +143,16 @@ class Learner():
                 w.join()
         except:
             pass
+
+    def resetPopulation(self, population: Optional[List[NN]] = None):
+        # Assumptions: New population is the same size as default population. Networks in new population have same size as default size.
+        if population is None:
+            self.population = [self.randomGenome() for _ in range(self.population_size)]
+        else:
+            self.population = deepcopy(population)
+        self.fitnesses = [np.inf for _ in range(self.population_size)]
+        return None
+
 
     def randomGenome(self):
         # Create a NN with random weights and get the weights as the genome

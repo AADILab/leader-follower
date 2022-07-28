@@ -11,7 +11,7 @@ import pygame
 PLOT_SCORES = False
 PLAY_ENV = True
 
-save_data = pickle.load(open("trial_0.pkl", "rb"))
+save_data = pickle.load(open("trial_1.pkl", "rb"))
 scores_list = save_data["scores_list"]
 final_scores = save_data["final_scores"]
 final_population = save_data["final_population"]

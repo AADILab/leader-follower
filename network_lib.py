@@ -46,7 +46,10 @@ class NN():
         return [
             np.random.normal(self.mean, self.std_dev, size=(self.num_inputs+1, self.num_hidden)),
             np.random.normal(self.mean, self.std_dev, size=(self.num_hidden+1, self.num_outputs))
-            ]
+        ]
+
+    def shape(self):
+        return (self.num_inputs, self.num_hidden, self.num_outputs)
 
 def createNNfromWeights(weights: List[np.ndarray]):
     num_inputs = weights[0].shape[0]-1
