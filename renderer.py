@@ -2,8 +2,10 @@ import numpy as np
 import pygame
 import pygame.gfxdraw
 
+from learning_module_lib import LearningModule
+
 class Renderer():
-    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, render_centroid_observations = False, render_POI_observations = False, render_mode = 'human') -> None:
+    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, POIs = None, render_centroid_observations = False, render_POI_observations = False, render_POIs = False, render_mode = 'human') -> None:
         # Save variables
         self.num_leaders = num_leaders
         self.num_followers = num_followers
@@ -14,6 +16,8 @@ class Renderer():
         self.follower_inds = self.setupFollowerInd(follower_inds)
         self.render_centroid_observations = render_centroid_observations
         self.render_POI_observations = render_POI_observations
+        self.render_POIs = render_POIs
+        self.POIs = None
 
         # Set useful variables
         self.follower_color = (0,120,250)
@@ -102,11 +106,20 @@ class Renderer():
             # In the future, consider reworking this so Renderer doesn't access the BoidsManager directly
             self.renderCentroidObservations(bm, observations, all_obs_positions, possible_agents)
         if self.render_POI_observations and self.num_leaders > 0:
+            print("self.render_POI_observations and self.num_leaders > 0")
             self.renderPOIObservations(bm, lm, observations, possible_agents)
+        if self.render_POIs:
+            self.renderPOIs(lm)
+
         pygame.display.flip()
 
     def getPixels(self, units):
         return np.round(units * self.pixels_per_unit).astype(int)
+
+    def renderPOIs(self, lm: LearningModule):
+        for poi in lm.goal_locations:
+            # poi_pix_location = self.getPixelCoords(poi)
+            self.renderPlusSign(poi, (0,100,0))
 
     def renderCentroidObservations(self, bm, observations, all_obs_positions, possible_agents):
         for leader_id in range(self.num_leaders):

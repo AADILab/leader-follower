@@ -9,9 +9,9 @@ from sys import exit
 import pygame
 
 
-PLOT_SCORES = True
+PLOT_SCORES = False
 PLAY_ENV = True
-FILENAME = "trial_3.pkl"
+FILENAME = "trial_4.pkl"
 
 save_data = pickle.load(open(FILENAME, "rb"))
 scores_list = save_data["scores_list"]
@@ -19,7 +19,6 @@ final_scores = save_data["final_scores"]
 final_population = save_data["final_population"]
 env_kwargs = save_data["env_kwargs"]
 
-# print("scores_list: ", scores_list)
 if PLOT_SCORES:
     plt.plot(scores_list)
     plt.show()
@@ -29,6 +28,7 @@ if PLAY_ENV:
     shutdown = False
     env_kwargs["render_mode"] = "human"
     env = BoidsEnv(**env_kwargs)
+    env.renderer.render_POIs = True
     refresh_time = 1/env.FPS
     for count, genome in enumerate(final_population[:]):
         print("Playing genome ",count)
