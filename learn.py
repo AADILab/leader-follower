@@ -3,8 +3,8 @@ from time import time
 import numpy as np
 import pickle
 
-NUM_GENERATIONS = 1000
-EXPERIMENT_NAME = "trial_1"
+NUM_GENERATIONS = 100
+EXPERIMENT_NAME = "trial_2"
 
 filename = EXPERIMENT_NAME + ".pkl"
 
