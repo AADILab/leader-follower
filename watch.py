@@ -11,7 +11,7 @@ import pygame
 
 PLOT_SCORES = False
 PLAY_ENV = True
-FILENAME = "trial_4.pkl"
+FILENAME = "trial_5.pkl"
 
 save_data = pickle.load(open(FILENAME, "rb"))
 scores_list = save_data["scores_list"]
