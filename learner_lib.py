@@ -96,7 +96,7 @@ class Worker():
         return rewards["team"][0]
 
 class Learner():
-    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, num_workers: int = 10, env_kwargs: Dict = {}) -> None:
+    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, nn_inputs: int, nn_hidden: int, nn_outputs: int, num_workers: int = 10, env_kwargs: Dict = {}) -> None:
         # Set variables
         self.population_size = population_size
         self.num_parents = num_parents
@@ -106,9 +106,9 @@ class Learner():
         self.iterations = 0
 
         # Initialize population
-        self.input_size = 2
-        self.hidden_size = 6
-        self.out_size = 2
+        self.input_size = nn_inputs
+        self.hidden_size = nn_hidden
+        self.out_size = nn_outputs
         self.population = [self.randomGenome() for _ in range(self.population_size)]
         self.fitnesses = [np.inf for _ in range(self.population_size)]
 

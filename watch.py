@@ -9,9 +9,9 @@ from sys import exit
 import pygame
 
 
-PLOT_SCORES = False
+PLOT_SCORES = True
 PLAY_ENV = True
-FILENAME = "trial_5.pkl"
+FILENAME = "trial_11.pkl"
 
 save_data = pickle.load(open(FILENAME, "rb"))
 scores_list = save_data["scores_list"]
