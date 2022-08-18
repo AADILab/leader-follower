@@ -40,7 +40,7 @@ if PLAY_ENV:
     env.renderer.render_POIs = True
     refresh_time = 1/env.FPS
     for count, genome in enumerate(final_population[:]):
-        print("Playing genome ",count)
+        print("Playing genome ",count+1)
         network = createNNfromWeights(genome)
         observations = env.reset()
         for _ in range(env.num_steps):
