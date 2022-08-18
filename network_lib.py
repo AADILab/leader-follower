@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 import numpy as np
 
 class NN():
@@ -12,6 +12,7 @@ class NN():
         # Number of layers
         self.num_layers = len(self.shape)-1
         self.weights = self.randomWeights()
+        self.weights_shape = calculateWeightShape(self.weights)
 
     def randomWeights(self)->List[np.ndarray]:
         weights = []
@@ -58,17 +59,25 @@ class NN():
         return (self.num_inputs, self.num_hidden, self.num_outputs)
 
 def createNNfromWeights(weights: List[np.ndarray]):
-    dims = [w.shape for w in weights]
-    num_inputs = dims[0][0]
-    num_hidden = [d[0] for d in dims[1:]]
-    num_outputs = dims[-1][1]
+    print("createNNfromWeights()")
+    weight_shape = calculateWeightShape(weights)
+    print("w shape: ", weight_shape)
+    num_inputs = weight_shape[0][0]-1
+    num_hidden = [d[0]-1 for d in weight_shape[1:]]
+    num_outputs = weight_shape[-1][1]
     net = NN(num_inputs, num_hidden, num_outputs)
+    print("net shape ", net.shape)
     net.setWeights(weights)
     return net
+
+def calculateWeightShape(weights: List[np.ndarray])->Tuple[Tuple[int]]:
+    return tuple([w.shape for w in weights])
 
 if __name__ == "__main__":
     # 4 inputs, 10 hidden, 2 outputs
     # Weights should be shape (5, 10), (11, 2)
     nn = NN(num_inputs=4, num_hidden=10, num_outputs=2)
+    print(nn.shape)
+    print(nn.weights_shape)
     Y = nn.forward(np.array([1,2,3,4]))
     print(Y)
