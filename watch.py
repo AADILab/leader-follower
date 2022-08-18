@@ -1,7 +1,7 @@
 import pickle
 import matplotlib.pyplot as plt
 from env_lib import BoidsEnv
-from network_lib import createNNfromWeights, calculateWeightShape
+from network_lib import createNNfromWeights
 from learner_lib import computeAction
 from time import time, sleep
 from sys import exit
@@ -42,6 +42,7 @@ if PLAY_ENV:
     for count, genome in enumerate(final_population[:]):
         print("Playing genome ",count+1)
         network = createNNfromWeights(genome)
+        print("Number of weights in network: ", network.total_weights)
         observations = env.reset()
         for _ in range(env.num_steps):
             start_time = time()

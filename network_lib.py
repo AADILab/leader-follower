@@ -13,6 +13,7 @@ class NN():
         self.num_layers = len(self.shape)-1
         self.weights = self.randomWeights()
         self.weights_shape = calculateWeightShape(self.weights)
+        self.total_weights = calculateWeightSize(self.weights)
 
     def randomWeights(self)->List[np.ndarray]:
         weights = []
@@ -69,6 +70,9 @@ def createNNfromWeights(weights: List[np.ndarray]):
 
 def calculateWeightShape(weights: List[np.ndarray])->Tuple[Tuple[int]]:
     return tuple([w.shape for w in weights])
+
+def calculateWeightSize(weights: List[np.ndarray])->Tuple[Tuple[int]]:
+    return sum([w.size for w in weights])
 
 if __name__ == "__main__":
     # 4 inputs, 10 hidden, 2 outputs
