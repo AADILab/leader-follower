@@ -106,7 +106,6 @@ class Renderer():
             # In the future, consider reworking this so Renderer doesn't access the BoidsManager directly
             self.renderCentroidObservations(bm, observations, all_obs_positions, possible_agents)
         if self.render_POI_observations and self.num_leaders > 0:
-            print("self.render_POI_observations and self.num_leaders > 0")
             self.renderPOIObservations(bm, lm, observations, possible_agents)
         if self.render_POIs:
             self.renderPOIs(lm)

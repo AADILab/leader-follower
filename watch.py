@@ -14,6 +14,7 @@ PLOT_SCORES = True
 PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
 RENDER_FOLLOWER_OBSERVATION = False
+RENDER_LEADER_OBSERVATION = True
 # TRIALNAME = "trial_68"
 
 if not RENDER_FOLLOWER_OBSERVATION:
@@ -38,6 +39,8 @@ if PLAY_ENV:
     env_kwargs["render_mode"] = "human"
     env = BoidsEnv(**env_kwargs)
     env.renderer.render_POIs = True
+    env.renderer.render_centroid_observations = True
+    env.renderer.render_POI_observations = True
     refresh_time = 1/env.FPS
     for count, genome in enumerate(final_population[:]):
         print("Playing genome ",count+1)
