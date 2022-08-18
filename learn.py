@@ -21,7 +21,7 @@ start_headings = np.array([[-np.pi/2,-np.pi/2,-np.pi,-np.pi/2,-np.pi/2,-np.pi]])
 
 start = time()
 env_kwargs = {"num_leaders": 3, "num_followers": 3, "FPS": 5, "num_steps": 6*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
-learner = Learner(population_size=100, num_parents=5, sigma_mutation=0.1, nn_inputs=4, nn_hidden=5, nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
+learner = Learner(population_size=100, num_parents=5, sigma_mutation=0.1, nn_inputs=4, nn_hidden=[5,5], nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
 
 try:
     learner.train(num_generations=NUM_GENERATIONS)
