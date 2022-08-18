@@ -73,12 +73,8 @@ class Worker():
 
     def evaluateGenome(self, genome: Genome, seed: int = 0, draw: bool = False) -> float:
         """Load genome into boids environment and calculate a fitness score."""
-        print(str(self.id)+"evaluateGenome()")
         # Load network with weights from genome
         self.net.setWeights(genome)
-        print(str(self.id)+"net shape: ", self.net.shape)
-        print(str(self.id)+"net w shape: ", self.net.weights_shape)
-        print(str(self.id)+"g shape: ", calculateWeightShape(genome))
 
         # Run network on boids environment
         observations = self.env.reset()
