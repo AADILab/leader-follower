@@ -79,7 +79,7 @@ class Worker():
         # Run network on boids environment
         observations = self.env.reset()
         done = False
-        # cumulative_reward = 0
+        cumulative_reward = 0
         while not done:
             if draw:
                 self.env.render()
@@ -92,10 +92,11 @@ class Worker():
             done = True in dones.values()
             # Add the team reward to the cumulative reward
             # Need [0] index because rewards are an array of rewards. One for each objective.
-            # cumulative_reward += rewards["team"][0]
+            cumulative_reward += rewards["team"][0]
         self.env.close()
 
-        return rewards["team"][0]
+        # return rewards["team"][0]
+        return cumulative_reward
 
 class Learner():
     def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, nn_inputs: int, nn_hidden: int, nn_outputs: int, num_workers: int = 10, init_population = None, env_kwargs: Dict = {}) -> None:

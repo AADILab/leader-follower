@@ -13,8 +13,8 @@ import pygame
 PLOT_SCORES = True
 PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
-RENDER_FOLLOWER_OBSERVATION = True
-# TRIALNAME = "trial_28"
+RENDER_FOLLOWER_OBSERVATION = False
+# TRIALNAME = "trial_68"
 
 if not RENDER_FOLLOWER_OBSERVATION:
     f_inds = []
