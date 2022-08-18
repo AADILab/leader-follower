@@ -17,9 +17,10 @@ class LearningModule():
     """This class will contain methods for getting the observations and rewards for leader agents.
     This module will contain all information related to the swarm objectives.
     """
-    def __init__(self, goal_locations: np.ndarray) -> None:
+    def __init__(self, goal_locations: np.ndarray, observe_followers: bool = True) -> None:
         self.goal_locations = goal_locations
         self.num_goals = goal_locations.shape[0]
+        self.observe_followers = observe_followers
 
     @functools.lru_cache(maxsize=None)
     def observation_space(self):
@@ -68,6 +69,8 @@ class LearningModule():
 
         observations = {}
         for agent_id in range(bm.num_leaders):
-            # observations[agent_id] = np.hstack((centroids_obs_np[agent_id], all_goal_obs[agent_id].flatten()))
-            observations[agent_id] = all_goal_obs[agent_id].flatten()
+            if self.observe_followers:
+                observations[agent_id] = np.hstack((centroids_obs_np[agent_id], all_goal_obs[agent_id].flatten()))
+            else:
+                observations[agent_id] = all_goal_obs[agent_id].flatten()
         return observations

@@ -39,7 +39,7 @@ def raw_env():
 class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human', 'none'], "name": "boids"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, headings = None, velocities = None, follower_inds = None, learning_module: LearningModule = None, num_steps = 20000, render_mode = 'human', map_size = np.array([50,50])):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, headings = None, velocities = None, follower_inds = None, learning_module: LearningModule = None, observe_followers = True, num_steps = 20000, render_mode = 'human', map_size = np.array([50,50])):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -48,6 +48,8 @@ class BoidsEnv(ParallelEnv):
 
         These attributes should not be changed after initialization.
         '''
+        self.observe_followers = observe_followers
+
         # Only leaders are included in self.possible_agents
         # because they are the learners
         self.possible_agents = ["leader_" + str(r) for r in np.arange(num_leaders)+1]
@@ -74,7 +76,7 @@ class BoidsEnv(ParallelEnv):
     def setupLearningModule(self, learning_module):
         if learning_module is None:
             # return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
-            return LearningModule(goal_locations=np.array([[10.,10.]]))
+            return LearningModule(goal_locations=np.array([[10.,10.]]), observe_followers=self.observe_followers)
         else:
             return learning_module
 

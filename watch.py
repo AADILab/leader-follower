@@ -5,15 +5,17 @@ from network_lib import createNNfromWeights
 from learner_lib import computeAction
 from time import time, sleep
 from sys import exit
+from file_helper import getLatestTrialName, loadTrial
 
 import pygame
 
 
 PLOT_SCORES = True
 PLAY_ENV = True
-FILENAME = "trial_11.pkl"
+TRIALNAME = getLatestTrialName()
+# TRIALNAME = "trial_28"
 
-save_data = pickle.load(open(FILENAME, "rb"))
+save_data = loadTrial(TRIALNAME)
 scores_list = save_data["scores_list"]
 final_scores = save_data["final_scores"]
 final_population = save_data["final_population"]
