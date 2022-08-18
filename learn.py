@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 from file_helper import loadPopulation, getNewTrialName
 
-NUM_GENERATIONS = 30
+NUM_GENERATIONS = 50
 EXPERIMENT_NAME = getNewTrialName()
 LOAD_POPULATION = None
 
@@ -15,13 +15,13 @@ else:
 
 filename = EXPERIMENT_NAME + ".pkl"
 
-start_positions = np.array([[40.,40.], [10,40],[40,10]])
-start_velocities = np.array([[0.,0.,0.]]).T
-start_headings = np.array([[-np.pi/2,-np.pi/2,-np.pi]]).T
+start_positions = np.array([[30,30], [20,30], [30,20], [40.,40.], [10,40], [40,10],])
+start_velocities = np.array([[0.,0.,0.,0.,0.,0.]]).T
+start_headings = np.array([[-np.pi/2,-np.pi/2,-np.pi,-np.pi/2,-np.pi/2,-np.pi]]).T
 
 start = time()
-env_kwargs = {"num_leaders": 3, "num_followers": 0, "FPS": 5, "num_steps": 6*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
-learner = Learner(population_size=100, num_parents=5, sigma_mutation=0.1, nn_inputs=2, nn_hidden=5, nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
+env_kwargs = {"num_leaders": 3, "num_followers": 3, "FPS": 5, "num_steps": 6*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
+learner = Learner(population_size=100, num_parents=5, sigma_mutation=0.1, nn_inputs=4, nn_hidden=5, nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
 
 try:
     learner.train(num_generations=NUM_GENERATIONS)

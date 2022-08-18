@@ -13,13 +13,20 @@ import pygame
 PLOT_SCORES = True
 PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
+RENDER_FOLLOWER_OBSERVATION = True
 # TRIALNAME = "trial_28"
+
+if not RENDER_FOLLOWER_OBSERVATION:
+    f_inds = []
+else:
+    f_inds = None
 
 save_data = loadTrial(TRIALNAME)
 scores_list = save_data["scores_list"]
 final_scores = save_data["final_scores"]
 final_population = save_data["final_population"]
 env_kwargs = save_data["env_kwargs"]
+env_kwargs["follower_inds"] = f_inds
 
 if PLOT_SCORES:
     plt.plot(scores_list)

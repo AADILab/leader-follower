@@ -43,11 +43,12 @@ class LearningModule():
 
         # Calculate average distance with temporal weight
         reward_list = []
-        # follower_positions = bm.get_follower_positions()
-        leader_positions = bm.get_leader_positions()
+        follower_positions = bm.get_follower_positions()
+        # leader_positions = bm.get_leader_positions()
+        # all_positions = bm.positions.copy()
         for goal_location in self.goal_locations:
             # Calculate distance between the goal location and all followers
-            distances = np.linalg.norm(goal_location - leader_positions)
+            distances = np.linalg.norm(goal_location - follower_positions, axis=0)
 
             # # Weight these distances by the temporal weight and overall steps and number of followers
             # weighted_distances = distances * wt / total_steps / bm.num_leaders
