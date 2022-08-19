@@ -1,11 +1,10 @@
-from torch import float64
 from learner_lib import Learner
 from time import time
 import numpy as np
 import pickle
 from file_helper import loadPopulation, getNewTrialName, getLatestTrialName
 
-NUM_GENERATIONS = 100
+NUM_GENERATIONS = 500
 EXPERIMENT_NAME = getNewTrialName()
 LOAD_POPULATION = None
 # LOAD_POPULATION = getLatestTrialName()
@@ -26,7 +25,7 @@ start_headings = np.random.uniform(0, 2*np.pi, size=(4,1))
 
 start = time()
 env_kwargs = {"num_leaders": 1, "num_followers": 3, "FPS": 5, "num_steps": 10*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
-learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.1, nn_inputs=4, nn_hidden=[10], nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
+learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.15, nn_inputs=4, nn_hidden=[10], nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
 
 try:
     learner.train(num_generations=NUM_GENERATIONS)
