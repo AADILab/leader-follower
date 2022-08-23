@@ -15,7 +15,7 @@ PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
 RENDER_FOLLOWER_OBSERVATION = False
 RENDER_LEADER_OBSERVATION = True
-# TRIALNAME = "trial_68"
+# TRIALNAME = "trial_149"
 
 if not RENDER_FOLLOWER_OBSERVATION:
     f_inds = []
