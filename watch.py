@@ -1,11 +1,10 @@
-import pickle
 import matplotlib.pyplot as plt
-from env_lib import BoidsEnv
-from network_lib import createNNfromWeights
-from learner_lib import computeAction
+from lib.env_lib import BoidsEnv
+from lib.network_lib import createNNfromWeights
+from lib.learner_lib import computeAction
 from time import time, sleep
 from sys import exit
-from file_helper import getLatestTrialName, loadTrial
+from lib.file_helper import getLatestTrialName, loadTrial
 
 import pygame
 
@@ -15,6 +14,7 @@ PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
 RENDER_FOLLOWER_OBSERVATION = False
 RENDER_LEADER_OBSERVATION = True
+# TRIALNAME = "trial_167"
 # TRIALNAME = "trial_149"
 
 if not RENDER_FOLLOWER_OBSERVATION:
@@ -43,9 +43,9 @@ if PLAY_ENV:
     env.renderer.render_POI_observations = True
     refresh_time = 1/env.FPS
     for count, genome in enumerate(final_population[:]):
-        print("Playing genome ",count+1)
+        print("Playing genome ",count+1," with score ", final_scores[count])
         network = createNNfromWeights(genome)
-        print("Number of weights in network: ", network.total_weights)
+        # print("Number of weights in network: ", network.total_weights)
         observations = env.reset()
         for _ in range(env.num_steps):
             start_time = time()

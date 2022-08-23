@@ -1,4 +1,3 @@
-from cmath import e
 import queue
 from typing import List, Dict, Optional, Callable
 import random
@@ -9,9 +8,9 @@ import numpy as np
 from multiprocessing import Event, Process, Queue
 from time import time
 from copy import deepcopy
-from network_lib import NN, calculateWeightShape
 
-from env_lib import BoidsEnv
+from lib.network_lib import NN, calculateWeightShape
+from lib.env_lib import BoidsEnv
 
 # Genome encodes weights of a network as list of tensors
 Genome = List[np.array]
@@ -96,6 +95,7 @@ class Worker():
         self.env.close()
 
         # return rewards["team"][0]
+        # if cumulative_reward != 0: print("cumulative reward: ", cumulative_reward)
         return cumulative_reward
 
 class Learner():
@@ -186,7 +186,9 @@ class Learner():
 
     def sortPopulation(self, scores: List[float]):
         """Sort population so that lower fitness policies are moved to the front"""
-        return [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population))]
+        sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population))]
+        sorted_pop.reverse()
+        return sorted_pop
 
     def mutatePopulation(self, scores) -> List[Genome]:
         """Generate a new population based on the fitness scores of the genomes in the population."""
@@ -195,6 +197,7 @@ class Learner():
 
         # Trying to minimize distance of swarm to objective, so lower scores are better
         # Keep parents with lowest scores
+        # EDIT: This is different when POIs are on/off. Then we want the highest scores
         parents = sorted_population[:self.num_parents]
         # Randomly select parents and mutate them to get the rest of the population
         children = [self.mutateGenome(random.choice(parents)) for _ in range(self.num_children)]
@@ -245,6 +248,7 @@ class Learner():
 
     def getFinalMetrics(self):
         final_scores_sorted = sorted(self.fitnesses)
+        final_scores_sorted.reverse()
         final_population_sorted = self.sortPopulation(self.fitnesses)
         finished_iterations = self.iterations
         return self.score_list, final_scores_sorted, final_population_sorted, finished_iterations
@@ -253,8 +257,8 @@ class Learner():
         """Train the learner for a set number of generations. Track performance data."""
         for _ in tqdm(range(num_generations)):
             self.step()
-            min_score = min(self.fitnesses)
+            best_score = max(self.fitnesses)
             # if self.stop_event.is_set():
             #     print("Stop event was set. Shutting down main program. ")
-            self.score_list.append(min_score)
+            self.score_list.append(best_score)
         return None

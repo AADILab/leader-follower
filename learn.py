@@ -1,13 +1,13 @@
-from learner_lib import Learner
+from lib.learner_lib import Learner
 from time import time
 import numpy as np
-import pickle
-from file_helper import loadPopulation, getNewTrialName, getLatestTrialName
+from lib.file_helper import loadPopulation, getNewTrialName, getLatestTrialName, saveTrial
 
-NUM_GENERATIONS = 500
+NUM_GENERATIONS = 5
 EXPERIMENT_NAME = getNewTrialName()
 LOAD_POPULATION = None
-# LOAD_POPULATION = getLatestTrialName()
+LOAD_POPULATION = getLatestTrialName()
+# LOAD_POPULATION = "trial_167"
 
 if LOAD_POPULATION is not None:
     initial_population = loadPopulation(LOAD_POPULATION)
@@ -44,6 +44,7 @@ save_data = {
     "finished_iterations": finished_iterations,
     "env_kwargs": env_kwargs
 }
-pickle.dump(save_data, open(filename, "wb"))
+
+saveTrial(save_data)
 
 print("Experiment time: ", time() - start, " seconds. Completed ", finished_iterations, " out of ", NUM_GENERATIONS, " generations.")

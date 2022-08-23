@@ -1,11 +1,12 @@
 import functools
+from multiprocessing import allow_connection_pickling
 from typing import Dict, List
 from xml.sax.handler import all_properties
 import numpy as np
 from gym.spaces import Box
 import enum
 
-from boids_manager import BoidsManager
+from lib.boids_manager import BoidsManager
 
 
 class OBSERVATION(enum.IntEnum):
@@ -18,10 +19,11 @@ class LearningModule():
     """This class will contain methods for getting the observations and rewards for leader agents.
     This module will contain all information related to the swarm objectives.
     """
-    def __init__(self, goal_locations: np.ndarray, observe_followers: bool = True) -> None:
+    def __init__(self, goal_locations: np.ndarray, observe_followers: bool = True, coupling: int = 1) -> None:
         self.goal_locations = goal_locations
         self.num_goals = goal_locations.shape[0]
         self.observe_followers = observe_followers
+        self.coupling = 1
 
     @functools.lru_cache(maxsize=None)
     def observation_space(self):
@@ -39,6 +41,21 @@ class LearningModule():
         # For now, I'm going to return a list of team-wide rewards with no agent-based breakdown
         # This function takes in possible_agents so I can assign agent-based rewards later if I want to
 
+        # Note: Now making POIs observable and rewards based on observation
+        return self.getObservationRewards(bm, actions, step_count, total_steps, posisble_agents)
+
+    def getObservationRewards(self, bm: BoidsManager, actions: Dict, step_count: int, total_steps: int, posisble_agents: List[str]):
+        """Get reward based on observing POIs. Get rewarded for POIs observed in this time step."""
+        reward = 0
+        all_positions = bm.positions.copy()
+        for goal_location in self.goal_locations:
+            distances = np.linalg.norm(goal_location - all_positions, axis=1)
+            if np.sum(distances <= bm.radius_attraction) >= self.coupling:
+                reward += 1/self.num_goals
+        return {"team": [reward]}
+
+    def getDistanceRewards(self, bm: BoidsManager, actions: Dict, step_count: int, total_steps: int, posisble_agents: List[str]):
+        """Get rewards based on distance to POIs"""
         # Calculate temporal weight
         wt = 1 - np.cos(np.pi * step_count/total_steps)
 
@@ -50,7 +67,7 @@ class LearningModule():
         pos = all_positions
         for goal_location in self.goal_locations:
             # Calculate distance between the goal location and all followers
-            distances = np.linalg.norm(goal_location - pos, axis=0)
+            distances = np.linalg.norm(goal_location - pos, axis=1)
 
             # # Weight these distances by the temporal weight and overall steps and number of followers
             # weighted_distances = distances * wt / total_steps / bm.num_leaders

@@ -5,9 +5,9 @@ from pettingzoo.utils import wrappers
 from pettingzoo.utils import from_parallel
 import numpy as np
 
-from boids_manager import BoidsManager
-from renderer import Renderer
-from learning_module_lib import LearningModule
+from lib.boids_manager import BoidsManager
+from lib.renderer import Renderer
+from lib.learning_module_lib import LearningModule
 
 def env():
     '''

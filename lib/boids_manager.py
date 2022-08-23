@@ -1,6 +1,6 @@
 import numpy as np
 
-from map_utils import Map
+from lib.map_utils import Map
 
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \

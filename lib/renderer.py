@@ -2,7 +2,7 @@ import numpy as np
 import pygame
 import pygame.gfxdraw
 
-from learning_module_lib import LearningModule
+from lib.learning_module_lib import LearningModule
 
 class Renderer():
     def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, POIs = None, render_centroid_observations = False, render_POI_observations = False, render_POIs = False, render_mode = 'human') -> None:
