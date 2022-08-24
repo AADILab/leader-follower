@@ -121,6 +121,8 @@ class Learner():
             env_kwargs["observe_followers"] = True
         elif self.input_size == 2:
             env_kwargs["observe_followers"] = False
+        else:
+            env_kwargs["observe_followers"] = False
 
         # Store environment parameters
         self.env_kwargs = env_kwargs

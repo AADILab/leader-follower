@@ -101,14 +101,14 @@ class Renderer():
     def renderFrame(self, positions, headings, bm = None, lm = None, observations = None, all_obs_positions = None, possible_agents = None):
         self.screen.fill((255,255,255))
         self.renderBoids(positions, headings)
+        if self.render_POIs:
+            self.renderPOIs(lm)
         if self.render_centroid_observations and self.num_leaders > 0:
             # This is a bit of a messy way of getting leader observations to show up here
             # In the future, consider reworking this so Renderer doesn't access the BoidsManager directly
             self.renderCentroidObservations(bm, observations, all_obs_positions, possible_agents)
         if self.render_POI_observations and self.num_leaders > 0:
             self.renderPOIObservations(bm, lm, observations, possible_agents)
-        if self.render_POIs:
-            self.renderPOIs(lm)
 
         pygame.display.flip()
 
@@ -214,7 +214,7 @@ class Renderer():
                 # Get leader pixel coordinates
                 leader_pix = self.getPixelCoords(leader_position)
                 # Render line from leader to poi
-                pygame.gfxdraw.line(self.screen, leader_pix[0], leader_pix[1], poi_pix[0], poi_pix[1], poi_line_color)
+                # pygame.gfxdraw.line(self.screen, leader_pix[0], leader_pix[1], poi_pix[0], poi_pix[1], poi_line_color)
 
     @staticmethod
     def checkForPygameQuit():
