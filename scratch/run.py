@@ -1,4 +1,4 @@
-from env_lib import parallel_env, ROCK
+from lib.env_lib import parallel_env, ROCK
 
 def policy(observation, agent):
     return ROCK

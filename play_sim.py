@@ -2,7 +2,7 @@ import pygame
 from time import time
 import pygame
 
-from env_lib import BoidsEnv
+from lib.env_lib import BoidsEnv
 
 import numpy as np
 np.random.seed(3)
@@ -48,7 +48,7 @@ positions[num_followers:, 1] += np.random.uniform(num_leaders, size=(num_leaders
 headings = np.random.uniform(0, 2*np.pi, size = (num_followers+num_leaders, 1))
 headings[num_followers:] = np.pi/2
 
-env = BoidsEnv(num_leaders = num_leaders, num_followers = num_followers, FPS=60, num_steps= 60*60, follower_inds=[], render_mode='human', map_size=map_size, positions = positions, headings = headings)
+env = BoidsEnv(num_leaders = num_leaders, num_followers = num_followers, FPS=60, num_steps=60*60, follower_inds=[], render_mode='human', map_size=map_size, positions = None, headings = headings)
 
 # Reset env for first round of observations
 observations = env.reset()

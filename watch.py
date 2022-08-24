@@ -16,6 +16,7 @@ RENDER_FOLLOWER_OBSERVATION = False
 RENDER_LEADER_OBSERVATION = True
 # TRIALNAME = "trial_167"
 # TRIALNAME = "trial_149"
+# TRIALNAME = "trial_1"
 
 if not RENDER_FOLLOWER_OBSERVATION:
     f_inds = []
@@ -31,6 +32,9 @@ env_kwargs["follower_inds"] = f_inds
 
 if PLOT_SCORES:
     plt.plot(scores_list)
+    plt.xlabel("Generation")
+    plt.ylabel("Score")
+    plt.title("Team Performance")
     plt.show()
 
 

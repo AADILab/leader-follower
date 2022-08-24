@@ -5,7 +5,9 @@ from lib.map_utils import Map
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
         num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, \
-            avoid_walls = True, ghost_density = 0, use_momentum=False, dt = 1/60, max_acceleration = 5, wall_avoidance_multiplier = 1, repulsion_mulitplier = 3) -> None:
+        avoid_walls = True, ghost_density = 0, use_momentum=False, dt = 1/60, max_acceleration = 5, \
+        wall_avoidance_multiplier = 1, repulsion_mulitplier = 3, \
+        spawn_midpoint = None, spawn_radius = None, spawn_velocity = None) -> None:
         # Note: Boids are organized in arrays as [followers, leaders]. Followers are at the front of the arrays
         # and Leaders are at the back.
         # Leader index "N" is Boid index "num_followers+N". Follower index "F" is Boid index "F".
@@ -37,6 +39,9 @@ class BoidsManager():
         self.ghost_density = ghost_density
         self.use_momentum = use_momentum
         self.dt = dt
+        self.spawn_midpoint = spawn_midpoint
+        self.spawn_radius = spawn_radius
+        self.spawn_velocity = None
 
         # Setup counterfactual ghost boids for wall avoidance
         # This isn't being used for anything right now,
@@ -94,9 +99,11 @@ class BoidsManager():
         return ghost_positions
 
     def setup_velocities(self, velocities):
-        if velocities is None:
+        if velocities is None and self.spawn_velocity is None:
             # Boid velocities are randomized from min to the max velocity
             return np.random.uniform(self.min_velocity, self.max_velocity, size=(self.total_agents,1))
+        elif self.spawn_velocity is not None:
+            return self.spawn_velocity*np.ones((self.total_agents,1))
         else:
             if type(velocities) != np.ndarray:
                 raise Exception("velocities must be input as numpy array")
@@ -118,13 +125,22 @@ class BoidsManager():
                 return headings.copy()
 
     def setup_positions(self, positions):
-        if positions is None:
+        if positions is None and self.spawn_midpoint is None and self.spawn_radius is None:
             # Boid positions are randomized within map bounds
             # The first num_leaders boids are leaders, and there rest are regular boids
             return np.hstack((
                 np.random.uniform(self.map_size[0], size=(self.total_agents,1)),
                 np.random.uniform(self.map_size[1], size=(self.total_agents,1))
             ))
+        elif positions is None:
+            # Boid positions are randomized within the spawn radius of the spawn midpoint
+            # print("sp: ", self.spawn_radius)
+            rand_angles = np.random.uniform(low=0., high=2*np.pi, size=(self.num_followers+self.num_leaders,1))
+            rand_radii = np.random.uniform(low=0.,high=self.spawn_radius,size=(self.num_followers+self.num_leaders,1))
+            return np.hstack((
+                rand_radii*np.cos(rand_angles),
+                rand_radii*np.sin(rand_angles)
+            )) + self.spawn_midpoint
         else:
             if type(positions) != np.ndarray:
                 raise Exception("positions must be input as numpy array")

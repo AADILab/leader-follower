@@ -39,7 +39,7 @@ def raw_env():
 class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human', 'none'], "name": "boids"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, headings = None, velocities = None, follower_inds = None, learning_module: LearningModule = None, observe_followers = True, num_steps = 20000, render_mode = 'human', map_size = np.array([50,50])):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, headings = None, velocities = None, follower_inds = None, learning_module: LearningModule = None, observe_followers = True, num_steps = 20000, render_mode = 'human', map_size = np.array([100,100]), spawn_midpoint=None, spawn_radius=None, spawn_velocity=None, poi_positions=np.array([[10,10],[90,10],[10,90],[90,90]])):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -59,7 +59,7 @@ class BoidsEnv(ParallelEnv):
         self.dt = 1/float(FPS)
 
         rs = (2,3,5)
-        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=10, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions, headings=headings, velocities=velocities)
+        self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=10, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions, headings=headings, velocities=velocities, spawn_radius = spawn_radius, spawn_midpoint=spawn_midpoint, spawn_velocity=spawn_velocity)
 
         self.render_mode = render_mode
         if self.render_mode == 'none':
@@ -68,6 +68,7 @@ class BoidsEnv(ParallelEnv):
             self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_centroid_observations=False, render_POI_observations=False, render_mode=render_mode)
 
         # Setup learning module
+        self.poi_positions = poi_positions
         self.lm = self.setupLearningModule(learning_module)
 
         # Set total steps in simulation run. Necessary for reward calculations
@@ -76,7 +77,7 @@ class BoidsEnv(ParallelEnv):
     def setupLearningModule(self, learning_module):
         if learning_module is None:
             # return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
-            return LearningModule(goal_locations=np.array([[10.,10.]]), observe_followers=self.observe_followers)
+            return LearningModule(goal_locations=self.poi_positions, observe_followers=self.observe_followers)
         else:
             return learning_module
 
