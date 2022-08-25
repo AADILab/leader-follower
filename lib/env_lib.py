@@ -96,7 +96,7 @@ class BoidsEnv(ParallelEnv):
             dtype=np.float32
         )
 
-    def render(self, mode=None):
+    def render(self, mode=None, kwargs={}):
         '''
         Renders the environment. In human mode, it can print to terminal, open
         up a graphical window, or open up some other display that a human can see and understand.
@@ -107,7 +107,7 @@ class BoidsEnv(ParallelEnv):
             mode = self.render_mode
         if mode == 'human':
             # self.renderer.renderFrame(self.bm.positions, self.bm.headings, self.bm, self.pm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents)
-            self.renderer.renderFrame(self.bm, self.pm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents)
+            self.renderer.renderFrame(self.bm, self.pm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents, **kwargs)
     def close(self):
         '''
         Close should release any graphical displays, subprocesses, network connections

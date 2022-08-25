@@ -16,7 +16,7 @@ RENDER_FOLLOWER_OBSERVATION = False
 RENDER_LEADER_OBSERVATION = True
 # TRIALNAME = "trial_167"
 # TRIALNAME = "trial_149"
-# TRIALNAME = "trial_313"
+# TRIALNAME = "trial_409"
 
 if not RENDER_FOLLOWER_OBSERVATION:
     f_inds = []
@@ -43,9 +43,9 @@ if PLAY_ENV:
     shutdown = False
     env_kwargs["render_mode"] = "human"
     env = BoidsEnv(**env_kwargs)
-    env.renderer.render_POIs = True
-    env.renderer.render_centroid_observations = True
-    env.renderer.render_POI_observations = True
+    # env.renderer.render_POIs = True
+    # env.renderer.render_centroid_observations = False
+    # env.renderer.render_POI_observations = False
     refresh_time = 1/env.FPS
     for count, genome in enumerate(final_population[:]):
         print("Playing genome ",count+1," with score ", final_scores[count])
@@ -61,7 +61,7 @@ if PLAY_ENV:
             if shutdown: exit()
             actions = {agent: computeAction(network, observations[agent], env) for agent in env.possible_agents}
             observations, rewards, dones, infos = env.step(actions)
-            env.render()
+            env.render(kwargs={"render_leader_observations": False})
             loop_time = time() - start_time
             if loop_time < refresh_time:
                 sleep(refresh_time - loop_time)

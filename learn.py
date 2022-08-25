@@ -29,7 +29,7 @@ env_kwargs = {
     "num_leaders": 1,
     "num_followers": 2,
     "FPS": 5,
-    "num_steps": 15*5,
+    "num_steps": 5*5,
     "render_mode": 'none',
     "map_size": np.array([50,50]),
     "positions" : np.array([[25.,25.], [25.,22.], [25,28]]),
@@ -38,7 +38,7 @@ env_kwargs = {
     # "spawn_radius": 1,
     "spawn_velocity": 0,
     "poi_positions": np.array([[20.,20.], [30.,20.], [30.,30.], [20.,30.]]), # ,[20.,80.],[80.,20.],[80.,80.]
-    "coupling": 2}
+    "coupling": 3}
 learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.15, nn_inputs=env_kwargs["poi_positions"].size+2, nn_hidden=[10], nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
 
 try:

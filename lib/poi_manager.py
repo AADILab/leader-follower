@@ -4,14 +4,15 @@ import numpy as np
 from lib.boids_manager import BoidsManager
 
 class POI():
-    def __init__(self, position: np.array) -> None:
+    def __init__(self, position: np.array, observation_radius: float) -> None:
         self.position = position
         self.observed = False
+        self.observation_radius = observation_radius
 
 class POIManager():
     def __init__(self, positions: List[List[float]], observation_radius: float, coupling: int = 1) -> None:
         self.positions = np.array(positions)
-        self.pois = [POI(position) for position in positions]
+        self.pois = [POI(position, observation_radius) for position in positions]
         self.num_pois = len(self.pois)
         self.coupling = coupling
         self.observation_radius = observation_radius

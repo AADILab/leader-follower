@@ -184,31 +184,31 @@ class Learner():
 
     def sortPopulation(self, scores: List[float]):
         """Sort population so that higher fitness policies are moved to the front"""
-        # sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population))]
+        sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population), reverse=True)]
         # sorted_pop.reverse()
         # return sorted_pop
         # sorted_pop = [genome for _, genome in sorted(zip(scores, self.population), reverse=True)]
-        sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population), reverse=True)]
-        sorted_scores = [score for score in sorted(scores, reverse=True)]
+        # sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population), reverse=True)]
+        # sorted_scores = [score for score in sorted(scores, reverse=True)]
 
-        start_inds = [0]
-        end_inds = []
-        last_score = None
+        # start_inds = [0]
+        # end_inds = []
+        # last_score = None
 
-        for ind, score in enumerate(sorted_scores):
-            if last_score is None:
-                last_score = score
-            elif score != last_score:
-                last_score = score
-                start_inds.append(ind)
-                end_inds.append(ind)
+        # for ind, score in enumerate(sorted_scores):
+        #     if last_score is None:
+        #         last_score = score
+        #     elif score != last_score:
+        #         last_score = score
+        #         start_inds.append(ind)
+        #         end_inds.append(ind)
 
-        end_inds.append(15)
+        # end_inds.append(15)
 
-        for start_ind, end_ind in zip(start_inds, end_inds):
-            shuffled_genomes = sorted_pop[start_ind:end_ind]
-            random.shuffle(shuffled_genomes)
-            sorted_pop[start_ind:end_ind] = shuffled_genomes
+        # for start_ind, end_ind in zip(start_inds, end_inds):
+        #     shuffled_genomes = sorted_pop[start_ind:end_ind]
+        #     random.shuffle(shuffled_genomes)
+        #     sorted_pop[start_ind:end_ind] = shuffled_genomes
 
         # print(sorted_pop)
 
@@ -272,19 +272,22 @@ class Learner():
         # Print best score
         final_scores_sorted = sorted(self.fitnesses)
         final_scores_sorted.reverse()
-        print(final_scores_sorted[0])
+        print(self.iterations, " : ", final_scores_sorted[0])
         return None
 
     def getFinalMetrics(self):
-        final_scores_sorted = sorted(self.fitnesses)
-        final_scores_sorted.reverse()
-        final_population_sorted = self.sortPopulation(self.fitnesses)
+        # final_scores_sorted = sorted(self.fitnesses, reverse=True)
+        # final_population_sorted = self.sortPopulation(self.fitnesses)
+        # Not sorting because there seems to be a problem when watching with matching
+        # fitnesses to genomes
+        final_scores_sorted = self.fitnesses
+        final_population_sorted = self.population
         finished_iterations = self.iterations
         return self.score_list, final_scores_sorted, final_population_sorted, finished_iterations
 
     def train(self, num_generations: int):
         """Train the learner for a set number of generations. Track performance data."""
-        for _ in tqdm(range(num_generations)):
+        for _ in range(num_generations):
             self.step()
             best_score = max(self.fitnesses)
             # if self.stop_event.is_set():
