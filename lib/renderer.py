@@ -190,6 +190,7 @@ class Renderer():
             color = (255,0,0)
         pix_position = self.getPixelCoords(poi.position)
         pygame.gfxdraw.filled_circle(self.screen, pix_position[0], pix_position[1], int(self.pixels_per_unit/2), color)
+        pygame.gfxdraw.aacircle(self.screen, pix_position[0], pix_position[1], int(self.pixels_per_unit/2), color)
 
     def renderPOIObservations(self, bm, pm: POIManager, observations, possible_agents):
         poi_color = (200,0,200)
