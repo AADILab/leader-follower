@@ -22,8 +22,9 @@ class POIManager():
     def update(self, bm: BoidsManager) -> None:
         for poi in self.pois:
             # print(np.linalg.norm(bm.positions - poi.position, axis=1))
-            min_distance = np.min(np.linalg.norm(bm.positions - poi.position, axis=1))
-            if min_distance <= self.observation_radius:
+            distances = np.linalg.norm(bm.positions - poi.position, axis=1)
+            observations = np.sum(distances<=self.observation_radius)
+            if observations >= self.coupling:
                 poi.observed = True
                 # print("POI Observed | min distance: ", min_distance, " | observation_radius: ", self.observation_radius)
 
