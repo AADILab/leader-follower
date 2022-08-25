@@ -6,7 +6,7 @@ from pygame import init
 from tqdm import tqdm
 import numpy as np
 from multiprocessing import Event, Process, Queue
-from time import time
+from time import time, sleep
 from copy import deepcopy
 
 from lib.network_lib import NN, calculateWeightShape
@@ -52,11 +52,12 @@ class Worker():
                 try:
                     # fitness = self.evaluateGenome(genome, seed, False)
                     fitness = self.evaluateGenome(genome, seed, False)
+                    # print("Id: ", self.genome_id, " | Score: ", fitness)
 
                 except AttributeError as e:
                     print("AttributeError!")
                     print(e)
-                    fitness = np.inf
+                    fitness = 0
 
                 output = {"id": input["id"], "fitness": fitness}
                 self.out_queue.put(output)
@@ -77,8 +78,10 @@ class Worker():
 
         # Run network on boids environment
         observations = self.env.reset()
+        # if self.env.pm.numObserved() > 0:
+        #     print("ERROR: Env was reset but pois are already observed")
         done = False
-        cumulative_reward = 0
+        # cumulative_reward = 0
         while not done:
             if draw:
                 self.env.render()
@@ -91,15 +94,24 @@ class Worker():
             done = True in dones.values()
             # Add the team reward to the cumulative reward
             # Need [0] index because rewards are an array of rewards. One for each objective.
-            cumulative_reward += rewards["team"][0]
+            # cumulative_reward += rewards["team"]
+            # sleep(self.env.dt)
+            # if self.env.pm.numObserved() > 0: print("All pois observed. Reward: ", rewards["team"])
+            # if rewards["team"] == 1.0: print("Team Reward is 1.0")
+
         self.env.close()
 
         # return rewards["team"][0]
         # if cumulative_reward != 0: print("cumulative reward: ", cumulative_reward)
-        return cumulative_reward
+        # print(rewards["team"])
+        # if rewards["team"] == 1.0 and not self.env.pm.pois[0].observed:
+        #     print("Received score of 1.0 but poi was not observed.")
+        # elif rewards["team"] == 0.0 and self.env.pm.pois[0].observed:
+        #     print("Recieved score of 0.0 but poi was observed.")
+        return rewards["team"]
 
 class Learner():
-    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, nn_inputs: int, nn_hidden: int, nn_outputs: int, num_workers: int = 10, init_population = None, env_kwargs: Dict = {}) -> None:
+    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, nn_inputs: int, nn_hidden: int, nn_outputs: int, num_workers: int = 4, init_population = None, env_kwargs: Dict = {}) -> None:
         # Set variables
         self.population_size = population_size
         self.num_parents = num_parents
@@ -114,7 +126,7 @@ class Learner():
         self.out_size = nn_outputs
         if init_population is None: self.population = [self.randomGenome() for _ in range(self.population_size)]
         else: self.population = init_population
-        self.fitnesses = [np.inf for _ in range(self.population_size)]
+        self.fitnesses = [0 for _ in range(self.population_size)]
 
         # Hack to switch observe_followers parameter depending on nn input size
         if self.input_size == 4:
@@ -171,7 +183,7 @@ class Learner():
             self.population = [self.randomGenome() for _ in range(self.population_size)]
         else:
             self.population = deepcopy(population)
-        self.fitnesses = [np.inf for _ in range(self.population_size)]
+        self.fitnesses = [0 for _ in range(self.population_size)]
         return None
 
 
@@ -194,12 +206,9 @@ class Learner():
 
     def mutatePopulation(self, scores) -> List[Genome]:
         """Generate a new population based on the fitness scores of the genomes in the population."""
-        # Sort population so that lowest scoring genomes are at the front of the list
+        # Sort population so that highest scoring genomes are at the front of the list
         sorted_population = self.sortPopulation(scores)
 
-        # Trying to minimize distance of swarm to objective, so lower scores are better
-        # Keep parents with lowest scores
-        # EDIT: This is different when POIs are on/off. Then we want the highest scores
         parents = sorted_population[:self.num_parents]
         # Randomly select parents and mutate them to get the rest of the population
         children = [self.mutateGenome(random.choice(parents)) for _ in range(self.num_children)]
@@ -219,7 +228,8 @@ class Learner():
         # Keep track of which genomes' fitnesses have been received
         received = [False for _ in population]
         timeout = 10 # seconds
-        fitnesses = [np.inf for _ in population]
+        fitnesses = [0 for _ in population]
+
 
         while not all (received) and not self.stop_event.is_set():
             try:
@@ -239,19 +249,25 @@ class Learner():
 
     def step(self) -> float:
         """Step forward the learner by a generation and update the population."""
-        # Evaluate all the genomes in the population
-        # scores = [self.evaluateGenome(genome) for genome in self.population]
-        self.fitnesses = self.evaluatePopulation()
-        # Mutate the population according to the fitness scores
+        # Mutate the population according to their fitness scores
         self.population = self.mutatePopulation(self.fitnesses)
+        # Evaluate all the genomes in the population
+        self.fitnesses = self.evaluatePopulation()
+        # print("Fitnesses: ", self.fitnesses)
         # Track times step() has been called
         self.iterations += 1
         return None
 
     def getFinalMetrics(self):
+        print("Before sorting:")
+        print([int(f) for f in self.fitnesses])
+        print([str(n[0][0][0])[:5] for n in self.population])
         final_scores_sorted = sorted(self.fitnesses)
         final_scores_sorted.reverse()
         final_population_sorted = self.sortPopulation(self.fitnesses)
+        print("After sorting:")
+        print([int(f) for f in final_scores_sorted])
+        print([str(n[0][0][0])[:5] for n in final_population_sorted])
         finished_iterations = self.iterations
         return self.score_list, final_scores_sorted, final_population_sorted, finished_iterations
 

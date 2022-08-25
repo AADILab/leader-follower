@@ -1,7 +1,5 @@
 import functools
-from multiprocessing import allow_connection_pickling
 from typing import Dict, List
-from xml.sax.handler import all_properties
 import numpy as np
 from gym.spaces import Box
 import enum
@@ -23,7 +21,6 @@ class LearningModule():
         self.goal_locations = goal_locations
         self.num_goals = goal_locations.shape[0]
         self.observe_followers = observe_followers
-        self.coupling = 1
 
     @functools.lru_cache(maxsize=None)
     def observation_space(self):

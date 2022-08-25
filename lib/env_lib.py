@@ -1,4 +1,5 @@
 import functools
+from xml.etree.ElementInclude import include
 from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
@@ -6,8 +7,11 @@ from pettingzoo.utils import from_parallel
 import numpy as np
 
 from lib.boids_manager import BoidsManager
+from lib.observations_lib import ObservationManager
+from lib.fitness_manager import FitnessManager
 from lib.renderer import Renderer
-from lib.learning_module_lib import LearningModule
+# from lib.learning_module_lib import LearningModule
+from lib.poi_manager import POIManager
 
 def env():
     '''
@@ -39,7 +43,10 @@ def raw_env():
 class BoidsEnv(ParallelEnv):
     metadata = {'render.modes': ['human', 'none'], "name": "boids"}
 
-    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, headings = None, velocities = None, follower_inds = None, learning_module: LearningModule = None, observe_followers = True, num_steps = 20000, render_mode = 'human', map_size = np.array([100,100]), spawn_midpoint=None, spawn_radius=None, spawn_velocity=None, poi_positions=np.array([[10,10],[90,10],[10,90],[90,90]])):
+    def __init__(self, num_leaders = 2, num_followers = 10, FPS = 60, positions = None, headings = None, velocities = None,
+                follower_inds = None, observe_followers = True, num_steps = 20000,
+                render_mode = 'human', map_size = np.array([100,100]), spawn_midpoint=None, spawn_radius=None, spawn_velocity=None,
+                poi_positions=[[10,10],[90,10],[10,90],[90,90]], coupling: int = 1):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -60,26 +67,18 @@ class BoidsEnv(ParallelEnv):
 
         rs = (2,3,5)
         self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=10, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions, headings=headings, velocities=velocities, spawn_radius = spawn_radius, spawn_midpoint=spawn_midpoint, spawn_velocity=spawn_velocity)
+        self.pm = POIManager(positions=poi_positions, coupling=coupling, observation_radius=rs[2])
+        self.obs = ObservationManager(self.bm, self.pm, include_followers=True)
+        self.fm = FitnessManager(self.pm)
 
         self.render_mode = render_mode
         if self.render_mode == 'none':
             self.renderer = None
         else:
-            self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_centroid_observations=False, render_POI_observations=False, render_mode=render_mode)
-
-        # Setup learning module
-        self.poi_positions = poi_positions
-        self.lm = self.setupLearningModule(learning_module)
+            self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_mode=render_mode)
 
         # Set total steps in simulation run. Necessary for reward calculations
         self.num_steps = num_steps
-
-    def setupLearningModule(self, learning_module):
-        if learning_module is None:
-            # return LearningModule(goal_locations = np.array([self.bm.map_size])/2)
-            return LearningModule(goal_locations=self.poi_positions, observe_followers=self.observe_followers)
-        else:
-            return learning_module
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
@@ -107,7 +106,7 @@ class BoidsEnv(ParallelEnv):
         if mode is None:
             mode = self.render_mode
         if mode == 'human':
-            self.renderer.renderFrame(self.bm.positions, self.bm.headings, self.bm, self.lm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents)
+            self.renderer.renderFrame(self.bm.positions, self.bm.headings, self.bm, self.pm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents)
 
     def close(self):
         '''
@@ -126,12 +125,13 @@ class BoidsEnv(ParallelEnv):
         '''
         self.agents = self.possible_agents[:]
         self.step_count = 0
+        self.pm.reset()
         self.bm.reset()
         observations = self.getObservations()
         return observations
 
     def getObservations(self):
-        observations_lm = self.lm.getObservations(self.bm)
+        observations_lm = self.obs.getObservations()
         observations = {}
         for agent_id, agent_observation in observations_lm.items():
             observations[self.possible_agents[agent_id]] = agent_observation
@@ -161,8 +161,11 @@ class BoidsEnv(ParallelEnv):
         # Get the observations of the leader boids
         observations = self.getObservations()
 
+        # Update POIs
+        self.pm.update(self.bm)
+
         # Get rewards for leaders
-        rewards = self.lm.getRewards(self.bm, actions, self.step_count, self.num_steps, self.possible_agents)
+        rewards = {"team": self.fm.getTeamFitness()}
 
         # Step forward and check if simulation is done
         self.step_count += 1

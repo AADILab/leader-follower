@@ -66,3 +66,4 @@ if PLAY_ENV:
                 sleep(refresh_time - loop_time)
             else:
                 print("Loop took longer than refresh rate")
+        print("Final Score: ", rewards["team"])

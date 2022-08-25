@@ -41,7 +41,7 @@ class BoidsManager():
         self.dt = dt
         self.spawn_midpoint = spawn_midpoint
         self.spawn_radius = spawn_radius
-        self.spawn_velocity = None
+        self.spawn_velocity = spawn_velocity
 
         # Setup counterfactual ghost boids for wall avoidance
         # This isn't being used for anything right now,

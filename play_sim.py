@@ -48,7 +48,16 @@ positions[num_followers:, 1] += np.random.uniform(num_leaders, size=(num_leaders
 headings = np.random.uniform(0, 2*np.pi, size = (num_followers+num_leaders, 1))
 headings[num_followers:] = np.pi/2
 
-env = BoidsEnv(num_leaders = num_leaders, num_followers = num_followers, FPS=60, num_steps=60*60, follower_inds=[], render_mode='human', map_size=map_size, positions = None, headings = headings)
+env_kwargs = {"num_leaders": 1, "num_followers": 3, "FPS": 5, "num_steps": 10*5, "render_mode": 'none', "map_size": np.array([100,100]),
+    "spawn_midpoint": np.array([50.,50.]), "spawn_radius": 2,
+    "spawn_velocity": 0,
+    "poi_positions": np.array([[20.,20.],[20.,80.],[80.,20.],[80.,80.]])} # ,[20.,80.],[80.,20.],[80.,80.]
+env_kwargs["render_mode"] = "human"
+env_kwargs["FPS"] = 60
+env_kwargs["num_steps"] = 60*60
+
+# env = BoidsEnv(num_leaders = num_leaders, num_followers = num_followers, FPS=60, num_steps=60*60, follower_inds=[], render_mode='human', map_size=map_size, positions = None, headings = headings)
+env = BoidsEnv(**env_kwargs)
 
 # Reset env for first round of observations
 observations = env.reset()
@@ -66,4 +75,4 @@ while not shutdown:
         actions = {agent: policy(observations[agent], agent) for agent in env.possible_agents}
         observations, rewards, dones, infos = env.step(actions)
         env.render()
-        # print(rewards["team"])
+        print(rewards["team"])
