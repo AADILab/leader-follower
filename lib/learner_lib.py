@@ -52,6 +52,8 @@ class Worker():
                 try:
                     # fitness = self.evaluateGenome(genome, seed, False)
                     fitness = self.evaluateGenome(genome, seed, False)
+                    if fitness == 1.0:
+                        print("Stop! Figured it out")
                     # print("Id: ", self.genome_id, " | Score: ", fitness)
 
                 except AttributeError as e:
@@ -181,21 +183,51 @@ class Learner():
         return new_genome
 
     def sortPopulation(self, scores: List[float]):
-        """Sort population so that lower fitness policies are moved to the front"""
-        sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population))]
-        sorted_pop.reverse()
+        """Sort population so that higher fitness policies are moved to the front"""
+        # sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population))]
+        # sorted_pop.reverse()
+        # return sorted_pop
+        # sorted_pop = [genome for _, genome in sorted(zip(scores, self.population), reverse=True)]
+        sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population), reverse=True)]
+        sorted_scores = [score for score in sorted(scores, reverse=True)]
+
+        start_inds = [0]
+        end_inds = []
+        last_score = None
+
+        for ind, score in enumerate(sorted_scores):
+            if last_score is None:
+                last_score = score
+            elif score != last_score:
+                last_score = score
+                start_inds.append(ind)
+                end_inds.append(ind)
+
+        end_inds.append(15)
+
+        for start_ind, end_ind in zip(start_inds, end_inds):
+            shuffled_genomes = sorted_pop[start_ind:end_ind]
+            random.shuffle(shuffled_genomes)
+            sorted_pop[start_ind:end_ind] = shuffled_genomes
+
+        # print(sorted_pop)
+
         return sorted_pop
 
     def mutatePopulation(self, scores) -> List[Genome]:
         """Generate a new population based on the fitness scores of the genomes in the population."""
-        # Sort population so that highest scoring genomes are at the front of the list
-        sorted_population = self.sortPopulation(scores)
-
-        parents = sorted_population[:self.num_parents]
-        # Randomly select parents and mutate them to get the rest of the population
-        children = [self.mutateGenome(random.choice(parents)) for _ in range(self.num_children)]
-        # Return a new population with the best-fit parents and mutated children
-        mutated_population = parents + children
+        # If all genomes score 0.0, then do a random restart
+        if len(set(scores)) == 1 and scores[0] == 0.0:
+            mutated_population = [self.randomGenome() for _ in range(self.population_size)]
+        else:
+            # Sort population so that highest scoring genomes are at the front of the list
+            sorted_population = self.sortPopulation(scores)
+            # Select parents as genomes with highest scores
+            parents = sorted_population[:self.num_parents]
+            # Randomly select parents and mutate them to get the rest of the population
+            children = [self.mutateGenome(random.choice(parents)) for _ in range(self.num_children)]
+            # Return a new population with the best-fit parents and mutated children
+            mutated_population = parents + children
         return mutated_population
 
     def evaluatePopulation(self, population = None):
@@ -237,6 +269,10 @@ class Learner():
         self.fitnesses = self.evaluatePopulation()
         # Track times step() has been called
         self.iterations += 1
+        # Print best score
+        final_scores_sorted = sorted(self.fitnesses)
+        final_scores_sorted.reverse()
+        print(final_scores_sorted[0])
         return None
 
     def getFinalMetrics(self):

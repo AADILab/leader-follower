@@ -3,7 +3,7 @@ from time import time
 import numpy as np
 from lib.file_helper import loadPopulation, getNewTrialName, getLatestTrialName, saveTrial
 
-NUM_GENERATIONS = 10
+NUM_GENERATIONS = 1000
 EXPERIMENT_NAME = getNewTrialName()
 LOAD_POPULATION = None
 # LOAD_POPULATION = getLatestTrialName()
@@ -26,19 +26,19 @@ filename = EXPERIMENT_NAME + ".pkl"
 start = time()
 # env_kwargs = {"num_leaders": 1, "num_followers": 3, "FPS": 5, "num_steps": 10*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
 env_kwargs = {
-    "num_leaders": 2,
+    "num_leaders": 1,
     "num_followers": 1,
     "FPS": 5,
     "num_steps": 10*5,
     "render_mode": 'none',
     "map_size": np.array([50,50]),
-    "positions" : np.array([[25.,20.], [25.,25], [20,25]]),
-    "headings": np.array([[-np.pi], [-np.pi], [-np.pi]]),
+    "positions" : np.array([[25.,25.], [22.,22.]]),
+    "headings": np.array([[-np.pi/2], [-np.pi/2]]),
     # "spawn_midpoint": np.array([25.,25.]),
     # "spawn_radius": 1,
     "spawn_velocity": 0,
-    "poi_positions": np.array([[10.,10.]]), # ,[20.,80.],[80.,20.],[80.,80.]
-    "coupling": 3}
+    "poi_positions": np.array([[20.,20.], [30.,20.], [30.,30.], [20.,30.]]), # ,[20.,80.],[80.,20.],[80.,80.]
+    "coupling": 2}
 learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.15, nn_inputs=env_kwargs["poi_positions"].size+2, nn_hidden=[10], nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
 
 try:
