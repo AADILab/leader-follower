@@ -34,6 +34,7 @@ if PLOT_SCORES:
     plt.plot(scores_list)
     plt.xlabel("Generation")
     plt.ylabel("Score")
+    plt.ylim([0.0,1.2])
     plt.title("Team Performance")
     plt.show()
 

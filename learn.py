@@ -27,13 +27,13 @@ start = time()
 # env_kwargs = {"num_leaders": 1, "num_followers": 3, "FPS": 5, "num_steps": 10*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
 env_kwargs = {
     "num_leaders": 1,
-    "num_followers": 1,
+    "num_followers": 2,
     "FPS": 5,
-    "num_steps": 10*5,
+    "num_steps": 15*5,
     "render_mode": 'none',
     "map_size": np.array([50,50]),
-    "positions" : np.array([[25.,25.], [22.,22.]]),
-    "headings": np.array([[-np.pi/2], [-np.pi/2]]),
+    "positions" : np.array([[25.,25.], [25.,22.], [25,28]]),
+    "headings": np.array([[-np.pi/2], [-np.pi/2], [-np.pi/2]]),
     # "spawn_midpoint": np.array([25.,25.]),
     # "spawn_radius": 1,
     "spawn_velocity": 0,
