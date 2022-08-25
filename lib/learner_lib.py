@@ -78,10 +78,7 @@ class Worker():
 
         # Run network on boids environment
         observations = self.env.reset()
-        # if self.env.pm.numObserved() > 0:
-        #     print("ERROR: Env was reset but pois are already observed")
         done = False
-        # cumulative_reward = 0
         while not done:
             if draw:
                 self.env.render()
@@ -92,22 +89,7 @@ class Worker():
             observations, rewards, dones, _  = self.env.step(actions)
             # Save done
             done = True in dones.values()
-            # Add the team reward to the cumulative reward
-            # Need [0] index because rewards are an array of rewards. One for each objective.
-            # cumulative_reward += rewards["team"]
-            # sleep(self.env.dt)
-            # if self.env.pm.numObserved() > 0: print("All pois observed. Reward: ", rewards["team"])
-            # if rewards["team"] == 1.0: print("Team Reward is 1.0")
-
         self.env.close()
-
-        # return rewards["team"][0]
-        # if cumulative_reward != 0: print("cumulative reward: ", cumulative_reward)
-        # print(rewards["team"])
-        # if rewards["team"] == 1.0 and not self.env.pm.pois[0].observed:
-        #     print("Received score of 1.0 but poi was not observed.")
-        # elif rewards["team"] == 0.0 and self.env.pm.pois[0].observed:
-        #     print("Recieved score of 0.0 but poi was observed.")
         return rewards["team"]
 
 class Learner():
@@ -253,21 +235,14 @@ class Learner():
         self.population = self.mutatePopulation(self.fitnesses)
         # Evaluate all the genomes in the population
         self.fitnesses = self.evaluatePopulation()
-        # print("Fitnesses: ", self.fitnesses)
         # Track times step() has been called
         self.iterations += 1
         return None
 
     def getFinalMetrics(self):
-        print("Before sorting:")
-        print([int(f) for f in self.fitnesses])
-        print([str(n[0][0][0])[:5] for n in self.population])
         final_scores_sorted = sorted(self.fitnesses)
         final_scores_sorted.reverse()
         final_population_sorted = self.sortPopulation(self.fitnesses)
-        print("After sorting:")
-        print([int(f) for f in final_scores_sorted])
-        print([str(n[0][0][0])[:5] for n in final_population_sorted])
         finished_iterations = self.iterations
         return self.score_list, final_scores_sorted, final_population_sorted, finished_iterations
 

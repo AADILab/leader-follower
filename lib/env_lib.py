@@ -106,8 +106,8 @@ class BoidsEnv(ParallelEnv):
         if mode is None:
             mode = self.render_mode
         if mode == 'human':
-            self.renderer.renderFrame(self.bm.positions, self.bm.headings, self.bm, self.pm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents)
-
+            # self.renderer.renderFrame(self.bm.positions, self.bm.headings, self.bm, self.pm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents)
+            self.renderer.renderFrame(self.bm, self.pm, self.getObservations(), self.bm.get_leader_position_observations(), self.possible_agents)
     def close(self):
         '''
         Close should release any graphical displays, subprocesses, network connections

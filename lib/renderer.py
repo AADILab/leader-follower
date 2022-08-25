@@ -1,12 +1,13 @@
+from typing import Dict
 import numpy as np
 import pygame
 import pygame.gfxdraw
 
-from lib.poi_manager import POIManager
+from lib.poi_manager import POI, POIManager
 from lib.boids_manager import BoidsManager
 
 class Renderer():
-    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, POIs = None, render_centroid_observations = True, render_POI_observations = True, render_POIs = True, render_mode = 'human') -> None:
+    def __init__(self, num_leaders, num_followers, map_size, pixels_per_unit, radii=None, follower_inds=None, render_mode = 'human') -> None:
         # Save variables
         self.num_leaders = num_leaders
         self.num_followers = num_followers
@@ -15,9 +16,6 @@ class Renderer():
         self.pixels_per_unit = pixels_per_unit
         self.radii = radii
         self.follower_inds = self.setupFollowerInd(follower_inds)
-        self.render_centroid_observations = render_centroid_observations
-        self.render_POI_observations = render_POI_observations
-        self.render_POIs = render_POIs
         self.POIs = None
 
         # Set useful variables
@@ -99,27 +97,28 @@ class Renderer():
                 color = self.leader_color
             self.renderBoid(positions[boid_id], headings[boid_id][0], color, boid_id)
 
-    def renderFrame(self, positions, headings, bm = None, pm = None, observations = None, all_obs_positions = None, possible_agents = None):
+    def renderFrame(self, bm: BoidsManager, pm: POIManager = None, env_observations: Dict = None, all_obs_positions = None, possible_agents = None, render_POIs: bool = True, render_leader_observations: bool = True):
         self.screen.fill((255,255,255))
-        self.renderBoids(positions, headings)
-        if self.render_POIs:
+        self.renderBoids(bm.positions, bm.headings)
+        if render_POIs:
             self.renderPOIs(pm)
-        if self.render_centroid_observations and self.num_leaders > 0:
-            # This is a bit of a messy way of getting leader observations to show up here
-            # In the future, consider reworking this so Renderer doesn't access the BoidsManager directly
-            self.renderCentroidObservations(bm, observations, all_obs_positions, possible_agents)
-        if self.render_POI_observations and self.num_leaders > 0:
-            self.renderPOIObservations(bm, pm, observations, possible_agents)
-
+        if render_leader_observations:
+            if self.num_leaders > 0:
+                # This is a bit of a messy way of getting leader observations to show up here
+                # In the future, consider reworking this so Renderer doesn't access the BoidsManager directly
+                self.renderCentroidObservations(bm, env_observations, all_obs_positions, possible_agents)
+            if self.num_leaders > 0:
+                self.renderPOIObservations(bm, pm, env_observations, possible_agents)
         pygame.display.flip()
 
     def getPixels(self, units):
         return np.round(units * self.pixels_per_unit).astype(int)
 
     def renderPOIs(self, pm: POIManager):
-        for poi in pm.positions:
+        for poi in pm.pois:
             # poi_pix_location = self.getPixelCoords(poi)
-            self.renderPlusSign(poi, (0,100,0))
+            # self.renderPlusSign(poi, (0,100,0))
+            self.renderPOI(poi)
 
     def renderCentroidObservations(self, bm, observations, all_obs_positions, possible_agents):
         for leader_id in range(self.num_leaders):
@@ -184,7 +183,15 @@ class Renderer():
         pygame.gfxdraw.line(self.screen, top[0], top[1], bottom[0], bottom[1], color)
         pygame.gfxdraw.line(self.screen, left[0], left[1], right[0], right[1], color)
 
-    def renderPOIObservations(self, bm, pm, observations, possible_agents):
+    def renderPOI(self, poi: POI):
+        if poi.observed:
+            color = (0,255,0)
+        else:
+            color = (255,0,0)
+        pix_position = self.getPixelCoords(poi.position)
+        pygame.gfxdraw.filled_circle(self.screen, pix_position[0], pix_position[1], int(self.pixels_per_unit/2), color)
+
+    def renderPOIObservations(self, bm, pm: POIManager, observations, possible_agents):
         poi_color = (200,0,200)
         poi_line_color = (255, 0, 255)
 
@@ -192,11 +199,8 @@ class Renderer():
         num_pois = int( (observations[possible_agents[0]].size-2)/2 )
 
         # Go through each POI
-        for poi_id in range(num_pois):
-            # Get the POI position
-            poi_position = pm.positions[poi_id]
-            # Render POI as plus sign
-            self.renderPlusSign(poi_position, poi_color)
+        for poi_id, poi in enumerate(pm.pois):
+            self.renderPOI(poi)
             # Go through each leader
             for leader_id in range(self.num_leaders):
                 # Save the heading of the leader wrt world frame
