@@ -68,7 +68,7 @@ class BoidsEnv(ParallelEnv):
         rs = (2,3,5)
         self.bm = BoidsManager(num_leaders=num_leaders, num_followers=num_followers, max_velocity=10, max_angular_velocity=np.pi*0.5, radius_repulsion=rs[0], radius_orientation=rs[1], radius_attraction=rs[2], map_size=map_size, ghost_density=10, dt=self.dt, positions=positions, headings=headings, velocities=velocities, spawn_radius = spawn_radius, spawn_midpoint=spawn_midpoint, spawn_velocity=spawn_velocity)
         self.pm = POIManager(positions=poi_positions, coupling=coupling, observation_radius=rs[2])
-        self.obs = ObservationManager(self.bm, self.pm, include_followers=True)
+        self.obs = ObservationManager(self.bm, self.pm, include_followers=observe_followers)
         self.fm = FitnessManager(self.pm)
 
         self.render_mode = render_mode

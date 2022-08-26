@@ -95,7 +95,7 @@ class Worker():
         return rewards["team"]
 
 class Learner():
-    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, nn_inputs: int, nn_hidden: int, nn_outputs: int, num_workers: int = 4, init_population = None, env_kwargs: Dict = {}) -> None:
+    def __init__(self, population_size: int, num_parents: int, sigma_mutation: float, nn_hidden: int, nn_outputs: int, num_workers: int = 4, init_population = None, env_kwargs: Dict = {}) -> None:
         # Set variables
         self.population_size = population_size
         self.num_parents = num_parents
@@ -105,7 +105,7 @@ class Learner():
         self.iterations = 0
 
         # Initialize population
-        self.input_size = nn_inputs
+        self.input_size = 2*env_kwargs["poi_positions"].shape[0]+2*env_kwargs["observe_followers"]
         self.hidden_size = nn_hidden
         self.out_size = nn_outputs
         if init_population is None: self.population = [self.randomGenome() for _ in range(self.population_size)]
@@ -113,12 +113,13 @@ class Learner():
         self.fitnesses = [0 for _ in range(self.population_size)]
 
         # Hack to switch observe_followers parameter depending on nn input size
-        if self.input_size == 4:
-            env_kwargs["observe_followers"] = True
-        elif self.input_size == 2:
-            env_kwargs["observe_followers"] = False
-        else:
-            env_kwargs["observe_followers"] = False
+
+        # if self.input_size == 4:
+        #     env_kwargs["observe_followers"] = True
+        # elif self.input_size == 2:
+        #     env_kwargs["observe_followers"] = False
+        # else:
+        #     env_kwargs["observe_followers"] = False
 
         # Store environment parameters
         self.env_kwargs = env_kwargs

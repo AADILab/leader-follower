@@ -16,7 +16,7 @@ RENDER_FOLLOWER_OBSERVATION = False
 RENDER_LEADER_OBSERVATION = True
 # TRIALNAME = "trial_167"
 # TRIALNAME = "trial_149"
-# TRIALNAME = "trial_409"
+# TRIALNAME = "trial_412"
 
 if not RENDER_FOLLOWER_OBSERVATION:
     f_inds = []
@@ -29,6 +29,7 @@ final_scores = save_data["final_scores"]
 final_population = save_data["final_population"]
 env_kwargs = save_data["env_kwargs"]
 env_kwargs["follower_inds"] = f_inds
+# env_kwargs["observe_followers"] = True
 
 if PLOT_SCORES:
     plt.plot(scores_list)
