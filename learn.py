@@ -1,4 +1,4 @@
-from lib.learner_lib import Learner
+from lib.ccea_lib import CCEA
 from time import time
 import numpy as np
 from lib.file_helper import loadPopulation, getNewTrialName, getLatestTrialName, saveTrial
@@ -26,21 +26,21 @@ filename = EXPERIMENT_NAME + ".pkl"
 start = time()
 # env_kwargs = {"num_leaders": 1, "num_followers": 3, "FPS": 5, "num_steps": 10*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
 env_kwargs = {
-    "num_leaders": 1,
+    "num_leaders": 2,
     "num_followers": 0,
     "FPS": 5,
     "num_steps": 10*5,
     "render_mode": 'none',
     "map_size": np.array([50,50]),
-    "positions" : np.array([[25.,25.]]),
-    "headings": np.array([[-np.pi/2]]),
+    "positions" : np.array([[25.,25.], [25, 26]]),
+    "headings": np.array([[-np.pi/2], [np.pi/2]]),
     # "spawn_midpoint": np.array([25.,25.]),
     # "spawn_radius": 1,
     "spawn_velocity": 0,
     "poi_positions": np.array([[15.,15.], [35.,15.], [35.,35.], [15.,35.]]), # ,[20.,80.],[80.,20.],[80.,80.]
     "coupling": 1,
     "observe_followers": False}
-learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.15, nn_hidden=[10], nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
+learner = CCEA(num_agents = 2, sub_population_size=15, num_parents=5, sigma_mutation=0.15, nn_hidden=[10], nn_outputs=2, num_workers=4, init_population=initial_population, env_kwargs=env_kwargs)
 
 try:
     learner.train(num_generations=NUM_GENERATIONS)
@@ -49,12 +49,12 @@ except KeyboardInterrupt:
 
 learner.stop_event.set()
 
-scores_list, final_scores, final_population, finished_iterations = learner.getFinalMetrics()
+best_fitness_list, final_population, finished_iterations = learner.getFinalMetrics()
 
 # Save data
 save_data = {
-    "scores_list": scores_list,
-    "final_scores": final_scores,
+    "scores_list": best_fitness_list,
+    # "final_scores": final_scores,
     "final_population": final_population,
     "finished_iterations": finished_iterations,
     "env_kwargs": env_kwargs
