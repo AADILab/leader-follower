@@ -1,5 +1,5 @@
 import queue
-from typing import List, Dict, Optional, Callable
+from typing import List, Dict, Optional, Callable, Tuple, Union
 import random
 import traceback
 from pygame import init
@@ -26,7 +26,7 @@ def computeAction(net, observation, env):
     velocity = (out[1]+1.0)/2*env.bm.max_velocity
     return np.array([heading, velocity])
 
-class Evaluator():
+class EvaluationWorker():
     def __init__(self, in_queue: Queue, out_queue: Queue, stop_event: Event, id: int, env_kwargs: Dict = {}, nn_kwargs: Dict ={}):
         self.in_queue = in_queue
         self.out_queue = out_queue
@@ -50,28 +50,26 @@ class Evaluator():
                 seed = input["seed"]
 
                 try:
-                    # fitness = self.evaluateGenome(genome, seed, False)
                     fitness = self.evaluateGenome(genome, seed, False)
-                    if fitness == 1.0:
-                        print("Stop! Figured it out")
-                    # print("Id: ", self.genome_id, " | Score: ", fitness)
+                    # if fitness == 1.0:
+                    #     print("Stop! Figured it out")
 
                 except AttributeError as e:
-                    print("AttributeError!")
-                    print(e)
+                    print(f"AttributeError on EvaluationWorker {self.id}, Genome: {self.genome_id}")
+                    print(traceback.format_exc())
                     fitness = 0
 
                 output = {"id": input["id"], "fitness": fitness}
                 self.out_queue.put(output)
 
         except KeyboardInterrupt:
-            print(f"Interrupt on Evaluator {self.id}, Genome {self.genome_id} !")
+            print(f"Interrupt on EvaluationWorker {self.id}, Genome {self.genome_id} !")
             self.stop_event.set()
         except Exception as e:
-            print(f"Error on Evaluator {self.id}, Genome {self.genome_id}! Exiting program. Error: {e}\nFull Traceback:\n{traceback.format_exc()}")
+            print(f"Error on EvaluationWorker {self.id}, Genome {self.genome_id}! Exiting program. Error: {e}\nFull Traceback:\n{traceback.format_exc()}")
             self.stop_event.set()
         finally:
-            print(f"Shutting down Evaluator {self.id}")
+            print(f"Shutting down EvaluationWorker {self.id}")
 
     def evaluateGenome(self, genome: Genome, seed: int = 0, draw: bool = False) -> float:
         """Load genome into boids environment and calculate a fitness score."""
@@ -126,7 +124,7 @@ class Learner():
 
     def initEvaluationWorkers(self):
         return [
-        Evaluator(
+        EvaluationWorker(
             in_queue=self.work_queue,
             out_queue=self.fitness_queue,
             stop_event=self.stop_event,
@@ -168,7 +166,7 @@ class Learner():
             self.population = [self.randomGenome() for _ in range(self.population_size)]
         else:
             self.population = deepcopy(population)
-        self.fitnesses = [0 for _ in range(self.population_size)]
+        self.fitnesses = [None for _ in range(self.population_size)]
         return None
 
     def randomGenome(self):
@@ -182,25 +180,37 @@ class Learner():
             new_genome.append(layer + np.random.normal(0.0, self.sigma_mutation, size=(layer.shape)))
         return new_genome
 
-    def sortPopulation(self, scores: List[float]):
+    def sortedPopulation(self, population=None, fitnesses=None) -> Tuple[List[Genome], List[float]]:
         """Sort population so that higher fitness policies are moved to the front"""
-        return [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population), reverse=True)]
+        if population is None: population = self.population
+        if fitnesses is None: fitnesses = self.fitnesses
+        # Program was stopped due to user ctrl+C command or error. Some policies may not have fitnesses assigned.
+        if self.stop_event.is_set() and None in fitnesses:
+            scored_pop = [genome for genome, fitness in zip(population, fitnesses) if fitness is not None]
+            scored_fit = [fitness for fitness in fitnesses if fitness is not None]
+            unscored_pop = [genome for genome, fitness in zip(population, fitnesses) if fitness is None]
+            sorted_pop, sorted_fit =  self.sortedPopulation(scored_pop, scored_fit)
+            return sorted_pop+unscored_pop, sorted_fit+[None for _ in range(len(unscored_pop))]
+        return [genome for _, _, genome in sorted(zip(fitnesses, list(range(len(population))), population), reverse=True)], sorted(fitnesses, reverse=True)
 
-    def mutatePopulation(self, scores) -> List[Genome]:
+    def mutatedPopulation(self) -> Tuple[List[Genome], List[Union[float,None]]]:
         """Generate a new population based on the fitness scores of the genomes in the population."""
         # If all genomes score 0.0, then do a random restart
-        if len(set(scores)) == 1 and scores[0] == 0.0:
+        if len(set(self.fitnesses)) == 1 and self.fitnesses[0] == 0.0:
             mutated_population = [self.randomGenome() for _ in range(self.population_size)]
+            mutated_fitnesses = [None for _ in range(self.population_size)]
         else:
             # Sort population so that highest scoring genomes are at the front of the list
-            sorted_population = self.sortPopulation(scores)
+            population, fitnesses = self.sortedPopulation()
             # Select parents as genomes with highest scores
-            parents = sorted_population[:self.num_parents]
+            parents = population[:self.num_parents]
             # Randomly select parents and mutate them to get the rest of the population
             children = [self.mutateGenome(random.choice(parents)) for _ in range(self.num_children)]
             # Return a new population with the best-fit parents and mutated children
             mutated_population = parents + children
-        return mutated_population
+            # Return corresponding fitnesses
+            mutated_fitnesses = fitnesses[:self.num_parents]+[None for _ in range(self.num_children)]
+        return mutated_population, mutated_fitnesses
 
     def evaluatePopulation(self, population = None):
         if population is None:
@@ -235,26 +245,22 @@ class Learner():
     def step(self) -> float:
         """Step forward the learner by a generation and update the population."""
         # Mutate the population according to their fitness scores
-        self.population = self.mutatePopulation(self.fitnesses)
+        self.population, self.fitnesses = self.mutatedPopulation()
         # Evaluate all the genomes in the population
         self.fitnesses = self.evaluatePopulation()
         # Track times step() has been called
         self.iterations += 1
-        # Print best score
-        final_scores_sorted = sorted(self.fitnesses)
-        final_scores_sorted.reverse()
-        print(self.iterations, " : ", final_scores_sorted[0])
         return None
 
     def getFinalMetrics(self):
-        final_scores_sorted = sorted(self.fitnesses, reverse=True)
-        final_population_sorted = self.sortPopulation(self.fitnesses)
-        finished_iterations = self.iterations
-        return self.score_list, final_scores_sorted, final_population_sorted, finished_iterations
+        population, fitnesses = self.sortedPopulation()
+        return self.score_list, fitnesses, population, self.iterations
 
     def train(self, num_generations: int):
         """Train the learner for a set number of generations. Track performance data."""
-        for _ in range(num_generations):
+        # Evaluate the initial random policies
+        self.fitnesses = self.evaluatePopulation()
+        for _ in tqdm(range(num_generations)):
             self.step()
             best_score = max(self.fitnesses)
             # if self.stop_event.is_set():

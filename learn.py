@@ -3,7 +3,7 @@ from time import time
 import numpy as np
 from lib.file_helper import loadPopulation, getNewTrialName, getLatestTrialName, saveTrial
 
-NUM_GENERATIONS = 5000
+NUM_GENERATIONS = 100
 EXPERIMENT_NAME = getNewTrialName()
 LOAD_POPULATION = None
 # LOAD_POPULATION = getLatestTrialName()
@@ -27,18 +27,18 @@ start = time()
 # env_kwargs = {"num_leaders": 1, "num_followers": 3, "FPS": 5, "num_steps": 10*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
 env_kwargs = {
     "num_leaders": 1,
-    "num_followers": 4,
+    "num_followers": 0,
     "FPS": 5,
     "num_steps": 10*5,
     "render_mode": 'none',
     "map_size": np.array([50,50]),
-    "positions" : np.array([[25.,25.], [25,28], [28,25], [22,25], [25.,22.]]),
-    "headings": np.array([[-np.pi/2], [-np.pi/2], [-np.pi/2], [-np.pi/2], [-np.pi/2]]),
+    "positions" : np.array([[25.,25.]]),
+    "headings": np.array([[-np.pi/2]]),
     # "spawn_midpoint": np.array([25.,25.]),
     # "spawn_radius": 1,
     "spawn_velocity": 0,
-    "poi_positions": np.array([[20.,20.], [30.,20.], [30.,30.], [20.,30.]]), # ,[20.,80.],[80.,20.],[80.,80.]
-    "coupling": 5,
+    "poi_positions": np.array([[15.,15.], [35.,15.], [35.,35.], [15.,35.]]), # ,[20.,80.],[80.,20.],[80.,80.]
+    "coupling": 1,
     "observe_followers": False}
 learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.15, nn_hidden=[10], nn_outputs=2, init_population = initial_population, env_kwargs=env_kwargs)
 
