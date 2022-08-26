@@ -26,7 +26,7 @@ def computeAction(net, observation, env):
     velocity = (out[1]+1.0)/2*env.bm.max_velocity
     return np.array([heading, velocity])
 
-class Worker():
+class Evaluator():
     def __init__(self, in_queue: Queue, out_queue: Queue, stop_event: Event, id: int, env_kwargs: Dict = {}, nn_kwargs: Dict ={}):
         self.in_queue = in_queue
         self.out_queue = out_queue
@@ -65,13 +65,13 @@ class Worker():
                 self.out_queue.put(output)
 
         except KeyboardInterrupt:
-            print(f"Interrupt on Worker {self.id}, Genome {self.genome_id} !")
+            print(f"Interrupt on Evaluator {self.id}, Genome {self.genome_id} !")
             self.stop_event.set()
         except Exception as e:
-            print(f"Error on Worker {self.id}, Genome {self.genome_id}! Exiting program. Error: {e}\nFull Traceback:\n{traceback.format_exc()}")
+            print(f"Error on Evaluator {self.id}, Genome {self.genome_id}! Exiting program. Error: {e}\nFull Traceback:\n{traceback.format_exc()}")
             self.stop_event.set()
         finally:
-            print(f"Shutting down Worker {self.id}")
+            print(f"Shutting down Evaluator {self.id}")
 
     def evaluateGenome(self, genome: Genome, seed: int = 0, draw: bool = False) -> float:
         """Load genome into boids environment and calculate a fitness score."""
@@ -85,7 +85,6 @@ class Worker():
             if draw:
                 self.env.render()
             # Collect actions for all agents with each agent using the same genome to guide its action
-            # actions = {agent_name: self.net.forward(np.array(observations[agent_name])) for agent_name in self.env.possible_agents}
             actions = {agent_name: computeAction(self.net, observations[agent_name], self.env) for agent_name in self.env.possible_agents}
             # Step forward the environment
             observations, rewards, dones, _  = self.env.step(actions)
@@ -112,15 +111,6 @@ class Learner():
         else: self.population = init_population
         self.fitnesses = [0 for _ in range(self.population_size)]
 
-        # Hack to switch observe_followers parameter depending on nn input size
-
-        # if self.input_size == 4:
-        #     env_kwargs["observe_followers"] = True
-        # elif self.input_size == 2:
-        #     env_kwargs["observe_followers"] = False
-        # else:
-        #     env_kwargs["observe_followers"] = False
-
         # Store environment parameters
         self.env_kwargs = env_kwargs
 
@@ -130,7 +120,7 @@ class Learner():
         self.work_queue = Queue(1000)
         self.fitness_queue = Queue(1000)
         init_workers = [
-            Worker(
+            Evaluator(
                 in_queue=self.work_queue,
                 out_queue=self.fitness_queue,
                 stop_event=self.stop_event,
@@ -185,35 +175,7 @@ class Learner():
 
     def sortPopulation(self, scores: List[float]):
         """Sort population so that higher fitness policies are moved to the front"""
-        sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population), reverse=True)]
-        # sorted_pop.reverse()
-        # return sorted_pop
-        # sorted_pop = [genome for _, genome in sorted(zip(scores, self.population), reverse=True)]
-        # sorted_pop = [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population), reverse=True)]
-        # sorted_scores = [score for score in sorted(scores, reverse=True)]
-
-        # start_inds = [0]
-        # end_inds = []
-        # last_score = None
-
-        # for ind, score in enumerate(sorted_scores):
-        #     if last_score is None:
-        #         last_score = score
-        #     elif score != last_score:
-        #         last_score = score
-        #         start_inds.append(ind)
-        #         end_inds.append(ind)
-
-        # end_inds.append(15)
-
-        # for start_ind, end_ind in zip(start_inds, end_inds):
-        #     shuffled_genomes = sorted_pop[start_ind:end_ind]
-        #     random.shuffle(shuffled_genomes)
-        #     sorted_pop[start_ind:end_ind] = shuffled_genomes
-
-        # print(sorted_pop)
-
-        return sorted_pop
+        return [genome for _, _, genome in sorted(zip(scores, list(range(len(self.population))), self.population), reverse=True)]
 
     def mutatePopulation(self, scores) -> List[Genome]:
         """Generate a new population based on the fitness scores of the genomes in the population."""
@@ -277,12 +239,8 @@ class Learner():
         return None
 
     def getFinalMetrics(self):
-        # final_scores_sorted = sorted(self.fitnesses, reverse=True)
-        # final_population_sorted = self.sortPopulation(self.fitnesses)
-        # Not sorting because there seems to be a problem when watching with matching
-        # fitnesses to genomes
-        final_scores_sorted = self.fitnesses
-        final_population_sorted = self.population
+        final_scores_sorted = sorted(self.fitnesses, reverse=True)
+        final_population_sorted = self.sortPopulation(self.fitnesses)
         finished_iterations = self.iterations
         return self.score_list, final_scores_sorted, final_population_sorted, finished_iterations
 
