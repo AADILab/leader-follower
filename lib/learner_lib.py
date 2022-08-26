@@ -102,6 +102,7 @@ class Learner():
         self.sigma_mutation = sigma_mutation
         self.score_list = []
         self.iterations = 0
+        self.num_workers = num_workers
 
         # Initialize population
         self.input_size = 2*env_kwargs["poi_positions"].shape[0]+2*env_kwargs["observe_followers"]
@@ -109,7 +110,7 @@ class Learner():
         self.out_size = nn_outputs
         if init_population is None: self.population = [self.randomGenome() for _ in range(self.population_size)]
         else: self.population = init_population
-        self.fitnesses = [0 for _ in range(self.population_size)]
+        self.fitnesses = [None for _ in range(self.population_size)]
 
         # Store environment parameters
         self.env_kwargs = env_kwargs
@@ -119,24 +120,33 @@ class Learner():
 
         self.work_queue = Queue(1000)
         self.fitness_queue = Queue(1000)
-        init_workers = [
-            Evaluator(
-                in_queue=self.work_queue,
-                out_queue=self.fitness_queue,
-                stop_event=self.stop_event,
-                id=worker_id,
-                env_kwargs=env_kwargs,
-                nn_kwargs={"num_inputs": self.input_size, "num_hidden": self.hidden_size, "num_outputs": self.out_size}
-            )
-            for worker_id in range(num_workers)
-        ]
-        self.workers = [
+        init_workers = self.initEvaluationWorkers()
+        self.workers = self.setupEvaluationWorkers(init_workers)
+        self.startEvaluationWorkers()
+
+    def initEvaluationWorkers(self):
+        return [
+        Evaluator(
+            in_queue=self.work_queue,
+            out_queue=self.fitness_queue,
+            stop_event=self.stop_event,
+            id=worker_id,
+            env_kwargs=self.env_kwargs,
+            nn_kwargs={"num_inputs": self.input_size, "num_hidden": self.hidden_size, "num_outputs": self.out_size}
+        )
+        for worker_id in range(self.num_workers)
+    ]
+
+    def setupEvaluationWorkers(self, init_workers):
+        return [
             Process(
                 target=worker,
                 args=(),
             )
             for worker in init_workers
         ]
+
+    def startEvaluationWorkers(self):
         for w in self.workers:
             w.start()
 
@@ -160,7 +170,6 @@ class Learner():
             self.population = deepcopy(population)
         self.fitnesses = [0 for _ in range(self.population_size)]
         return None
-
 
     def randomGenome(self):
         # Create a NN with random weights and get the weights as the genome
@@ -206,7 +215,6 @@ class Learner():
         received = [False for _ in population]
         timeout = 10 # seconds
         fitnesses = [0 for _ in population]
-
 
         while not all (received) and not self.stop_event.is_set():
             try:
