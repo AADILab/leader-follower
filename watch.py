@@ -25,8 +25,8 @@ else:
 
 save_data = loadTrial(TRIALNAME)
 scores_list = save_data["scores_list"]
-final_scores = save_data["final_scores"]
 final_population = save_data["final_population"]
+best_team_data = save_data["best_team_data"]
 env_kwargs = save_data["env_kwargs"]
 env_kwargs["follower_inds"] = f_inds
 # env_kwargs["observe_followers"] = True
@@ -34,7 +34,7 @@ env_kwargs["follower_inds"] = f_inds
 if PLOT_SCORES:
     plt.plot(scores_list)
     plt.xlabel("Generation")
-    plt.ylabel("Score")
+    plt.ylabel("Fitness Score")
     plt.ylim([0.0,1.2])
     plt.title("Team Performance")
     plt.show()
@@ -48,24 +48,26 @@ if PLAY_ENV:
     # env.renderer.render_centroid_observations = False
     # env.renderer.render_POI_observations = False
     refresh_time = 1/env.FPS
-    for count, genome in enumerate(final_population[:]):
-        print("Playing genome ",count+1," with score ", final_scores[count])
-        network = createNNfromWeights(genome)
-        # print("Number of weights in network: ", network.total_weights)
-        observations = env.reset()
-        for _ in range(env.num_steps):
-            start_time = time()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    print("Shutdown command recieved. Shutting down.")
-                    shutdown = True
-            if shutdown: exit()
-            actions = {agent: computeAction(network, observations[agent], env) for agent in env.possible_agents}
-            observations, rewards, dones, infos = env.step(actions)
-            env.render(kwargs={"render_leader_observations": False})
-            loop_time = time() - start_time
-            if loop_time < refresh_time:
-                sleep(refresh_time - loop_time)
-            else:
-                print("Loop took longer than refresh rate")
-        print("Final Score: ", rewards["team"])
+    networks = [createNNfromWeights(genome_data.genome) for genome_data in best_team_data.team]
+
+    # for count, genome in enumerate(final_population[:]):
+    # print("Playing genome ",count+1," with score ", final_scores[count])
+    # network = createNNfromWeights(genome)
+    # print("Number of weights in network: ", network.total_weights)
+    observations = env.reset()
+    for _ in range(env.num_steps):
+        start_time = time()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                print("Shutdown command recieved. Shutting down.")
+                shutdown = True
+        if shutdown: exit()
+        actions = {agent: computeAction(network, observations[agent], env) for agent, network in zip(env.possible_agents, networks)}
+        observations, rewards, dones, infos = env.step(actions)
+        env.render(kwargs={"render_leader_observations": False})
+        loop_time = time() - start_time
+        if loop_time < refresh_time:
+            sleep(refresh_time - loop_time)
+        else:
+            print("Loop took longer than refresh rate")
+    print("Final Score: ", rewards["team"])

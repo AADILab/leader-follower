@@ -38,7 +38,7 @@ env_kwargs = {
     # "spawn_radius": 1,
     "spawn_velocity": 0,
     "poi_positions": np.array([[15.,15.], [35.,15.], [35.,35.], [15.,35.]]), # ,[20.,80.],[80.,20.],[80.,80.]
-    "coupling": 1,
+    "coupling": 2,
     "observe_followers": False}
 learner = CCEA(num_agents = 2, sub_population_size=15, num_parents=5, sigma_mutation=0.15, nn_hidden=[10], nn_outputs=2, num_workers=4, init_population=initial_population, env_kwargs=env_kwargs)
 
@@ -49,14 +49,14 @@ except KeyboardInterrupt:
 
 learner.stop_event.set()
 
-best_fitness_list, final_population, finished_iterations = learner.getFinalMetrics()
+best_fitness_list, final_population, finished_iterations, best_team_data = learner.getFinalMetrics()
 
 # Save data
 save_data = {
     "scores_list": best_fitness_list,
-    # "final_scores": final_scores,
     "final_population": final_population,
     "finished_iterations": finished_iterations,
+    "best_team_data": best_team_data,
     "env_kwargs": env_kwargs
 }
 
