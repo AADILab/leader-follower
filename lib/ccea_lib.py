@@ -257,9 +257,7 @@ class CCEA():
             except queue.Empty:
                 pass
 
-        print("Team Fitnesses: ", [team_data.fitness for team_data in evaluated_teams])
         covered = [[0 for _ in sub_pop] for sub_pop in self.population]
-        print("Covered: ", covered)
 
         # Assign fitnesses from teams to agent policies on that team
         for evaluated_team_data in evaluated_teams:
@@ -268,24 +266,15 @@ class CCEA():
                 self.population[agent_id][genome_data.id].fitness = evaluated_team_data.fitness
                 covered[agent_id][genome_data.id] += 1
 
-        # # Debugging code
-        # for sub_pop in self.population:
-        #     for genome_data in sub_pop:
-        #         print(genome_data.fitness)
-
-        print("Population Fitnesses: ",[[genome_data.fitness for genome_data in sub_pop] for sub_pop in self.population])
-        print("Covered: ", covered)
-
         # Save the team with the highest fitness
         evaluated_teams.sort(reverse=True)
         if self.best_team_data is None or evaluated_teams[0].fitness > self.best_team_data.fitness:
             self.best_team_data = deepcopy(evaluated_teams[0])
+            print(self.best_team_data.fitness)
 
     def mutatePopulation(self):
         # Mutate policies
         for sub_pop in self.population:
-            # print([genome_data.fitness for genome_data in sub_pop]) # Debugging code
-
             # Sort each sub population so highest fitness policies are at the front
             sub_pop.sort(reverse=True)
             # Set new ids for parents since their position in the sub population changed
