@@ -1,5 +1,4 @@
 import functools
-from xml.etree.ElementInclude import include
 from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
@@ -75,7 +74,7 @@ class BoidsEnv(ParallelEnv):
         if self.render_mode == 'none':
             self.renderer = None
         else:
-            self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=10, radii = rs, follower_inds=follower_inds, render_mode=render_mode)
+            self.renderer = Renderer(num_leaders, num_followers, map_size, pixels_per_unit=15, radii = rs, follower_inds=follower_inds, render_mode=render_mode)
 
         # Set total steps in simulation run. Necessary for reward calculations
         self.num_steps = num_steps

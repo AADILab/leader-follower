@@ -21,6 +21,17 @@ class Renderer():
         # Set useful variables
         self.follower_color = (0,120,250)
         self.leader_color = (250, 120, 0)
+        self.leader_colors = [
+            (250, 120, 0),
+            (250, 250, 0),
+            (0, 200, 0),
+            (120,0,120),
+            # (0,154,68),
+            # (250, 120, 0),
+            # (255,164,0),
+            # (255,233,0),
+            # (225,6,0)
+        ]
         self.boid_radius = 1 # unit, not pixel
         self.boid_pixel_radius = self.getPixels(self.boid_radius)
         self.phi = np.pi/8
@@ -94,7 +105,10 @@ class Renderer():
             if boid_id < self.num_followers:
                 color = self.follower_color
             else:
-                color = self.leader_color
+                if boid_id-self.num_followers < len(self.leader_colors):
+                    color = self.leader_colors[boid_id-self.num_followers]
+                else:
+                    color = self.leader_color
             self.renderBoid(positions[boid_id], headings[boid_id][0], color, boid_id)
 
     def renderFrame(self, bm: BoidsManager, pm: POIManager = None, env_observations: Dict = None, all_obs_positions = None, possible_agents = None, render_POIs: bool = True, render_leader_observations: bool = True):

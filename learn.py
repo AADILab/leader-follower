@@ -3,7 +3,7 @@ from time import time
 import numpy as np
 from lib.file_helper import loadPopulation, getNewTrialName, getLatestTrialName, saveTrial
 
-NUM_GENERATIONS = 100
+NUM_GENERATIONS = 500
 EXPERIMENT_NAME = getNewTrialName()
 LOAD_POPULATION = None
 # LOAD_POPULATION = getLatestTrialName()
@@ -25,22 +25,41 @@ filename = EXPERIMENT_NAME + ".pkl"
 
 start = time()
 # env_kwargs = {"num_leaders": 1, "num_followers": 3, "FPS": 5, "num_steps": 10*5, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
+
+# Boid positions are randomized within the spawn radius of the spawn midpoint
+# print("sp: ", self.spawn_radius)
+
+num_leaders = 4
+num_followers = 5
+
+spawn_radius = 5
+spawn_midpoint = np.array([25.,25.])
+
+rand_angles = np.random.uniform(low=0., high=2*np.pi, size=(num_followers+num_leaders,1))
+rand_radii = np.random.uniform(low=0.,high=spawn_radius,size=(num_followers+num_leaders,1))
+positions = np.hstack((
+    rand_radii*np.cos(rand_angles),
+    rand_radii*np.sin(rand_angles)
+)) + spawn_midpoint
+
+headings = np.random.uniform(low=0., high=2*np.pi, size = (num_followers+num_leaders, 1))
+
 env_kwargs = {
-    "num_leaders": 2,
-    "num_followers": 0,
+    "num_leaders": num_leaders,
+    "num_followers": num_followers,
     "FPS": 5,
     "num_steps": 10*5,
     "render_mode": 'none',
     "map_size": np.array([50,50]),
-    "positions" : np.array([[25.,25.], [25, 26]]),
-    "headings": np.array([[-np.pi/2], [np.pi/2]]),
+    "positions" : positions, #np.array([[25.,25.], [25, 26]]),
+    "headings": headings,# np.array([[-np.pi/2], [np.pi/2]]),
     # "spawn_midpoint": np.array([25.,25.]),
     # "spawn_radius": 1,
     "spawn_velocity": 0,
     "poi_positions": np.array([[15.,15.], [35.,15.], [35.,35.], [15.,35.]]), # ,[20.,80.],[80.,20.],[80.,80.]
-    "coupling": 2,
+    "coupling": 5,
     "observe_followers": False}
-learner = CCEA(num_agents = 2, sub_population_size=15, num_parents=5, sigma_mutation=0.15, nn_hidden=[10], nn_outputs=2, num_workers=4, init_population=initial_population, env_kwargs=env_kwargs)
+learner = CCEA(num_agents = num_leaders, sub_population_size=15, num_parents=5, sigma_mutation=0.15, nn_hidden=[10], nn_outputs=2, num_workers=4, init_population=initial_population, env_kwargs=env_kwargs)
 
 try:
     learner.train(num_generations=NUM_GENERATIONS)
