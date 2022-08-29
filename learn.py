@@ -3,7 +3,7 @@ from time import time
 import numpy as np
 from lib.file_helper import loadPopulation, getNewTrialName, getLatestTrialName, saveTrial
 
-NUM_GENERATIONS = 500
+NUM_GENERATIONS = 50
 EXPERIMENT_NAME = getNewTrialName()
 LOAD_POPULATION = None
 # LOAD_POPULATION = getLatestTrialName()
@@ -30,7 +30,7 @@ start = time()
 # print("sp: ", self.spawn_radius)
 
 num_leaders = 4
-num_followers = 5
+num_followers = 20
 
 spawn_radius = 5
 spawn_midpoint = np.array([25.,25.])

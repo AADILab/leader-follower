@@ -63,7 +63,7 @@ class BoidsManager():
         self.velocities = self.setup_velocities(self.init_velocities)
 
         # Setup underlying map structure for observations
-        self.map = Map(self.map_size, self.radius_attraction, self.positions)
+        # self.map = Map(self.map_size, self.radius_attraction, self.positions)
 
     def reset(self):
         """Reset simulation state with initial conditions. Random variables will be used for variables where no initial condition was specified."""
@@ -77,7 +77,7 @@ class BoidsManager():
         self.velocities = self.setup_velocities(self.init_velocities)
 
         # Reset the map with the new positions
-        self.map.reset(self.positions)
+        # self.map.reset(self.positions)
 
         return None
 
@@ -151,7 +151,9 @@ class BoidsManager():
 
     def get_observable_boid_ids(self, boid_id):
         # Grab the observable boids in that position
-        observable_boid_ids = self.map.get_observable_agent_inds(self.positions[boid_id], self.positions)
+        observable_boid_ids = list(np.nonzero(np.linalg.norm(self.positions[boid_id]-self.positions, axis=1) < self.radius_attraction)[0])
+        # print(observable_boid_ids)
+        # observable_boid_ids = self.map.get_observable_agent_inds(self.positions[boid_id], self.positions)
         # Toss out the current boid from observable boids
         observable_boid_ids.remove(boid_id)
         return observable_boid_ids
@@ -549,11 +551,11 @@ class BoidsManager():
         # Apply left bound
         self.positions[:,0][self.positions[:,0]<0] = 0
         # Apply right bound
-        self.positions[:,0][self.positions[:,0]>self.map.map_size[0]] = self.map.map_size[0]
+        self.positions[:,0][self.positions[:,0]>self.map_size[0]] = self.map_size[0]
         # Apply lower bound
         self.positions[:,1][self.positions[:,1]<0] = 0
         # Apply upper bound
-        self.positions[:,1][self.positions[:,1]>self.map.map_size[1]] = self.map.map_size[1]
+        self.positions[:,1][self.positions[:,1]>self.map_size[1]] = self.map_size[1]
 
     def unpack_leader_actions(self, leader_actions):
         if leader_actions is None:
@@ -587,4 +589,4 @@ class BoidsManager():
         # Update leader and follower states using kinematics
         self.update_all_states(angular_velocities, accelerations)
         # Reset the map with the new positions
-        self.map.reset(self.positions)
+        # self.map.reset(self.positions)
