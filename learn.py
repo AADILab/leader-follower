@@ -72,7 +72,7 @@ env_kwargs = {
     "poi_positions": np.array([[15.,30.], [35.,30.], [35.,35.], [15.,35.]]), # ,[20.,80.],[80.,20.],[80.,80.]
     "coupling": 3,
     "observe_followers": True}
-learner = CCEA(num_agents = num_leaders, sub_population_size=15, num_parents=5, sigma_mutation=0.15, nn_hidden=[10], nn_outputs=2, num_workers=4, init_population=initial_population, use_difference_rewards=True, env_kwargs=env_kwargs)
+learner = CCEA(num_agents = num_leaders, sub_population_size=15, num_parents=5, sigma_mutation=0.15, mutation_probability=0.15, nn_hidden=[10], nn_outputs=2, num_workers=4, init_population=initial_population, use_difference_rewards=False, env_kwargs=env_kwargs)
 
 try:
     learner.train(num_generations=NUM_GENERATIONS)

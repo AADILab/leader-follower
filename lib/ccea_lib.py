@@ -127,13 +127,14 @@ class EvaluationWorker():
         return rewards["team"], [rewards[self.env.possible_agents[agent_id]] for agent_id in range(self.env.num_agents)]
 
 class CCEA():
-    def __init__(self, num_agents: int, sub_population_size: int, num_parents: int, sigma_mutation: float, nn_hidden: int, nn_outputs: int, num_workers: int = 4, init_population = None, use_difference_rewards: bool = True, env_kwargs: Dict = {}) -> None:
+    def __init__(self, num_agents: int, sub_population_size: int, num_parents: int, sigma_mutation: float, mutation_probability: float, nn_hidden: int, nn_outputs: int, num_workers: int = 4, init_population = None, use_difference_rewards: bool = True, env_kwargs: Dict = {}) -> None:
         # Set variables
         self.num_agents = num_agents
         self.sub_population_size = sub_population_size
         self.num_parents = num_parents
         self.num_children = sub_population_size - num_parents
         self.sigma_mutation = sigma_mutation
+        self.mutation_probability = mutation_probability
         self.iterations = 0
         self.num_workers = num_workers
         self.env_kwargs = env_kwargs
@@ -217,10 +218,15 @@ class CCEA():
             pass
 
     def mutateGenome(self, genome: Genome) -> Genome:
-        """Mutate weights of genome with zero-mean gaussian noise."""
+        # """Mutate weights of genome with zero-mean gaussian noise."""
         new_genome = []
         for layer in genome:
-            new_genome.append(layer + np.random.normal(0.0, self.sigma_mutation, size=(layer.shape)))
+            new_layer = layer.copy()
+            rand = np.reshape(np.random.uniform(low=0.0,high=1.0,size=new_layer.size), new_layer.shape)
+            # print(rand.shape, new_layer.shape, layer.shape)
+            new_layer[rand < self.mutation_probability] += np.random.normal(0.0, self.sigma_mutation, size=new_layer[rand<self.mutation_probability].size)*new_layer[rand < self.mutation_probability]
+            new_genome.append(new_layer)
+            # new_genome.append(layer + np.random.normal(0.0, self.sigma_mutation, size=(layer.shape)))
         return new_genome
 
     def randomTeams(self):

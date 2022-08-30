@@ -135,7 +135,6 @@ class Renderer():
             self.renderPOI(poi, pm)
 
     def renderCentroidObservations(self, bm, observations, all_obs_positions, possible_agents):
-        print(observations)
         for leader_id in range(self.num_leaders):
             # Save the heading of the leader wrt world frame
             leader_heading = bm.headings[leader_id+self.num_followers][0]
