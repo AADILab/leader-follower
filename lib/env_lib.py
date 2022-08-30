@@ -1,3 +1,5 @@
+from copy import deepcopy
+from typing import List
 import functools
 from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
@@ -11,6 +13,9 @@ from lib.fitness_manager import FitnessManager
 from lib.renderer import Renderer
 # from lib.learning_module_lib import LearningModule
 from lib.poi_manager import POIManager
+
+def argmax(iterable):
+    return max(enumerate(iterable), key=lambda x: x[1])[0]
 
 def env():
     '''
@@ -142,6 +147,39 @@ class BoidsEnv(ParallelEnv):
             bm_actions[agent_id] = actions[agent_name]
         return bm_actions
 
+    def calculateDifferenceReward(self, agent_id: int, assigned_followers: List[int]):
+        # Make a copy of the POI manager and all POIs
+        pm_copy = deepcopy(self.pm)
+        all_removed_ids = assigned_followers+[agent_id]
+        for poi in pm_copy.pois:
+            # Determine if POI would be observed without this agent and its followers
+            # Set observation to False
+            poi.observed = False
+            # Check each group that observed this poi
+            for group in poi.observation_list:
+                # Recreate this group but with the leader and followers removed
+                # If the leaders and followers were not in this group, then this is just
+                # a copy of the original group
+                difference_group = [id for id in group if id not in all_removed_ids]
+                # If the coupling requirement is still satisfied, then set this poi as observed
+                if len(difference_group) >= self.pm.coupling:
+                    poi.observed = True
+                    break
+        difference_fitness_manager = FitnessManager(pm_copy)
+        return self.fm.getTeamFitness() - difference_fitness_manager.getTeamFitness()
+
+    def calculateDifferenceRewards(self):
+        # Assign followers to each leader
+        all_assigned_followers = [[] for _ in range(self.num_agents)]
+        for follower_id, follower in enumerate(self.bm.followers):
+            # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
+            all_assigned_followers[argmax(follower.leader_influence)].append(follower_id)
+        difference_rewards = []
+        for agent_id, assigned_followers in zip(range(self.num_agents),all_assigned_followers):
+            difference_rewards.append(self.calculateDifferenceReward(agent_id, assigned_followers))
+
+        return {self.possible_agents[agent_id]: difference_rewards[agent_id] for agent_id in range(self.num_agents)}
+
     def step(self, actions):
         '''
         step(action) takes in an action for each agent and should return the
@@ -163,9 +201,6 @@ class BoidsEnv(ParallelEnv):
         # Update POIs
         self.pm.update(self.bm)
 
-        # Get rewards for leaders
-        rewards = {"team": self.fm.getTeamFitness()}
-
         # Step forward and check if simulation is done
         self.step_count += 1
         if self.num_steps is not None:
@@ -175,6 +210,14 @@ class BoidsEnv(ParallelEnv):
 
         dones = {agent: env_done for agent in self.possible_agents}
         infos = {agent: {} for agent in self.possible_agents}
+
+        # Get rewards for leaders
+        if env_done:
+            rewards = self.calculateDifferenceRewards()
+            rewards["team"] = self.fm.getTeamFitness()
+        else:
+            rewards = {self.possible_agents[agent_id]: 0.0 for agent_id in range(self.num_agents)}
+            rewards["team"] = 0.0
 
         # print(self.step_count)
 

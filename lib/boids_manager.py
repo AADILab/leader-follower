@@ -2,6 +2,11 @@ import numpy as np
 
 from lib.map_utils import Map
 
+class Follower():
+    def __init__(self, num_leaders) -> None:
+        # Index is leader. Value is how many timesteps that leader was within the observation radius of this follower
+        self.leader_influence = [0 for _ in range(num_leaders)]
+
 class BoidsManager():
     def __init__(self, max_velocity, max_angular_velocity, radius_repulsion, radius_orientation, radius_attraction, \
         num_followers, num_leaders, map_size, positions = None, headings = None, velocities = None, \
@@ -52,6 +57,7 @@ class BoidsManager():
         self.init_positions = positions
         self.init_headings = headings
         self.init_velocities = velocities
+        self.is_leader_bool = [False for _ in range(self.num_followers)]+[True for _ in range(self.num_leaders)]
 
         # Setup boid positions
         self.positions = self.setup_positions(self.init_positions)
@@ -63,7 +69,10 @@ class BoidsManager():
         self.velocities = self.setup_velocities(self.init_velocities)
 
         # Setup underlying map structure for observations
-        # self.map = Map(self.map_size, self.radius_attraction, self.positions)
+        # self.map = Map(self.map_size, self.radius_attraction, self.positions
+
+        # Track which leaders the followers were following
+        self.followers = [Follower(self.num_leaders) for _ in range(self.num_followers)]
 
     def reset(self):
         """Reset simulation state with initial conditions. Random variables will be used for variables where no initial condition was specified."""
@@ -571,6 +580,13 @@ class BoidsManager():
         leader_actions is Nx2. Left side is delta headings. Right side is desired velocities.
         If leader actions is None, then leaders remain in current state.
         """
+        # Update what leaders each follower was influenced by
+        for f_id, follower in enumerate(self.followers):
+            obs_boid_ids = self.get_observable_boid_ids(f_id)
+            for boid_id in obs_boid_ids:
+                if self.is_leader_bool[boid_id]:
+                    leader_id = boid_id - self.num_followers
+                    follower.leader_influence[leader_id]+=1
         # Unpack leader actions
         leader_delta_headings, leader_desired_velocities = self.unpack_leader_actions(leader_actions)
         # Update the follower observations

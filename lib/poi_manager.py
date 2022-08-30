@@ -7,7 +7,8 @@ class POI():
     def __init__(self, position: np.array, observation_radius: float) -> None:
         self.position = position
         self.observed = False
-        self.observation_radius = observation_radius
+        # Groups of agents that observed this POI
+        self.observation_list = []
 
 class POIManager():
     def __init__(self, positions: List[List[float]], observation_radius: float, coupling: int = 1) -> None:
@@ -27,7 +28,10 @@ class POIManager():
             observations = np.sum(distances<=self.observation_radius)
             if observations >= self.coupling:
                 poi.observed = True
-                # print("POI Observed | min distance: ", min_distance, " | observation_radius: ", self.observation_radius)
+                # Get the ids of all agents that observed this POI
+                observer_ids = np.nonzero(distances<=self.observation_radius)[0]
+                poi.observation_list.append(observer_ids)
+                # print("POI  at ", list(poi.position) ," observed by ", observer_ids)
 
     def reset(self) -> None:
         for poi in self.pois:

@@ -52,6 +52,7 @@ class TeamData(SortByFitness):
         self.team = team
         self.id = id
         self.fitness = fitness
+        self.difference_evaluations = []
         self.evaluation_seed = evaluation_seed
 
 def generateSeed():
@@ -66,11 +67,12 @@ def computeAction(net, observation, env):
     return np.array([heading, velocity])
 
 class EvaluationWorker():
-    def __init__(self, in_queue, out_queue, stop_event: Event, id: int, team_size: int, env_kwargs: Dict = {}, nn_kwargs: Dict ={}):
+    def __init__(self, in_queue, out_queue, stop_event: Event, id: int, team_size: int, use_difference_rewards: bool, env_kwargs: Dict = {}, nn_kwargs: Dict ={}):
         self.in_queue = in_queue
         self.out_queue = out_queue
         self.stop_event = stop_event
         self.id = id
+        self.use_difference_rewards = use_difference_rewards
         self.env = BoidsEnv(**env_kwargs)
         self.team_policies = [NN(**nn_kwargs) for _ in range(team_size)]
 
@@ -83,7 +85,7 @@ class EvaluationWorker():
                     continue
 
                 try:
-                    team_data.fitness = self.evaluateTeam(team_data, False)
+                    team_data.fitness, team_data.difference_evaluations = self.evaluateTeam(team_data, False)
                 except AttributeError as e:
                     print(f"AttributeError on EvaluationWorker {self.id}")
                     print(traceback.format_exc())
@@ -122,10 +124,10 @@ class EvaluationWorker():
             # Save done
             done = True in dones.values()
         self.env.close()
-        return rewards["team"]
+        return rewards["team"], [rewards[self.env.possible_agents[agent_id]] for agent_id in range(self.env.num_agents)]
 
 class CCEA():
-    def __init__(self, num_agents: int, sub_population_size: int, num_parents: int, sigma_mutation: float, nn_hidden: int, nn_outputs: int, num_workers: int = 4, init_population = None, env_kwargs: Dict = {}) -> None:
+    def __init__(self, num_agents: int, sub_population_size: int, num_parents: int, sigma_mutation: float, nn_hidden: int, nn_outputs: int, num_workers: int = 4, init_population = None, use_difference_rewards: bool = True, env_kwargs: Dict = {}) -> None:
         # Set variables
         self.num_agents = num_agents
         self.sub_population_size = sub_population_size
@@ -137,6 +139,7 @@ class CCEA():
         self.env_kwargs = env_kwargs
         self.best_fitness_list = []
         self.best_team_data = None
+        self.use_difference_rewards = use_difference_rewards
 
         # Setup nn variables
         self.nn_inputs = 2*env_kwargs["poi_positions"].shape[0]+2*env_kwargs["observe_followers"]
@@ -180,6 +183,7 @@ class CCEA():
             out_queue=self.fitness_queue,
             stop_event=self.stop_event,
             id=worker_id,
+            use_difference_rewards=self.use_difference_rewards,
             env_kwargs=self.env_kwargs,
             team_size=self.num_agents,
             nn_kwargs={"num_inputs": self.nn_inputs, "num_hidden": self.nn_hidden, "num_outputs": self.nn_outputs}
@@ -263,7 +267,10 @@ class CCEA():
         for evaluated_team_data in evaluated_teams:
             # Each team is ordered by agent id. And each genome has an id corresponding to its position in the sub population
             for agent_id, genome_data in enumerate(evaluated_team_data.team):
-                self.population[agent_id][genome_data.id].fitness = evaluated_team_data.fitness
+                if self.use_difference_rewards:
+                    self.population[agent_id][genome_data.id].fitness = evaluated_team_data.difference_evaluations[agent_id]
+                else:
+                    self.population[agent_id][genome_data.id].fitness = evaluated_team_data.fitness
                 covered[agent_id][genome_data.id] += 1
 
         # Save the team with the highest fitness

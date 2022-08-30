@@ -64,10 +64,10 @@ if PLAY_ENV:
         if shutdown: exit()
         actions = {agent: computeAction(network, observations[agent], env) for agent, network in zip(env.possible_agents, networks)}
         observations, rewards, dones, infos = env.step(actions)
-        env.render(kwargs={"render_leader_observations": False})
+        env.render(kwargs={"render_centroid_observations": RENDER_LEADER_OBSERVATION})
         loop_time = time() - start_time
         if loop_time < refresh_time:
             sleep(refresh_time - loop_time)
         else:
             print("Loop took longer than refresh rate")
-    print("Final Score: ", rewards["team"])
+    # print("Final Score: ", rewards["team"])
