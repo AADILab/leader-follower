@@ -7,9 +7,9 @@ from lib.env_renderer import Renderer
 bc = BoidsColony(
     leader_positions=[],
     follower_positions=[
-        [20,20],
-        [21,20],
-        [22,20]
+        [2,2],
+        [3,3],
+        [2,3]
     ],
     leader_headings=[],
     follower_headings=[np.pi/2, np.pi/3, -np.pi],
@@ -18,7 +18,10 @@ bc = BoidsColony(
     radius_repulsion=2,
     radius_orientation=3,
     radius_attraction=5,
-    repulsion_mulitplier=3,
+    repulsion_multiplier=3,
+    orientation_multiplier=1,
+    attraction_multiplier=1,
+    wall_avoidance_multiplier=1,
     map_dimensions=[50,50],
     min_velocity=0, max_velocity=10,
     max_acceleration=5,

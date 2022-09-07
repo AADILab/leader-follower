@@ -8,9 +8,9 @@ from time import sleep
 
 bm = BoidsManager(
     positions=np.array([
-        [20,20],
-        [21,20],
-        [22,20]
+        [2,2],
+        [3,3],
+        [2,3]
     ], dtype=float),
     headings=np.array([[np.pi/2], [np.pi/3], [-np.pi]], dtype=float),
     velocities=np.array([[0],[0],[0]], dtype=float),

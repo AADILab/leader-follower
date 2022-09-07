@@ -57,7 +57,10 @@ class BoidsColony():
         leader_headings: List[float], follower_headings: List[float],
         leader_velocities: List[float], follower_velocities: List[float],
         radius_repulsion: float, radius_orientation: float, radius_attraction: float,
-        repulsion_mulitplier: float,
+        repulsion_multiplier: float,
+        orientation_multiplier: float,
+        attraction_multiplier: float,
+        wall_avoidance_multiplier: float,
         map_dimensions: List[float],
         min_velocity: float, max_velocity: float,
         max_acceleration: float,
@@ -81,7 +84,10 @@ class BoidsColony():
         self.radius_orientation = radius_orientation
         self.radius_attraction = radius_attraction
 
-        self.repulsion_multiplier = repulsion_mulitplier
+        self.repulsion_multiplier = repulsion_multiplier
+        self.orientation_multiplier = orientation_multiplier
+        self.attraction_multiplier = attraction_multiplier
+        self.wall_avoidance_multiplier = wall_avoidance_multiplier
 
         self.map_dimensions = np.array(map_dimensions, dtype=float)
 
@@ -134,14 +140,14 @@ class BoidsColony():
         orientation_headings = np.array([boid.heading for boid in orientation_boids])
         if np.shape(orientation_headings)[0] != 0:
             # Calculate a unit (x,y) vector from each heading
-            print("ori head: ", orientation_headings)
+            # print("ori head: ", orientation_headings)
             unit_vectors = np.hstack((
                 np.expand_dims(np.cos(orientation_headings), axis=1),
                 np.expand_dims(np.sin(orientation_headings), axis=1)
             ))
-            print("uv: ", unit_vectors)
+            # print("uv: ", unit_vectors)
             # Sum up the vectors for the final orientation vector
-            return np.sum(unit_vectors, axis=0)
+            return np.sum(unit_vectors, axis=0) * self.orientation_multiplier
         else:
             return np.array([0,0])
 
@@ -149,7 +155,7 @@ class BoidsColony():
         # Attraction vector is average vector from current boid to attraction boids, normalized by radius of attraction
         attraction_positions = np.array([boid.position for boid in attraction_boids])
         if np.shape(attraction_positions)[0] != 0:
-            return (np.average(attraction_positions, axis=0) - boid.position)/self.radius_attraction
+            return (np.average(attraction_positions, axis=0) - boid.position)/self.radius_attraction * self.attraction_multiplier
         else:
             return np.array([0,0])
 
@@ -178,7 +184,7 @@ class BoidsColony():
         # Top wall
         elif boid.position[1] >= self.map_dimensions[1] - self.radius_repulsion:
             wall_vec[1] = self.map_dimensions[1] - self.radius_repulsion - boid.position[1]
-        return wall_vec
+        return wall_vec * self.wall_avoidance_multiplier
 
     def calculateDesiredVelocity(self, sum_vector, delta_heading):
         # Heading is well aligned
@@ -295,21 +301,30 @@ class BoidsColony():
 
         # print("vels:")
         # print(vels)
-        print("Sum vecs")
-        for sum_vec in sum_vecs:
-            print(sum_vec)
-        print("Rep vecs:")
-        for rep_vec in rep_vecs:
-            print(rep_vec)
-        print("Ori vecs:")
-        for ori_vec in ori_vecs:
-            print(ori_vec)
-        print("Att vecs:")
-        for att_vec in att_vecs:
-            print(att_vec)
-        print("Deltas:")
-        for delta_heading, delta_vel in zip(delta_headings, delta_velocities):
-            print(delta_heading, delta_vel)
+        # print("Sum vecs")
+        # for sum_vec in sum_vecs:
+        #     print(sum_vec)
+        # print("Rep vecs:")
+        # for rep_vec in rep_vecs:
+        #     print(rep_vec)
+        # print("Ori vecs:")
+        # for ori_vec in ori_vecs:
+        #     print(ori_vec)
+        # print("Att vecs:")
+        # for att_vec in att_vecs:
+        #     print(att_vec)
+        print("Positions:")
+        for position in self.positions:
+            print(position)
+        print("Headings:")
+        for heading in self.headings:
+            print(heading)
+        print("Wall vecs:")
+        for wall_vec in wall_vecs:
+            print(wall_vec)
+        # print("Deltas:")
+        # for delta_heading, delta_vel in zip(delta_headings, delta_velocities):
+        #     print(delta_heading, delta_vel)
         # Go through each leader
         for leader, desired_velocity, desired_heading in zip(self.getLeaders(), leader_desired_velocities, leader_desired_headings):
             # Calculate delta heading, delta velocity

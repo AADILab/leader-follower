@@ -475,6 +475,16 @@ class BoidsManager():
         else:
             all_wall_avoidance_vectors = np.zeros((self.num_followers, 2))
 
+        print("Positions:")
+        for position in self.positions:
+            print(position)
+        print("Headings:")
+        for heading in self.headings:
+            print(heading)
+        print("Wall vecs:")
+        for wall_vec in all_wall_avoidance_vectors:
+            print(wall_vec)
+
         # Calculate a momentum for follower boids
         if self.use_momentum:
             all_momentum_vectors = np.hstack((
@@ -486,9 +496,9 @@ class BoidsManager():
 
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors + all_momentum_vectors
-        print("Sum vecs")
-        for sum_vec in all_sum_vectors:
-            print(sum_vec)
+        # print("Sum vecs")
+        # for sum_vec in all_sum_vectors:
+        #     print(sum_vec)
         all_desired_headings = np.expand_dims(np.arctan2(all_sum_vectors[:,1], all_sum_vectors[:,0]), axis=1)
 
         # Calculate desired velocity depending on how aligned the desired and current headings are
@@ -645,9 +655,9 @@ class BoidsManager():
         # print(follower_desired_velocities)
         # Calculate follower delta states
         follower_delta_headings, follower_delta_velocities = self.calculate_follower_deltas(follower_desired_headings, follower_desired_velocities)
-        print("Deltas:")
-        for delta_heading, delta_velocity in zip(follower_delta_headings, follower_delta_velocities):
-            print(delta_heading, delta_velocity)
+        # print("Deltas:")
+        # for delta_heading, delta_velocity in zip(follower_delta_headings, follower_delta_velocities):
+        #     print(delta_heading, delta_velocity)
         # Calculate leader delta velocities
         leader_delta_velocities = self.calculate_delta_velocities(leader_desired_velocities, self.get_leader_velocities())
         # Package together follower delta states and leader delta states
