@@ -74,8 +74,8 @@ class BoidsManager():
         # Track which leaders the followers were following
         self.followers = [Follower(self.num_leaders) for _ in range(self.num_followers)]
 
-        for follower_id in range(self.num_followers):
-            print(positions[follower_id], headings[follower_id], velocities[follower_id])
+        # for follower_id in range(self.num_followers):
+        #     print(positions[follower_id], headings[follower_id], velocities[follower_id])
 
     def reset(self):
         """Reset simulation state with initial conditions. Random variables will be used for variables where no initial condition was specified."""
@@ -486,6 +486,7 @@ class BoidsManager():
 
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors + all_momentum_vectors
+        print("Sum vecs")
         for sum_vec in all_sum_vectors:
             print(sum_vec)
         all_desired_headings = np.expand_dims(np.arctan2(all_sum_vectors[:,1], all_sum_vectors[:,0]), axis=1)
@@ -640,8 +641,8 @@ class BoidsManager():
         repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds = self.get_follower_observations()
         # Update follower desired states
         follower_desired_headings, follower_desired_velocities = self.calculate_follower_desired_states(repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds)
-        print("Vels:")
-        print(follower_desired_velocities)
+        # print("Vels:")
+        # print(follower_desired_velocities)
         # Calculate follower delta states
         follower_delta_headings, follower_delta_velocities = self.calculate_follower_deltas(follower_desired_headings, follower_desired_velocities)
         print("Deltas:")
@@ -654,10 +655,11 @@ class BoidsManager():
         all_delta_velocities = np.vstack((follower_delta_velocities, leader_delta_velocities))
         # Turn delta states into kinematics commands
         angular_velocities, accelerations = self.calculate_follower_kinematics(all_delta_headings, all_delta_velocities)
-        print("Kinematics:")
-        for follower_id in range(self.num_followers):
-            print(angular_velocities[follower_id,0], accelerations[follower_id,0])
+        # print("Kinematics:")
+        # for follower_id in range(self.num_followers):
+        #     print(angular_velocities[follower_id,0], accelerations[follower_id,0])
         # Update leader and follower states using kinematics
         self.update_all_states(angular_velocities, accelerations)
         # Reset the map with the new positions
         # self.map.reset(self.positions)
+        # print(self.positions)

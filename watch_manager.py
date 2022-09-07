@@ -58,7 +58,7 @@ r = Renderer(num_leaders=0, num_followers=3, map_size=np.array([50,50],dtype=int
     # env_observations: Dict = None, all_obs_positions = None, possible_agents = None,
     # render_POIs: bool = True, render_centroid_observations: bool = True):
 while not r.checkForPygameQuit():
-# for _ in range(60):
+# for _ in range(3):
     bm.step(leader_actions=None)
     r.renderFrame(bm, pm=None, env_observations=None, all_obs_positions=None, possible_agents=None, render_POIs=False, render_centroid_observations=False)
     sleep(1/60)

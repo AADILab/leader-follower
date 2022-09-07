@@ -91,8 +91,8 @@ class BoidsColony():
         self.max_angular_velocity = max_angular_velocity
         self.dt = dt
 
-        for boid in self.boids:
-            print(boid.position, boid.heading, boid.velocity)
+        # for boid in self.boids:
+        #     print(boid.position, boid.heading, boid.velocity)
 
     def getLeaders(self):
         return self.boids[:self.num_leaders]
@@ -134,10 +134,12 @@ class BoidsColony():
         orientation_headings = np.array([boid.heading for boid in orientation_boids])
         if np.shape(orientation_headings)[0] != 0:
             # Calculate a unit (x,y) vector from each heading
+            print("ori head: ", orientation_headings)
             unit_vectors = np.hstack((
-                np.cos(orientation_headings),
-                np.sin(orientation_headings)
+                np.expand_dims(np.cos(orientation_headings), axis=1),
+                np.expand_dims(np.sin(orientation_headings), axis=1)
             ))
+            print("uv: ", unit_vectors)
             # Sum up the vectors for the final orientation vector
             return np.sum(unit_vectors, axis=0)
         else:
@@ -233,6 +235,11 @@ class BoidsColony():
         delta_headings = np.zeros(self.num_total)
 
         vels = []
+        sum_vecs = []
+        rep_vecs = []
+        ori_vecs = []
+        att_vecs = []
+        wall_vecs = []
 
         # Go through each follower
         for follower in self.getFollowers():
@@ -245,6 +252,12 @@ class BoidsColony():
                 # Calculate its delta velocity as 0.0 and delta heading as 0.0
                 delta_velocities[follower.id] = 0.0
                 delta_headings[follower.id] = 0.0
+                rep_vecs.append(None)
+                ori_vecs.append(None)
+                att_vecs.append(None)
+                sum_vecs.append(None)
+                vels.append(None)
+
             else:
                 # Seperate observable boids into repulsion, orientation, and attraction boids
                 rep_boids, ori_boids, att_boids = self.splitRepOriAtt(observable_boids, distances)
@@ -258,7 +271,7 @@ class BoidsColony():
                 wall_avoid_vec = self.wallAvoidanceVec(follower)
                 # Sum vectors together to get x,y vector representing desired trajectory
                 sum_vec = repulsion_vec + orientation_vec + attraction_vec + wall_avoid_vec
-                print(sum_vec)
+                # print(sum_vec)
                 # X, Y VECTOR CALCULATED
                 # Calculate a desired heading based on x,y vector
                 desired_heading = np.arctan2(sum_vec[1], sum_vec[0])
@@ -266,16 +279,34 @@ class BoidsColony():
                 delta_heading = calculateDeltaHeading(follower.heading, desired_heading)
                 # Calculate desired velocity based on alignment between current heading and desired heading (alignment is captured in delta heading)
                 desired_velocity = self.calculateDesiredVelocity(sum_vec, delta_heading)
-                vels.append(desired_velocity)
                 # Calculate delta velocity
                 delta_velocity = desired_velocity - follower.velocity
                 # SAVE DELTA HEADING, DELTA VELOCITY FOR FOLLOWER
                 delta_velocities[follower.id] = delta_velocity
                 delta_headings[follower.id] = delta_heading
-            # print(delta_velocity, delta_heading)
+                rep_vecs.append(repulsion_vec)
+                ori_vecs.append(orientation_vec)
+                att_vecs.append(attraction_vec)
+                wall_vecs.append(wall_avoid_vec)
+                sum_vecs.append(sum_vec)
+                vels.append(desired_velocity)
 
-        print("vels:")
-        print(vels)
+            # print(delta_velocities[follower.id], delta_headings[follower.id])
+
+        # print("vels:")
+        # print(vels)
+        print("Sum vecs")
+        for sum_vec in sum_vecs:
+            print(sum_vec)
+        print("Rep vecs:")
+        for rep_vec in rep_vecs:
+            print(rep_vec)
+        print("Ori vecs:")
+        for ori_vec in ori_vecs:
+            print(ori_vec)
+        print("Att vecs:")
+        for att_vec in att_vecs:
+            print(att_vec)
         print("Deltas:")
         for delta_heading, delta_vel in zip(delta_headings, delta_velocities):
             print(delta_heading, delta_vel)
@@ -289,11 +320,12 @@ class BoidsColony():
             delta_heading[leader.id] = delta_heading
         # Calculate ANGULAR VELOCITY and LINEAR ACCELERATION for each boid (leaders and followers)
         angular_velocities, linear_accelerations = self.calculateKinematics(delta_velocities, delta_headings)
-        print("Kinematics:")
-        for boid in self.boids:
-            print(angular_velocities[boid.id], linear_accelerations[boid.id])
+        # print("Kinematics:")
+        # for boid in self.boids:
+        #     print(angular_velocities[boid.id], linear_accelerations[boid.id])
         # Apply angular velocity and linear acceleration to each boid
         self.applyKinematics(angular_velocities, linear_accelerations)
+        # print(self.positions)
 
 if __name__ == "__main__":
     a=np.array([Boid(None, None, None, None, None)])

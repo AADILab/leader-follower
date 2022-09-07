@@ -29,7 +29,7 @@ bc = BoidsColony(
 r = Renderer(boids_colony=bc, pixels_per_unit=10)
 
 while not r.checkForPygameQuit():
-# for _ in range(60):
+# for _ in range(3):
     bc.step(np.array([]), np.array([]))
     r.renderFrame()
     sleep(1/60)
