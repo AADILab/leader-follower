@@ -143,7 +143,8 @@ class CCEA():
         self.use_difference_rewards = use_difference_rewards
 
         # Setup nn variables
-        self.nn_inputs = 2*env_kwargs["poi_positions"].shape[0]+2*env_kwargs["observe_followers"]
+        # self.nn_inputs = 2*env_kwargs["poi_positions"].shape[0]+2*env_kwargs["observe_followers"]
+        self.nn_inputs = 12
         self.nn_hidden = nn_hidden
         self.nn_outputs = nn_outputs
         if init_population is None:

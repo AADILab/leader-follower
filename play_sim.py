@@ -75,4 +75,5 @@ while not shutdown:
         actions = {agent: policy(observations[agent], agent) for agent in env.possible_agents}
         observations, rewards, dones, infos = env.step(actions)
         env.render()
-        print(rewards["team"])
+        # print(rewards["team"])
+        print([str(n).split(".")[0] for n in observations["leader_1"]])

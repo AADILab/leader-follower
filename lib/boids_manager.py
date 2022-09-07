@@ -74,6 +74,9 @@ class BoidsManager():
         # Track which leaders the followers were following
         self.followers = [Follower(self.num_leaders) for _ in range(self.num_followers)]
 
+        for follower_id in range(self.num_followers):
+            print(positions[follower_id], headings[follower_id], velocities[follower_id])
+
     def reset(self):
         """Reset simulation state with initial conditions. Random variables will be used for variables where no initial condition was specified."""
         # Setup boid positions
@@ -235,7 +238,7 @@ class BoidsManager():
             obs_boid_ids = self.get_observable_boid_ids(boid_id)
             # Get observable boid positions
             obs_positions = self.get_boid_positions(obs_boid_ids)
-            # Calculate centroid of observable boids. Return own position if there are no observable boids.
+            # Calculate centroid of observable boids. Return None if there are no observable boids.
             centroid = self.calculate_centroid(obs_positions)
             if centroid is not None:
                 # centroid relative to leader boid
@@ -258,6 +261,48 @@ class BoidsManager():
             centroids_obs_np[boid_id-self.num_followers,0] = distance
             centroids_obs_np[boid_id-self.num_followers,1] = angle
         return centroids_obs_np
+
+    def get_leader_8_swarm_obs(self):
+        """Distance to nearest centroid in 8 regions for each leader
+        Centroid observations are an 8d array organized as [d1, d2, ..., d8] for each leader"""
+        all_sensor_readings = np.zeros((self.num_leaders,8))
+        for leader_id in range(self.num_leaders):
+            boid_id = leader_id + self.num_followers
+            # Get all observable boids for this leader
+            obs_boid_ids = self.get_observable_boid_ids(boid_id)
+            # Get positions of observable boids
+            obs_positions = self.get_boid_positions(obs_boid_ids)
+            # Get positions relative to leader boid
+            relative_positions = obs_positions - self.positions[boid_id]
+
+            octant_bins = [[] for _ in range(8)]
+            bin_size = 2*np.pi / 8
+            # Each position
+            for pos in relative_positions:
+                # Get the angle from leader to observed boid in world frame polar coordinates
+                absolute_angle = np.arctan2(pos[1], pos[0])
+                # Get the angle relative to the heading of the leader
+                relative_angle = self.bound_heading_pi_to_pi(absolute_angle - self.headings[boid_id])
+                # Technically, these angles are the same. This makes binning easier, though
+                if relative_angle == np.pi: relative_angle = -np.pi
+                # Determine which bin this position belongs to
+                bin_number = int( (relative_angle+np.pi)/bin_size )
+                # Bin it into one of 8 octants (like quadrants, but there are 8 of them)
+                octant_bins[bin_number].append(pos)
+
+            # Turn positions in bins into one sensor reading per bin
+            for bin_number, bin in enumerate(octant_bins):
+                if len(bin) == 0:
+                    all_sensor_readings[leader_id, bin_number] = self.radius_attraction
+                else:
+                    # Calculate the centroid of that octant
+                    centroid = self.calculate_centroid(np.array(octant_bins[bin_number]))
+                    # Get the distance to the centroid
+                    distance = np.sqrt(centroid[0]**2 + centroid[1]**2)
+                    # Save the distance as the entry for that octant
+                    all_sensor_readings[leader_id, bin_number] = distance
+        # Return sensor readings for all leaders
+        return all_sensor_readings
 
     @staticmethod
     def bound_heading_pi_to_pi(heading):
@@ -441,6 +486,8 @@ class BoidsManager():
 
         # Calculate desired boid velocities and headings from vector sums
         all_sum_vectors = all_repulsion_vectors + all_orientation_vectors + all_attraction_vectors + all_wall_avoidance_vectors + all_momentum_vectors
+        for sum_vec in all_sum_vectors:
+            print(sum_vec)
         all_desired_headings = np.expand_dims(np.arctan2(all_sum_vectors[:,1], all_sum_vectors[:,0]), axis=1)
 
         # Calculate desired velocity depending on how aligned the desired and current headings are
@@ -593,8 +640,13 @@ class BoidsManager():
         repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds = self.get_follower_observations()
         # Update follower desired states
         follower_desired_headings, follower_desired_velocities = self.calculate_follower_desired_states(repulsion_boids, orientation_boids, attraction_boids, no_boid_obs_inds)
+        print("Vels:")
+        print(follower_desired_velocities)
         # Calculate follower delta states
         follower_delta_headings, follower_delta_velocities = self.calculate_follower_deltas(follower_desired_headings, follower_desired_velocities)
+        print("Deltas:")
+        for delta_heading, delta_velocity in zip(follower_delta_headings, follower_delta_velocities):
+            print(delta_heading, delta_velocity)
         # Calculate leader delta velocities
         leader_delta_velocities = self.calculate_delta_velocities(leader_desired_velocities, self.get_leader_velocities())
         # Package together follower delta states and leader delta states
@@ -602,6 +654,9 @@ class BoidsManager():
         all_delta_velocities = np.vstack((follower_delta_velocities, leader_delta_velocities))
         # Turn delta states into kinematics commands
         angular_velocities, accelerations = self.calculate_follower_kinematics(all_delta_headings, all_delta_velocities)
+        print("Kinematics:")
+        for follower_id in range(self.num_followers):
+            print(angular_velocities[follower_id,0], accelerations[follower_id,0])
         # Update leader and follower states using kinematics
         self.update_all_states(angular_velocities, accelerations)
         # Reset the map with the new positions
