@@ -1,11 +1,13 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import numpy as np
+from numpy.typing import NDArray
 
-def calculateDistance(positions_a, positions_b):
+def calculateDistance(positions_a: NDArray[np.float64], positions_b: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Calculate the distance between positions A and B"""
     return np.linalg.norm(positions_a-positions_b, axis=1)
 
-def calculateDeltaHeading(current_heading, desired_heading):
+def calculateDeltaHeading(current_heading: float, desired_heading: float) -> float:
     """ Calculate delta headings such that delta is the shortest path from
     current heading to the desired heading.
     """
@@ -27,7 +29,14 @@ def calculateDeltaHeading(current_heading, desired_heading):
     return delta_heading
 
 class Boid():
-    def __init__(self, positions, headings, velocities, is_leader, id) -> None:
+    def __init__(self,
+        positions: NDArray[np.float64],
+        headings: NDArray[np.float64],
+        velocities: NDArray[np.float64],
+        is_leader: NDArray[np.bool_],
+        id: int
+        ) -> None:
+
         self._positions = positions
         self._headings = headings
         self._velocities = velocities
@@ -35,18 +44,18 @@ class Boid():
         self.id = id
 
     @property
-    def position(self):
+    def position(self) -> np.float64:
         return self._positions[self.id]
 
     @property
-    def heading(self):
+    def heading(self) -> np.float64:
         return self._headings[self.id]
 
     @property
-    def velocity(self):
+    def velocity(self) -> np.float64:
         return self._velocities[self.id]
 
-    def isLeader(self):
+    def isLeader(self) -> bool:
         return self._is_leader[self.id]
 
 BoidArray = np.ndarray[Boid, np.dtype[Boid]]
@@ -97,16 +106,15 @@ class BoidsColony():
         self.max_angular_velocity = max_angular_velocity
         self.dt = dt
 
-        # for boid in self.boids:
-        #     print(boid.position, boid.heading, boid.velocity)
-
-    def getLeaders(self):
+    def getLeaders(self) -> BoidArray:
+        """Get all the leaders in an array"""
         return self.boids[:self.num_leaders]
 
-    def getFollowers(self):
+    def getFollowers(self) -> BoidArray:
+        """Get all the followers in an array"""
         return self.boids[self.num_leaders:]
 
-    def getObservableBoids(self, boid: Boid, return_distances=False):
+    def getObservableBoids(self, boid: Boid, return_distances: bool = False) -> BoidArray:
         """Get all boids observable by this boid"""
         distances = calculateDistance(self.positions, boid.position)
         observable_bool = distances <= self.radius_attraction
@@ -115,7 +123,7 @@ class BoidsColony():
             return self.boids[observable_bool], distances[observable_bool]
         return self.boids[observable_bool]
 
-    def splitRepOriAtt(self, observable_boids, distances):
+    def splitRepOriAtt(self, observable_boids: BoidArray, distances: NDArray[np.float64]) -> Tuple[BoidArray]:
         """Split observable boids into repulsion, orientation, and attraction boids"""
         repulsion_bool = distances <= self.radius_repulsion
         orientation_bool = np.logical_and(distances > self.radius_repulsion, distances <= self.radius_orientation)
@@ -127,15 +135,17 @@ class BoidsColony():
 
         return repulsion_boids, orientation_boids, attraction_boids
 
-    def repulsionVec(self, boid: Boid, repulsion_boids: List[Boid]):
+    def repulsionVec(self, boid: Boid, repulsion_boids: BoidArray) -> NDArray[np.float64]:
+        """Calculate the repulsion vector for this boid using the repulsion_boids as the boids to move away from"""
         # Repulsion vector is average vector from repulsion boids to current boid, normalized by radius of repulsion
         repulsion_positions = np.array([boid.position for boid in repulsion_boids])
         if np.shape(repulsion_positions)[0] != 0:
             return (boid.position - np.average(repulsion_positions, axis=0))/self.radius_repulsion * self.repulsion_multiplier
         else:
-            return np.array([0,0])
+            return np.array([0.,0.], dtype=np.float64)
 
-    def orientationVec(self, orientation_boids: List[Boid]):
+    def orientationVec(self, orientation_boids: BoidArray) -> NDArray[np.float64]:
+        """Calculate the orientation vector using the orientation_boids' headings as the orientation to match"""
         # Orientation vector is sum of vectors derived from orientations of orientation boids
         orientation_headings = np.array([boid.heading for boid in orientation_boids])
         if np.shape(orientation_headings)[0] != 0:
@@ -149,17 +159,19 @@ class BoidsColony():
             # Sum up the vectors for the final orientation vector
             return np.sum(unit_vectors, axis=0) * self.orientation_multiplier
         else:
-            return np.array([0,0])
+            return np.array([0.,0.], dtype=np.float64)
 
-    def attractionVec(self, boid: Boid, attraction_boids: List[Boid]):
+    def attractionVec(self, boid: Boid, attraction_boids: BoidArray) -> NDArray[np.float64]:
+        """Calculate the attraction vector for this boid using the attraction boids as the boids to move towards"""
         # Attraction vector is average vector from current boid to attraction boids, normalized by radius of attraction
         attraction_positions = np.array([boid.position for boid in attraction_boids])
         if np.shape(attraction_positions)[0] != 0:
             return (np.average(attraction_positions, axis=0) - boid.position)/self.radius_attraction * self.attraction_multiplier
         else:
-            return np.array([0,0])
+            return np.array([0.,0.], dtype=np.float64)
 
-    def nearObservableWall(self, boid: Boid):
+    def nearWall(self, boid: Boid) -> bool:
+        """Determine if a boid is within repulsion radius of any wall"""
         if np.any(boid.position <= self.radius_repulsion):
             return True
         elif np.any(boid.position > self.map_dimensions - self.radius_repulsion):
@@ -167,10 +179,12 @@ class BoidsColony():
         else:
             return False
 
-    def nearObservableBoids(self, boid: Boid):
+    def nearObservableBoids(self, boid: Boid) -> bool:
+        """Determine if this boid is close enough to any other boids to observe them"""
         return len(self.getObservableBoids(boid)) == 0
 
-    def wallAvoidanceVec(self, boid: Boid):
+    def wallAvoidanceVec(self, boid: Boid) -> NDArray[np.float64]:
+        """Calculate the wall avoidance vector for this boid using the internal map dimensions"""
         wall_vec = np.array([0,0], dtype=float)
         # Left wall
         if boid.position[0] <= self.radius_repulsion:
@@ -186,7 +200,8 @@ class BoidsColony():
             wall_vec[1] = self.map_dimensions[1] - self.radius_repulsion - boid.position[1]
         return wall_vec * self.wall_avoidance_multiplier
 
-    def calculateDesiredVelocity(self, sum_vector, delta_heading):
+    def calculateDesiredVelocity(self, sum_vector: NDArray[np.float64], delta_heading: float) -> float:
+        """Calculate the desired velocity for this boid using the given X,Y sum vector and desired change in heading"""
         # Heading is well aligned
         if np.abs(delta_heading) < np.pi/2:
             # Match desired velocity to magnitude of sum vector
@@ -196,7 +211,7 @@ class BoidsColony():
             # Slow down
             return self.min_velocity
 
-    def calculateKinematics(self, delta_velocities, delta_headings):
+    def calculateKinematics(self, delta_velocities: NDArray[np.float64], delta_headings: NDArray[np.float64]) -> Tuple[NDArray[np.float64]]:
         """Turn deltas for heading and velocity into angular velocities
         and linear acclerations. Bound kinematics according to specified
         boundaries. Ex: max acceleration, max angular velocity
@@ -209,7 +224,7 @@ class BoidsColony():
         linear_accelerations[linear_accelerations < -self.max_acceleration] = -self.max_acceleration
         return angular_velocities, linear_accelerations
 
-    def applyKinematics(self, angular_velocities, linear_accelerations):
+    def applyKinematics(self, angular_velocities: NDArray[np.float64], linear_accelerations: NDArray[np.float64]) -> None:
         """Update all positions, velocities, and headings with the input kinematics using Euler integration.
         Bound kinematics according to specified boundaries. Ex: max_velocity
         """
@@ -234,35 +249,24 @@ class BoidsColony():
         # Apply upper bound
         self.positions[:,1][self.positions[:,1]>self.map_dimensions[1]] = self.map_dimensions[1]
 
-    def step(self, leader_desired_velocities, leader_desired_headings):
+    def step(self, leader_desired_velocities: Optional[NDArray[np.float64]] = None, leader_desired_headings: Optional[NDArray[np.float64]] = None) -> None:
+        """Step forward the boid colony with the input leader actions"""
         # Initialize desired velocities array
         # Initialize desired headings array
         delta_velocities = np.zeros(self.num_total)
         delta_headings = np.zeros(self.num_total)
-
-        vels = []
-        sum_vecs = []
-        rep_vecs = []
-        ori_vecs = []
-        att_vecs = []
-        wall_vecs = []
 
         # Go through each follower
         for follower in self.getFollowers():
             # Get all boids within observation radius
             observable_boids, distances = self.getObservableBoids(follower, return_distances=True)
             # Determine if boid is near wall
-            near_wall = self.nearObservableWall(follower)
+            near_wall = self.nearWall(follower)
             # If no boids are observed, and this boid is not near a wall
             if len(observable_boids) == 0 and not near_wall:
                 # Calculate its delta velocity as 0.0 and delta heading as 0.0
                 delta_velocities[follower.id] = 0.0
                 delta_headings[follower.id] = 0.0
-                rep_vecs.append(None)
-                ori_vecs.append(None)
-                att_vecs.append(None)
-                sum_vecs.append(None)
-                vels.append(None)
 
             else:
                 # Seperate observable boids into repulsion, orientation, and attraction boids
@@ -277,7 +281,6 @@ class BoidsColony():
                 wall_avoid_vec = self.wallAvoidanceVec(follower)
                 # Sum vectors together to get x,y vector representing desired trajectory
                 sum_vec = repulsion_vec + orientation_vec + attraction_vec + wall_avoid_vec
-                # print(sum_vec)
                 # X, Y VECTOR CALCULATED
                 # Calculate a desired heading based on x,y vector
                 desired_heading = np.arctan2(sum_vec[1], sum_vec[0])
@@ -290,57 +293,20 @@ class BoidsColony():
                 # SAVE DELTA HEADING, DELTA VELOCITY FOR FOLLOWER
                 delta_velocities[follower.id] = delta_velocity
                 delta_headings[follower.id] = delta_heading
-                rep_vecs.append(repulsion_vec)
-                ori_vecs.append(orientation_vec)
-                att_vecs.append(attraction_vec)
-                wall_vecs.append(wall_avoid_vec)
-                sum_vecs.append(sum_vec)
-                vels.append(desired_velocity)
-
-            # print(delta_velocities[follower.id], delta_headings[follower.id])
-
-        # print("vels:")
-        # print(vels)
-        # print("Sum vecs")
-        # for sum_vec in sum_vecs:
-        #     print(sum_vec)
-        # print("Rep vecs:")
-        # for rep_vec in rep_vecs:
-        #     print(rep_vec)
-        # print("Ori vecs:")
-        # for ori_vec in ori_vecs:
-        #     print(ori_vec)
-        # print("Att vecs:")
-        # for att_vec in att_vecs:
-        #     print(att_vec)
-        print("Positions:")
-        for position in self.positions:
-            print(position)
-        print("Headings:")
-        for heading in self.headings:
-            print(heading)
-        print("Wall vecs:")
-        for wall_vec in wall_vecs:
-            print(wall_vec)
-        # print("Deltas:")
-        # for delta_heading, delta_vel in zip(delta_headings, delta_velocities):
-        #     print(delta_heading, delta_vel)
-        # Go through each leader
-        for leader, desired_velocity, desired_heading in zip(self.getLeaders(), leader_desired_velocities, leader_desired_headings):
-            # Calculate delta heading, delta velocity
-            delta_heading = calculateDeltaHeading(leader.heading, desired_heading)
-            delta_velocity = desired_velocity - leader.velocity
-            # SAVE DELTA HEADING, DELTA VELOCITY FOR LEADER
-            delta_velocities[leader.id] = delta_velocity
-            delta_heading[leader.id] = delta_heading
+        # Check if any leader actions were input
+        if leader_desired_headings is not None and leader_desired_velocities is not None:
+            # Go through each leader
+            for leader, desired_velocity, desired_heading in zip(self.getLeaders(), leader_desired_velocities, leader_desired_headings):
+                # Calculate delta heading, delta velocity
+                delta_heading = calculateDeltaHeading(leader.heading, desired_heading)
+                delta_velocity = desired_velocity - leader.velocity
+                # SAVE DELTA HEADING, DELTA VELOCITY FOR LEADER
+                delta_velocities[leader.id] = delta_velocity
+                delta_heading[leader.id] = delta_heading
         # Calculate ANGULAR VELOCITY and LINEAR ACCELERATION for each boid (leaders and followers)
         angular_velocities, linear_accelerations = self.calculateKinematics(delta_velocities, delta_headings)
-        # print("Kinematics:")
-        # for boid in self.boids:
-        #     print(angular_velocities[boid.id], linear_accelerations[boid.id])
         # Apply angular velocity and linear acceleration to each boid
         self.applyKinematics(angular_velocities, linear_accelerations)
-        # print(self.positions)
 
 if __name__ == "__main__":
     a=np.array([Boid(None, None, None, None, None)])

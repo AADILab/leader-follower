@@ -1,7 +1,7 @@
 import numpy as np
 from time import sleep
 
-from lib.boids_colony import BoidsColony, Boid
+from lib.boids_colony import BoidsColony
 from lib.env_renderer import Renderer
 
 bc = BoidsColony(
@@ -32,7 +32,6 @@ bc = BoidsColony(
 r = Renderer(boids_colony=bc, pixels_per_unit=10)
 
 while not r.checkForPygameQuit():
-# for _ in range(3):
-    bc.step(np.array([]), np.array([]))
+    bc.step()
     r.renderFrame()
     sleep(1/60)
