@@ -4,20 +4,28 @@ from time import sleep
 from lib.boids_colony import BoidsColony
 from lib.env_renderer import Renderer
 from lib.colony_helpers import StateBounds
-from lib.spawner import BoidSpawner
+from lib.boid_spawner import BoidSpawner, BoidSpawnRule
+from lib.poi_colony import POIColony, POI
+from lib.math_helpers import calculateDeltaHeading, calculateDistance
 
 sb = StateBounds(
-    map_dimensions=np.array([50,50], dtype=np.float64),
+    map_dimensions=np.array([100,100], dtype=np.float64),
     min_velocity=0,
     max_velocity=10,
     max_accleration=5,
     max_angular_velocity=np.pi*0.5,
-    num_leaders=3,
-    num_followers=3
+    num_leaders=4,
+    num_followers=30
 )
 
-bs = BoidSpawner(sb)
-cs = bs.generateSpawnState()
+bs = BoidSpawner(
+    bounds=sb,
+    spawn_rule=BoidSpawnRule.Circle,
+    radius_fraction=1/5,
+    velocity_fraction=1/2
+)
+
+cs = bs.getSpawnState()
 
 bc = BoidsColony(
     init_state=cs,
@@ -32,9 +40,30 @@ bc = BoidsColony(
     dt=1/60
 )
 
-r = Renderer(boids_colony=bc, pixels_per_unit=10)
+pc = POIColony(
+    positions=np.array([
+        [15,15],
+        [55,55]
+    ], dtype=np.float64),
+    observation_radius=5,
+    coupling=5
+)
+
+def updatePois():
+    for poi in pc.pois:
+        distances = calculateDistance(poi.position, bc.state.positions)
+        num_observations = np.sum(distances<=pc.observation_radius)
+        if num_observations >= pc.coupling:
+            poi.observed = True
+            # Get ids of swarm members that observed this poi
+            observer_ids = np.nonzero(distances<=pc.observation_radius)[0]
+            poi.observation_list.append(observer_ids)
+
+
+r = Renderer(boids_colony=bc, poi_colony=pc, pixels_per_unit=10)
 
 while not r.checkForPygameQuit():
     bc.step()
+    updatePois()
     r.renderFrame()
     sleep(1/60)

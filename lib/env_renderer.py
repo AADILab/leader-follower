@@ -3,11 +3,13 @@ import pygame
 import pygame.gfxdraw
 
 from lib.boids_colony import BoidsColony, Boid
+from lib.poi_colony import POIColony, POI
 
 class Renderer():
-    def __init__(self, boids_colony: BoidsColony, pixels_per_unit: int) -> None:
+    def __init__(self, boids_colony: BoidsColony, poi_colony: POIColony, pixels_per_unit: int) -> None:
         # Save variables
         self.boids_colony = boids_colony
+        self.poi_colony = poi_colony
         self.pixels_per_unit = pixels_per_unit
 
         # Setup colors
@@ -91,9 +93,24 @@ class Renderer():
         for boid in self.boids_colony.boids:
             self.renderBoid(boid)
 
+    def renderPOI(self, poi: POI):
+        pix_coords = self.getPixelCoords(poi.position)
+        if poi.observed:
+            color = self.poi_observed_color
+        else:
+            color = self.poi_not_observed_color
+        pygame.gfxdraw.aacircle(self.screen, pix_coords[0], pix_coords[1], int(self.pixels_per_unit/4), color)
+        pygame.gfxdraw.filled_circle(self.screen, pix_coords[0], pix_coords[1], int(self.pixels_per_unit/4), color)
+        pygame.gfxdraw.aacircle(self.screen, pix_coords[0], pix_coords[1], int(self.poi_colony.observation_radius * self.pixels_per_unit), color)
+
+    def renderPOIs(self):
+        for poi in self.poi_colony.pois:
+            self.renderPOI(poi)
+
     def renderFrame(self):
         self.screen.fill((255,255,255))
         self.renderBoids()
+        self.renderPOIs()
         pygame.display.flip()
 
     @staticmethod
