@@ -3,6 +3,8 @@ from typing import List, Tuple, Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from lib.colony_helpers import ColonyState, StateBounds
+
 def calculateDistance(positions_a: NDArray[np.float64], positions_b: NDArray[np.float64]) -> NDArray[np.float64]:
     """Calculate the distance between positions A and B"""
     return np.linalg.norm(positions_a-positions_b, axis=1)
@@ -30,64 +32,67 @@ def calculateDeltaHeading(current_heading: float, desired_heading: float) -> flo
 
 class Boid():
     def __init__(self,
-        positions: NDArray[np.float64],
-        headings: NDArray[np.float64],
-        velocities: NDArray[np.float64],
-        is_leader: NDArray[np.bool_],
+        colony_state: ColonyState,
+        # positions: NDArray[np.float64],
+        # headings: NDArray[np.float64],
+        # velocities: NDArray[np.float64],
+        # is_leader: NDArray[np.bool_],
         id: int
         ) -> None:
 
-        self._positions = positions
-        self._headings = headings
-        self._velocities = velocities
-        self._is_leader = is_leader
+        self.colony_state = colony_state
         self.id = id
 
     @property
     def position(self) -> np.float64:
-        return self._positions[self.id]
+        return self.colony_state.positions[self.id]
 
     @property
     def heading(self) -> np.float64:
-        return self._headings[self.id]
+        return self.colony_state.headings[self.id]
 
     @property
     def velocity(self) -> np.float64:
-        return self._velocities[self.id]
+        return self.colony_state.velocities[self.id]
 
     def isLeader(self) -> bool:
-        return self._is_leader[self.id]
+        return self.colony_state.is_leader[self.id]
 
 BoidArray = np.ndarray[Boid, np.dtype[Boid]]
 
 class BoidsColony():
     def __init__(self,
-        leader_positions: List[List[float]], follower_positions: List[List[float]],
-        leader_headings: List[float], follower_headings: List[float],
-        leader_velocities: List[float], follower_velocities: List[float],
+        init_state: ColonyState,
+        bounds: StateBounds,
+        # leader_positions: List[List[float]], follower_positions: List[List[float]],
+        # leader_headings: List[float], follower_headings: List[float],
+        # leader_velocities: List[float], follower_velocities: List[float],
         radius_repulsion: float, radius_orientation: float, radius_attraction: float,
         repulsion_multiplier: float,
         orientation_multiplier: float,
         attraction_multiplier: float,
         wall_avoidance_multiplier: float,
-        map_dimensions: List[float],
-        min_velocity: float, max_velocity: float,
-        max_acceleration: float,
-        max_angular_velocity: float,
+        # map_dimensions: List[float],
+        # min_velocity: float, max_velocity: float,
+        # max_acceleration: float,
+        # max_angular_velocity: float,
         dt: float
         ) -> None:
 
-        self.num_leaders = len(leader_positions)
-        self.num_followers = len(follower_positions)
-        self.num_total = self.num_leaders+self.num_followers
+        self.state = init_state
+        self.bounds = bounds
 
-        self.is_leader = np.array([True for _ in range(self.num_leaders)]+[False for _ in range(self.num_followers)])
+        # self.num_leaders = len(leader_positions)
+        # self.num_followers = len(follower_positions)
+        # self.num_total = self.num_leaders+self.num_followers
 
-        self.positions = np.array(leader_positions+follower_positions, dtype=float)
-        self.headings = np.array(leader_headings+follower_headings, dtype=float)
-        self.velocities = np.array(leader_velocities+follower_velocities, dtype=float)
+        # self.is_leader = np.array([True for _ in range(self.num_leaders)]+[False for _ in range(self.num_followers)])
 
-        self.boids = np.array([Boid(self.positions, self.headings, self.velocities, self.is_leader, id) for id in range(self.num_total)])
+        # self.positions = np.array(leader_positions+follower_positions, dtype=float)
+        # self.headings = np.array(leader_headings+follower_headings, dtype=float)
+        # self.velocities = np.array(leader_velocities+follower_velocities, dtype=float)
+
+        self.boids = np.array([Boid(self.state, id) for id in range(self.bounds.num_total)])
 
         self.radius_repulsion = radius_repulsion
         self.radius_orientation = radius_orientation
@@ -98,25 +103,25 @@ class BoidsColony():
         self.attraction_multiplier = attraction_multiplier
         self.wall_avoidance_multiplier = wall_avoidance_multiplier
 
-        self.map_dimensions = np.array(map_dimensions, dtype=float)
+        # self.map_dimensions = np.array(map_dimensions, dtype=float)
 
-        self.min_velocity = min_velocity
-        self.max_velocity = max_velocity
-        self.max_acceleration = max_acceleration
-        self.max_angular_velocity = max_angular_velocity
+        # self.min_velocity = min_velocity
+        # self.max_velocity = max_velocity
+        # self.max_acceleration = max_acceleration
+        # self.max_angular_velocity = max_angular_velocity
         self.dt = dt
 
     def getLeaders(self) -> BoidArray:
         """Get all the leaders in an array"""
-        return self.boids[:self.num_leaders]
+        return self.boids[:self.bounds.num_leaders]
 
     def getFollowers(self) -> BoidArray:
         """Get all the followers in an array"""
-        return self.boids[self.num_leaders:]
+        return self.boids[self.bounds.num_leaders:]
 
     def getObservableBoids(self, boid: Boid, return_distances: bool = False) -> BoidArray:
         """Get all boids observable by this boid"""
-        distances = calculateDistance(self.positions, boid.position)
+        distances = calculateDistance(self.state.positions, boid.position)
         observable_bool = distances <= self.radius_attraction
         observable_bool[boid.id] = False
         if return_distances:
@@ -174,7 +179,7 @@ class BoidsColony():
         """Determine if a boid is within repulsion radius of any wall"""
         if np.any(boid.position <= self.radius_repulsion):
             return True
-        elif np.any(boid.position > self.map_dimensions - self.radius_repulsion):
+        elif np.any(boid.position > self.bounds.map_dimensions - self.radius_repulsion):
             return True
         else:
             return False
@@ -190,14 +195,14 @@ class BoidsColony():
         if boid.position[0] <= self.radius_repulsion:
             wall_vec[0] = self.radius_repulsion - boid.position[0]
         # Right wall
-        elif boid.position[0] >= self.map_dimensions[0] - self.radius_repulsion:
-            wall_vec[0] = self.map_dimensions[0] - self.radius_repulsion - boid.position[0]
+        elif boid.position[0] >= self.bounds.map_dimensions[0] - self.radius_repulsion:
+            wall_vec[0] = self.bounds.map_dimensions[0] - self.radius_repulsion - boid.position[0]
         # Bottom wall
         if boid.position[1] <= self.radius_repulsion:
             wall_vec[1] = self.radius_repulsion - boid.position[1]
         # Top wall
-        elif boid.position[1] >= self.map_dimensions[1] - self.radius_repulsion:
-            wall_vec[1] = self.map_dimensions[1] - self.radius_repulsion - boid.position[1]
+        elif boid.position[1] >= self.bounds.map_dimensions[1] - self.radius_repulsion:
+            wall_vec[1] = self.bounds.map_dimensions[1] - self.radius_repulsion - boid.position[1]
         return wall_vec * self.wall_avoidance_multiplier
 
     def calculateDesiredVelocity(self, sum_vector: NDArray[np.float64], delta_heading: float) -> float:
@@ -209,7 +214,7 @@ class BoidsColony():
         # Heading is not well aligned
         else:
             # Slow down
-            return self.min_velocity
+            return self.bounds.min_velocity
 
     def calculateKinematics(self, delta_velocities: NDArray[np.float64], delta_headings: NDArray[np.float64]) -> Tuple[NDArray[np.float64]]:
         """Turn deltas for heading and velocity into angular velocities
@@ -217,11 +222,11 @@ class BoidsColony():
         boundaries. Ex: max acceleration, max angular velocity
         """
         angular_velocities = delta_headings/self.dt
-        angular_velocities[angular_velocities > self.max_angular_velocity] = self.max_angular_velocity
-        angular_velocities[angular_velocities < -self.max_angular_velocity] = -self.max_angular_velocity
+        angular_velocities[angular_velocities > self.bounds.max_angular_velocity] = self.bounds.max_angular_velocity
+        angular_velocities[angular_velocities < -self.bounds.max_angular_velocity] = -self.bounds.max_angular_velocity
         linear_accelerations = delta_velocities/self.dt
-        linear_accelerations[linear_accelerations > self.max_acceleration] = self.max_acceleration
-        linear_accelerations[linear_accelerations < -self.max_acceleration] = -self.max_acceleration
+        linear_accelerations[linear_accelerations > self.bounds.max_acceleration] = self.bounds.max_acceleration
+        linear_accelerations[linear_accelerations < -self.bounds.max_acceleration] = -self.bounds.max_acceleration
         return angular_velocities, linear_accelerations
 
     def applyKinematics(self, angular_velocities: NDArray[np.float64], linear_accelerations: NDArray[np.float64]) -> None:
@@ -229,32 +234,32 @@ class BoidsColony():
         Bound kinematics according to specified boundaries. Ex: max_velocity
         """
         # Update headings
-        self.headings += angular_velocities*self.dt
+        self.state.headings += angular_velocities*self.dt
         # Apply circular cutoff
-        self.headings %= (2*np.pi)
+        self.state.headings %= (2*np.pi)
         # Update velocities
-        self.velocities += linear_accelerations*self.dt
-        self.velocities[self.velocities > self.max_velocity] = self.max_velocity
-        self.velocities[self.velocities < self.min_velocity] = self.min_velocity
+        self.state.velocities += linear_accelerations*self.dt
+        self.state.velocities[self.state.velocities > self.bounds.max_velocity] = self.bounds.max_velocity
+        self.state.velocities[self.state.velocities < self.bounds.min_velocity] = self.bounds.min_velocity
         # Update positions
-        self.positions[:,0] += self.velocities * np.cos(self.headings) * self.dt
-        self.positions[:,1] += self.velocities * np.sin(self.headings) * self.dt
+        self.state.positions[:,0] += self.state.velocities * np.cos(self.state.headings) * self.dt
+        self.state.positions[:,1] += self.state.velocities * np.sin(self.state.headings) * self.dt
         # Bound positions
         # Apply left bound
-        self.positions[:,0][self.positions[:,0]<0] = 0
+        self.state.positions[:,0][self.state.positions[:,0]<0] = 0
         # Apply right bound
-        self.positions[:,0][self.positions[:,0]>self.map_dimensions[0]] = self.map_dimensions[0]
+        self.state.positions[:,0][self.state.positions[:,0]>self.bounds.map_dimensions[0]] = self.bounds.map_dimensions[0]
         # Apply lower bound
-        self.positions[:,1][self.positions[:,1]<0] = 0
+        self.state.positions[:,1][self.state.positions[:,1]<0] = 0
         # Apply upper bound
-        self.positions[:,1][self.positions[:,1]>self.map_dimensions[1]] = self.map_dimensions[1]
+        self.state.positions[:,1][self.state.positions[:,1]>self.bounds.map_dimensions[1]] = self.bounds.map_dimensions[1]
 
     def step(self, leader_desired_velocities: Optional[NDArray[np.float64]] = None, leader_desired_headings: Optional[NDArray[np.float64]] = None) -> None:
         """Step forward the boid colony with the input leader actions"""
         # Initialize desired velocities array
         # Initialize desired headings array
-        delta_velocities = np.zeros(self.num_total)
-        delta_headings = np.zeros(self.num_total)
+        delta_velocities = np.zeros(self.bounds.num_total)
+        delta_headings = np.zeros(self.bounds.num_total)
 
         # Go through each follower
         for follower in self.getFollowers():

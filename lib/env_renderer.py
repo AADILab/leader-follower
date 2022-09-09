@@ -28,7 +28,7 @@ class Renderer():
 
         # Set up pygame and display
         pygame.init()
-        self.display_size = self.getPixels(self.boids_colony.map_dimensions)
+        self.display_size = self.getPixels(self.boids_colony.bounds.map_dimensions)
         self.screen = pygame.display.set_mode(self.display_size)
 
     def getPixels(self, units):
@@ -37,12 +37,12 @@ class Renderer():
     def getPixelCoords(self, unit_coords):
         if len(unit_coords.shape) == 1:
             px = self.getPixels(unit_coords[0])
-            py = self.getPixels(self.boids_colony.map_dimensions[1] - unit_coords[1])
+            py = self.getPixels(self.boids_colony.bounds.map_dimensions[1] - unit_coords[1])
             return np.array([px, py])
         else:
             p = np.zeros(unit_coords.shape, dtype=int)
             p[:,0] = self.getPixels(unit_coords[:, 0])
-            p[:,1] = self.getPixels(self.boids_colony.map_dimensions[1] - unit_coords[:, 1])
+            p[:,1] = self.getPixels(self.boids_colony.bounds.map_dimensions[1] - unit_coords[:, 1])
             return p
 
     def createTrianglePoints(self):

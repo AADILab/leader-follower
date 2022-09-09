@@ -3,18 +3,25 @@ from time import sleep
 
 from lib.boids_colony import BoidsColony
 from lib.env_renderer import Renderer
+from lib.colony_helpers import StateBounds
+from lib.spawner import BoidSpawner
+
+sb = StateBounds(
+    map_dimensions=np.array([50,50], dtype=np.float64),
+    min_velocity=0,
+    max_velocity=10,
+    max_accleration=5,
+    max_angular_velocity=np.pi*0.5,
+    num_leaders=3,
+    num_followers=3
+)
+
+bs = BoidSpawner(sb)
+cs = bs.generateSpawnState()
 
 bc = BoidsColony(
-    leader_positions=[],
-    follower_positions=[
-        [2,2],
-        [3,3],
-        [2,3]
-    ],
-    leader_headings=[],
-    follower_headings=[np.pi/2, np.pi/3, -np.pi],
-    leader_velocities=[],
-    follower_velocities=[0,0,0],
+    init_state=cs,
+    bounds=sb,
     radius_repulsion=2,
     radius_orientation=3,
     radius_attraction=5,
@@ -22,10 +29,6 @@ bc = BoidsColony(
     orientation_multiplier=1,
     attraction_multiplier=1,
     wall_avoidance_multiplier=1,
-    map_dimensions=[50,50],
-    min_velocity=0, max_velocity=10,
-    max_acceleration=5,
-    max_angular_velocity=np.pi*0.5,
     dt=1/60
 )
 
