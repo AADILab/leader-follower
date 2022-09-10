@@ -3,12 +3,13 @@ from typing import List, Tuple, Optional
 import numpy as np
 from numpy.typing import NDArray
 
-from lib.colony_helpers import ColonyState, StateBounds
+from lib.colony_helpers import BoidsColonyState, StateBounds
 from lib.math_helpers import calculateDeltaHeading, calculateDistance
 
 class Boid():
     def __init__(self,
-        colony_state: ColonyState,
+        colony_state: BoidsColonyState,
+        state_bounds: StateBounds,
         # positions: NDArray[np.float64],
         # headings: NDArray[np.float64],
         # velocities: NDArray[np.float64],
@@ -18,6 +19,9 @@ class Boid():
 
         self.colony_state = colony_state
         self.id = id
+        if not self.isLeader():
+            # Index is leader. Value is how many timesteps that leader was within the observation radius of this follower
+            self.leader_influence = [0 for _ in range(state_bounds.num_leaders)]
 
     @property
     def position(self) -> np.float64:
@@ -38,7 +42,7 @@ BoidArray = np.ndarray[Boid, np.dtype[Boid]]
 
 class BoidsColony():
     def __init__(self,
-        init_state: ColonyState,
+        init_state: BoidsColonyState,
         bounds: StateBounds,
         # leader_positions: List[List[float]], follower_positions: List[List[float]],
         # leader_headings: List[float], follower_headings: List[float],
@@ -68,7 +72,7 @@ class BoidsColony():
         # self.headings = np.array(leader_headings+follower_headings, dtype=float)
         # self.velocities = np.array(leader_velocities+follower_velocities, dtype=float)
 
-        self.boids = np.array([Boid(self.state, id) for id in range(self.bounds.num_total)])
+        self.boids = np.array([Boid(self.state, self.bounds, id) for id in range(self.bounds.num_total)])
 
         self.radius_repulsion = radius_repulsion
         self.radius_orientation = radius_orientation
@@ -230,8 +234,18 @@ class BoidsColony():
         # Apply upper bound
         self.state.positions[:,1][self.state.positions[:,1]>self.bounds.map_dimensions[1]] = self.bounds.map_dimensions[1]
 
+    def updateLeaderInfluence(self):
+        for follower in self.getFollowers():
+            observable_boids = self.getObservableBoids(follower)
+            for boid in observable_boids:
+                if boid.isLeader():
+                    follower.leader_influence[boid.id]+=1
+
     def step(self, leader_desired_velocities: Optional[NDArray[np.float64]] = None, leader_desired_headings: Optional[NDArray[np.float64]] = None) -> None:
         """Step forward the boid colony with the input leader actions"""
+        # Update which leader each follower is being influenced by
+        self.updateLeaderInfluence()
+
         # Initialize desired velocities array
         # Initialize desired headings array
         delta_velocities = np.zeros(self.bounds.num_total)
@@ -244,7 +258,7 @@ class BoidsColony():
             # Determine if boid is near wall
             near_wall = self.nearWall(follower)
             # If no boids are observed, and this boid is not near a wall
-            if len(observable_boids) == 0 and not near_wall:
+            if observable_boids.size == 0 and not near_wall:
                 # Calculate its delta velocity as 0.0 and delta heading as 0.0
                 delta_velocities[follower.id] = 0.0
                 delta_headings[follower.id] = 0.0
@@ -288,6 +302,3 @@ class BoidsColony():
         angular_velocities, linear_accelerations = self.calculateKinematics(delta_velocities, delta_headings)
         # Apply angular velocity and linear acceleration to each boid
         self.applyKinematics(angular_velocities, linear_accelerations)
-
-if __name__ == "__main__":
-    a=np.array([Boid(None, None, None, None, None)])

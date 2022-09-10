@@ -48,3 +48,6 @@ def calculateCentroid(positions):
         return None
     else:
         return np.average(positions, axis=0)
+
+def argmax(iterable):
+    return max(enumerate(iterable), key=lambda x: x[1])[0]

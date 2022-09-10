@@ -4,7 +4,7 @@ from typing import List, Optional
 import numpy as np
 from numpy.typing import NDArray
 
-from lib.colony_helpers import ColonyState, StateBounds
+from lib.colony_helpers import BoidsColonyState, StateBounds
 
 class BoidSpawnRule(IntEnum):
     Individual = 0 # Defer to individual rules for position, velocity, heading
@@ -156,4 +156,4 @@ class BoidSpawner():
         else:
             headings = self.generateHeadings()
         is_leader = self.fixed_is_leader
-        return ColonyState(positions=positions, headings=headings, velocities=velocities, is_leader=is_leader)
+        return BoidsColonyState(positions=positions, headings=headings, velocities=velocities, is_leader=is_leader)

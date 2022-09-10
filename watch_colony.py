@@ -5,6 +5,7 @@ from lib.boids_colony import BoidsColony
 from lib.env_renderer import Renderer
 from lib.colony_helpers import StateBounds
 from lib.boid_spawner import BoidSpawner, BoidSpawnRule, HeadingRule, PositionRule, VelocityRule
+from lib.fitness_calculator import FitnessCalculator
 from lib.poi_colony import POIColony, POI
 from lib.poi_spawner import POISpawner, POISpawnRule
 from lib.env_observations import ObservationManager, ObservationRule, SensorType
@@ -18,8 +19,8 @@ sb = StateBounds(
     max_velocity=10,
     max_accleration=5,
     max_angular_velocity=np.pi*0.5,
-    num_leaders=10,
-    num_followers=50
+    num_leaders=20,
+    num_followers=40
 )
 
 bs = BoidSpawner(
@@ -62,22 +63,14 @@ pc = POIColony(
     coupling=5
 )
 
-def updatePois():
-    for poi in pc.pois:
-        distances = calculateDistance(poi.position, bc.state.positions)
-        num_observations = np.sum(distances<=pc.observation_radius)
-        if num_observations >= pc.coupling:
-            poi.observed = True
-            # Get ids of swarm members that observed this poi
-            observer_ids = np.nonzero(distances<=pc.observation_radius)[0]
-            poi.observation_list.append(observer_ids)
+fc = FitnessCalculator(poi_colony=pc, boids_colony=bc)
 
 om = ObservationManager(
     observation_rule=ObservationRule.Individual,
     boids_colony=bc,
     poi_colony=pc,
     num_poi_bins=4,
-    num_swarm_bins=8,
+    num_swarm_bins=12,
     poi_sensor_type=SensorType.InverseDistance,
     swarm_sensor_type=SensorType.InverseDistance
 )
@@ -86,6 +79,6 @@ r = Renderer(boids_colony=bc, poi_colony=pc, observation_manager=om, pixels_per_
 
 while not r.checkForPygameQuit():
     bc.step()
-    updatePois()
+    pc.updatePois(bc.state)
     r.renderFrame()
     sleep(1/60)

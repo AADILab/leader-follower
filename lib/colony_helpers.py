@@ -1,6 +1,6 @@
 import numpy as np
 
-class ColonyState():
+class BoidsColonyState():
     def __init__(self, positions, headings, velocities, is_leader) -> None:
         self.positions = positions
         self.headings = headings
