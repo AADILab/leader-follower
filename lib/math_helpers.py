@@ -25,3 +25,26 @@ def calculateDeltaHeading(current_heading: float, desired_heading: float) -> flo
         which_delta = np.argmin([np.abs(delta0), np.abs(delta1)])
         delta_heading = np.array([delta0, delta1])[which_delta]
     return delta_heading
+
+def randomPositions(high_bounds: NDArray[np.float64], num_positions: int, low_bounds: NDArray[np.float64] = np.array([0.,0.])) -> NDArray[np.float64]:
+    """Generate an array of random positions according to the given constraints"""
+    return np.hstack((
+                np.random.uniform(low_bounds[0], high_bounds[1], size=(num_positions,1)),
+                np.random.uniform(low_bounds[1], high_bounds[1], size=(num_positions,1))
+            ))
+
+def boundAnglePiToPi(heading):
+    bounded_heading = heading
+    # Bound heading from [0,2pi]
+    if bounded_heading > 2*np.pi or bounded_heading < 0:
+        bounded_heading %= 2*np.pi
+    # Bound heading from [-pi,+pi]
+    if bounded_heading > np.pi:
+        bounded_heading -= 2*np.pi
+    return bounded_heading
+
+def calculateCentroid(positions):
+    if positions.size == 0:
+        return None
+    else:
+        return np.average(positions, axis=0)

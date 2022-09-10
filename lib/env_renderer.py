@@ -1,15 +1,20 @@
+from typing import Tuple
+
 import numpy as np
+from numpy.typing import NDArray
 import pygame
 import pygame.gfxdraw
 
 from lib.boids_colony import BoidsColony, Boid
 from lib.poi_colony import POIColony, POI
+from lib.env_observations import ObservationManager, SensorType
 
 class Renderer():
-    def __init__(self, boids_colony: BoidsColony, poi_colony: POIColony, pixels_per_unit: int) -> None:
+    def __init__(self, boids_colony: BoidsColony, poi_colony: POIColony, observation_manager: ObservationManager, pixels_per_unit: int) -> None:
         # Save variables
         self.boids_colony = boids_colony
         self.poi_colony = poi_colony
+        self.observation_manager = observation_manager
         self.pixels_per_unit = pixels_per_unit
 
         # Setup colors
@@ -107,8 +112,34 @@ class Renderer():
         for poi in self.poi_colony.pois:
             self.renderPOI(poi)
 
+    def renderSensorReadings(self, leader: Boid, sensor_readings: NDArray[np.float64], color: Tuple[float], leader_pix_coords: NDArray[np.int64]):
+        for ind, sensor_reading in enumerate(sensor_readings):
+            # Angle for this sensor reading relative to leader heading
+            angle_segment = 2*np.pi / (2*sensor_readings.size)
+            relative_angle = -np.pi + angle_segment + angle_segment*2*ind
+            # Angle in world from leader to this sensor reading
+            absolute_angle = (leader.heading + relative_angle)# % (2*np.pi)
+            # Position of reading to display
+            relative_position = np.array([sensor_reading*np.cos(absolute_angle), sensor_reading*np.sin(absolute_angle)])
+            # Position in world frame
+            absolute_position = leader.position+relative_position
+            # Convert to pix
+            poi_pix_coords = self.getPixelCoords(absolute_position)
+            # Render line
+            pygame.gfxdraw.line(self.screen, leader_pix_coords[0], leader_pix_coords[1], poi_pix_coords[0], poi_pix_coords[1], color)
+
+    def renderObservation(self, observation: NDArray[np.float64], leader: Boid):
+        leader_pix_coords = self.getPixelCoords(leader.position)
+        self.renderSensorReadings(leader, observation[:self.observation_manager.num_poi_bins], (0,0,0), leader_pix_coords)
+        self.renderSensorReadings(leader, observation[self.observation_manager.num_poi_bins:], self.boidColor(leader), leader_pix_coords)
+
+    def renderObservations(self):
+        for observation, leader in zip(self.observation_manager.getAllObservations(), self.boids_colony.getLeaders()):
+            self.renderObservation(observation, leader)
+
     def renderFrame(self):
         self.screen.fill((255,255,255))
+        self.renderObservations()
         self.renderBoids()
         self.renderPOIs()
         pygame.display.flip()
