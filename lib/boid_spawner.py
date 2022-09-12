@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -31,10 +31,10 @@ class BoidSpawner():
         # Boundaries for any generated state
         bounds: StateBounds,
         # Rules for spawning boids
-        spawn_rule: BoidSpawnRule,
-        position_rule: Optional[PositionRule] = None,
-        velocity_rule: Optional[VelocityRule] = None,
-        heading_rule: Optional[HeadingRule] = None,
+        spawn_rule: Union[BoidSpawnRule, str],
+        position_rule: Optional[Union[PositionRule, str]] = None,
+        velocity_rule: Optional[Union[VelocityRule, str]] = None,
+        heading_rule: Optional[Union[HeadingRule, str]] = None,
         # Whether to fix the spawn
         fix_all: bool = False,
         fix_positions: bool = False,
@@ -52,6 +52,15 @@ class BoidSpawner():
         leader_headings: Optional[List[float]] = None,
         follower_headings: Optional[List[float]] = None
         ) -> None:
+
+        if type(spawn_rule) == str:
+            spawn_rule = BoidSpawnRule[spawn_rule]
+        if type(position_rule) == str:
+            position_rule = PositionRule[position_rule]
+        if type(velocity_rule) == str:
+            velocity_rule = VelocityRule[velocity_rule]
+        if type(heading_rule) == str:
+            heading_rule = HeadingRule[heading_rule]
 
         self.bounds = bounds
         self.spawn_rule = spawn_rule

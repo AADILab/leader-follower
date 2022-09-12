@@ -3,6 +3,7 @@ from typing import Optional, List, Union
 
 import numpy as np
 from numpy.typing import NDArray
+from gym.spaces import Box
 
 from lib.math_helpers import calculateCentroid, calculateDistance, boundAnglePiToPi
 from lib.boids_colony import BoidsColony, Boid
@@ -16,14 +17,22 @@ class SensorType(IntEnum):
 
 class ObservationManager():
     def __init__(self,
-        observation_rule: ObservationRule,
+        observation_rule: Union[ObservationRule, str],
         boids_colony: BoidsColony,
         poi_colony: POIColony,
         num_poi_bins: Optional[int],
         num_swarm_bins: Optional[int],
-        poi_sensor_type: Optional[SensorType],
-        swarm_sensor_type: Optional[SensorType]
+        poi_sensor_type: Optional[Union[SensorType, str]],
+        swarm_sensor_type: Optional[Union[SensorType, str]]
         ) -> None:
+
+        if type(observation_rule) == str:
+            observation_rule = ObservationRule[observation_rule]
+        if type(poi_sensor_type) == str:
+            poi_sensor_type = SensorType[poi_sensor_type]
+        if type(swarm_sensor_type) == str:
+            swarm_sensor_type = SensorType[swarm_sensor_type]
+
         self.observation_rule = observation_rule
         self.boids_colony = boids_colony
         self.poi_colony = poi_colony
@@ -33,6 +42,26 @@ class ObservationManager():
 
         self.poi_sensor_type = poi_sensor_type
         self.swarm_sensor_type = swarm_sensor_type
+
+    def getObservationSpace(self):
+        # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
+
+        if self.poi_sensor_type.value == SensorType.InverseDistance:
+            low_poi = 0
+            high_poi = self.boids_colony.radius_attraction
+
+        if self.swarm_sensor_type.value == SensorType.InverseDistance:
+            low_swarm = 0
+            high_swarm = self.boids_colony.radius_attraction
+
+        lows =  [low_poi for _ in range(self.num_poi_bins)]  + [low_swarm for _ in range(self.num_swarm_bins)]
+        highs = [high_poi for _ in range(self.num_poi_bins)] + [high_swarm for _ in range(self.num_swarm_bins)]
+
+        return Box(
+            low=np.array(lows, dtype=np.float64),
+            high=np.array(highs, dtype=np.float64),
+            dtype=np.float64
+        )
 
     def getSensorReading(self, bin: List[Union[Boid,POI]], boid: Boid, sensor_type: SensorType) -> float:
         if sensor_type.value == SensorType.InverseDistance:
@@ -105,3 +134,5 @@ class ObservationManager():
         for leader in self.boids_colony.getLeaders():
             observations.append(self.getObservation(leader))
         return observations
+
+    # def getObservationS

@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 
@@ -5,16 +6,21 @@ from lib.math_helpers import calculateDistance
 from lib.colony_helpers import BoidsColonyState
 
 class POI():
-    def __init__(self, position: np.array) -> None:
-        self.position = position
+    def __init__(self, positions: NDArray[np.float64], id: int) -> None:
+        self._positions = positions
+        self.id = id
         self.observed = False
         # Groups of agents that observed this POI
         self.observation_list = []
 
+    @property
+    def position(self) -> NDArray[np.float64]:
+        return self._positions[self.id]
+
 class POIColony():
     def __init__(self, positions: NDArray[np.float64], observation_radius: float, coupling: int) -> None:
         self.positions = positions
-        self.pois = [POI(position) for position in positions]
+        self.pois = [POI(self.positions, id) for id in range(positions.shape[0])]
         self.num_pois = len(self.pois)
         self.observation_radius = observation_radius
         self.coupling = coupling
@@ -32,6 +38,9 @@ class POIColony():
     def numObserved(self):
         return sum(poi.observed for poi in self.pois)
 
-    def reset(self) -> None:
+    def reset(self, positions: NDArray[np.float64], ) -> None:
+        # Resetting self.positions should also reset position attribute for all pois
+        self.positions[:,:] = positions
         for poi in self.pois:
             poi.observed = False
+            poi.observation_list = []

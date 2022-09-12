@@ -91,6 +91,9 @@ class BoidsColony():
         # self.max_angular_velocity = max_angular_velocity
         self.dt = dt
 
+    def reset(self, reset_state: BoidsColonyState) -> None:
+        self.state = reset_state
+
     def getLeaders(self) -> BoidArray:
         """Get all the leaders in an array"""
         return self.boids[:self.bounds.num_leaders]
@@ -297,7 +300,7 @@ class BoidsColony():
                 delta_velocity = desired_velocity - leader.velocity
                 # SAVE DELTA HEADING, DELTA VELOCITY FOR LEADER
                 delta_velocities[leader.id] = delta_velocity
-                delta_heading[leader.id] = delta_heading
+                delta_headings[leader.id] = delta_heading
         # Calculate ANGULAR VELOCITY and LINEAR ACCELERATION for each boid (leaders and followers)
         angular_velocities, linear_accelerations = self.calculateKinematics(delta_velocities, delta_headings)
         # Apply angular velocity and linear acceleration to each boid

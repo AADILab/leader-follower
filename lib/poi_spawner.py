@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Optional, List
+from typing import Optional, List, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,7 +15,7 @@ class POISpawnRule(IntEnum):
 
 class POISpawner():
     def __init__(self,
-        poi_spawn_rule: POISpawnRule,
+        poi_spawn_rule: Union[POISpawnRule, str],
         # number of POIs for generated spawns
         num_pois: Optional[int] = None,
         # Bounds
@@ -28,6 +28,9 @@ class POISpawner():
         # Positions for preset spawns
         positions: Optional[List[List[float]]] = None
         ) -> None:
+
+        if type(poi_spawn_rule) == str:
+            poi_spawn_rule = POISpawnRule[poi_spawn_rule]
 
         self.spawn_rule = poi_spawn_rule
         self.num_pois = num_pois

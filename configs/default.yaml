@@ -1,0 +1,43 @@
+---
+env:
+  max_steps: !eval 5*60
+  render_mode: none
+  env_config:
+    map_dimensions:
+      x: 100
+      y: 100
+    StateBounds:
+      min_velocity: 0
+      max_velocity: 10
+      max_acceleration: 5
+      max_angular_velocity: !eval 3.14159 * 0.5
+      num_leaders: 5
+      num_followers: 40
+    BoidSpawner:
+      spawn_rule: Circle
+      radius_fraction: !eval 1/5
+      velocity_fraction: !eval 1/2
+    BoidsColony:
+      radius_repulsion: 2
+      radius_orientation: 3
+      radius_attraction: 5
+      repulsion_multiplier: 3
+      orientation_multiplier: 1
+      attraction_multiplier: 1
+      wall_avoidance_multiplier: 1
+      dt: !eval 1/60
+    POISpawner:
+      poi_spawn_rule: BoundedRandom
+      num_pois: 10
+      bound_fraction: !eval 1/2
+    POIColony:
+      observation_radius: 5
+      coupling: 5
+    ObservationManager:
+      observation_rule: Individual
+      num_poi_bins: 4
+      num_swarm_bins: 12
+      poi_sensor_type: InverseDistance
+      swarm_sensor_type: InverseDistance
+    Renderer:
+      pixels_per_unit: 10

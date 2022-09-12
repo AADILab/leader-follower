@@ -2,13 +2,13 @@ import numpy as np
 from time import sleep
 
 from lib.boids_colony import BoidsColony
-from lib.env_renderer import Renderer
+from lib.renderer import Renderer
 from lib.colony_helpers import StateBounds
 from lib.boid_spawner import BoidSpawner, BoidSpawnRule, HeadingRule, PositionRule, VelocityRule
 from lib.fitness_calculator import FitnessCalculator
 from lib.poi_colony import POIColony, POI
 from lib.poi_spawner import POISpawner, POISpawnRule
-from lib.env_observations import ObservationManager, ObservationRule, SensorType
+from lib.observations_manager import ObservationManager, ObservationRule, SensorType
 from lib.math_helpers import calculateDeltaHeading, calculateDistance
 
 map_dimensions=np.array([100,100], dtype=np.float64)
@@ -17,9 +17,9 @@ sb = StateBounds(
     map_dimensions=map_dimensions,
     min_velocity=0,
     max_velocity=10,
-    max_accleration=5,
+    max_acceleration=5,
     max_angular_velocity=np.pi*0.5,
-    num_leaders=20,
+    num_leaders=5,
     num_followers=40
 )
 
@@ -50,7 +50,7 @@ bc = BoidsColony(
 
 ps = POISpawner(
     poi_spawn_rule=POISpawnRule.BoundedRandom,
-    num_pois = 5,
+    num_pois = 10,
     map_dimensions=map_dimensions,
     bound_fraction=0.5
 )
@@ -78,7 +78,7 @@ om = ObservationManager(
 r = Renderer(boids_colony=bc, poi_colony=pc, observation_manager=om, pixels_per_unit=10)
 
 while not r.checkForPygameQuit():
-    bc.step()
+    bc.step(leader_desired_velocities=100*np.ones(sb.num_leaders), leader_desired_headings=100*np.ones(sb.num_leaders))
     pc.updatePois(bc.state)
     r.renderFrame()
     sleep(1/60)
