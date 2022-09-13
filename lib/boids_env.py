@@ -4,8 +4,6 @@ from enum import IntEnum
 
 from gym.spaces import Box
 from pettingzoo import ParallelEnv
-from pettingzoo.utils import wrappers
-from pettingzoo.utils import parallel_to_aec
 import numpy as np
 
 from lib.colony_helpers import StateBounds
@@ -17,36 +15,13 @@ from lib.fitness_calculator import FitnessCalculator
 from lib.observations_manager import ObservationManager
 from lib.renderer import Renderer
 
-# env() creates the Boids environment
-def env(kwargs: Dict):
-    """
-    The env function often wraps the environment in wrappers by default.
-    You can find full documentation for these methods
-    elsewhere in the developer documentation.
-    """
-    env = raw_env(kwargs)
-    # Provides a wide vareity of helpful user errors
-    # Strongly recommended
-    env = wrappers.OrderEnforcingWrapper(env)
-    return env
-
-
-def raw_env(kwargs: Dict):
-    """
-    To support the AEC API, the raw_env() function just uses the from_parallel
-    function to convert from a ParallelEnv to an AEC env
-    """
-    env = parallel_env(**kwargs)
-    env = parallel_to_aec(env)
-    return env
-
 class RenderMode(IntEnum):
     human = 0
     none = 1
 
-class parallel_env(ParallelEnv):
+class BoidsEnv(ParallelEnv):
     metadata = {"render_modes": ["human", "none"], "name": "boids_environment"}
-    def __init__(self, max_steps: int, render_mode: Union[RenderMode, str], env_config: Dict) -> None:
+    def __init__(self, max_steps: int, render_mode: Union[RenderMode, str], config: Dict) -> None:
         """
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -60,28 +35,27 @@ class parallel_env(ParallelEnv):
             render_mode = RenderMode[render_mode]
         self.render_mode = render_mode
 
-        self.map_dimensions = np.array([env_config["map_dimensions"]["x"],env_config["map_dimensions"]["y"]], dtype=np.float64)
+        self.map_dimensions = np.array([config["map_dimensions"]["x"],config["map_dimensions"]["y"]], dtype=np.float64)
         self.state_bounds = StateBounds(
             map_dimensions=self.map_dimensions,
-            **env_config["StateBounds"]
+            **config["StateBounds"]
         )
         self.boid_spawner = BoidSpawner(
             bounds=self.state_bounds,
-            **env_config["BoidSpawner"]
+            **config["BoidSpawner"]
         )
         self.boids_colony = BoidsColony(
             init_state=self.boid_spawner.getSpawnState(),
             bounds=self.state_bounds,
-            **env_config["BoidsColony"]
+            **config["BoidsColony"]
         )
-        print("bc: ",id(self.boids_colony))
         self.poi_spawner = POISpawner(
             map_dimensions=self.map_dimensions,
-            **env_config["POISpawner"]
+            **config["POISpawner"]
         )
         self.poi_colony = POIColony(
             positions=self.poi_spawner.getSpawnPositions(),
-            **env_config["POIColony"]
+            **config["POIColony"]
         )
         self.fitness_calculator = FitnessCalculator(
             boids_colony=self.boids_colony,
@@ -90,14 +64,14 @@ class parallel_env(ParallelEnv):
         self.observation_manager = ObservationManager(
             boids_colony=self.boids_colony,
             poi_colony=self.poi_colony,
-            **env_config["ObservationManager"]
+            **config["ObservationManager"]
         )
         if render_mode.value == RenderMode.human:
             self.renderer = Renderer(
                 boids_colony=self.boids_colony,
                 poi_colony=self.poi_colony,
                 observation_manager=self.observation_manager,
-                **env_config["Renderer"]
+                **config["Renderer"]
             )
         else:
             self.renderer = None
@@ -105,7 +79,7 @@ class parallel_env(ParallelEnv):
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(len(self.possible_agents))))
         )
-        self.env_config = env_config
+        self.config = config
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
@@ -132,7 +106,7 @@ class parallel_env(ParallelEnv):
                 boids_colony=self.boids_colony,
                 poi_colony=self.poi_colony,
                 observation_manager=self.observation_manager,
-                **self.env_config["Renderer"]
+                **self.config["Renderer"]
             )
             self.render_mode = mode
 
@@ -188,14 +162,11 @@ class parallel_env(ParallelEnv):
             leader_desired_velocities[agent_id] = actions[agent_name][0]
             leader_desired_headings[agent_id] = actions[agent_name][1]
 
-        print(leader_desired_headings, leader_desired_velocities)
-
         # Step forward simulation with leader actions
         self.boids_colony.step(
             leader_desired_velocities=leader_desired_velocities,
             leader_desired_headings=leader_desired_headings
         )
-        print("BE bc: ", id(self.boids_colony))
 
         # Get leader observations
         observations = self.getObservations()

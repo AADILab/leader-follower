@@ -10,7 +10,7 @@ from tqdm import tqdm
 import numpy as np
 
 from lib.network_lib import NN
-from lib.env_lib import BoidsEnv
+from lib.boids_env import BoidsEnv
 
 # Genome encodes weights of a network as list of numpy arrays
 Genome = List[np.array]
@@ -127,26 +127,33 @@ class EvaluationWorker():
         return rewards["team"], [rewards[self.env.possible_agents[agent_id]] for agent_id in range(self.env.num_agents)]
 
 class CCEA():
-    def __init__(self, num_agents: int, sub_population_size: int, num_parents: int, sigma_mutation: float, mutation_probability: float, nn_hidden: int, nn_outputs: int, num_workers: int = 4, init_population = None, use_difference_rewards: bool = True, env_kwargs: Dict = {}) -> None:
+    def __init__(self,
+        sub_population_size: int, num_parents: int,
+        mutation_rate: float, mutation_probability: float,
+        nn_hidden: int,
+        num_workers: int = 4,
+        init_population = None,
+        use_difference_evaluations: bool = True,
+        config: Dict = {}
+        ) -> None:
         # Set variables
-        self.num_agents = num_agents
+        self.num_agents = config["BoidsEnv"]["config"]["StateBounds"]["num_leaders"]
         self.sub_population_size = sub_population_size
         self.num_parents = num_parents
         self.num_children = sub_population_size - num_parents
-        self.sigma_mutation = sigma_mutation
+        self.sigma_mutation = mutation_rate
         self.mutation_probability = mutation_probability
         self.iterations = 0
         self.num_workers = num_workers
-        self.env_kwargs = env_kwargs
+        self.env_kwargs = config
         self.best_fitness_list = []
         self.best_team_data = None
-        self.use_difference_rewards = use_difference_rewards
+        self.use_difference_rewards = use_difference_evaluations
 
         # Setup nn variables
-        # self.nn_inputs = 2*env_kwargs["poi_positions"].shape[0]+2*env_kwargs["observe_followers"]
-        self.nn_inputs = 12
+        self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + config["BoidsEnv"]["config"]["ObservationManager"]["num_swarm_bins"]
         self.nn_hidden = nn_hidden
-        self.nn_outputs = nn_outputs
+        self.nn_outputs = 2
         if init_population is None:
             self.population = self.randomPopulation()
         else:
@@ -186,7 +193,7 @@ class CCEA():
             stop_event=self.stop_event,
             id=worker_id,
             use_difference_rewards=self.use_difference_rewards,
-            env_kwargs=self.env_kwargs,
+            env_kwargs=self.env_kwargs["BoidsEnv"],
             team_size=self.num_agents,
             nn_kwargs={"num_inputs": self.nn_inputs, "num_hidden": self.nn_hidden, "num_outputs": self.nn_outputs}
         )
