@@ -1,6 +1,5 @@
 ---
-num_generations: 500
-experiment_name: ~
+num_generations: 1
 load_population: ~
 CCEA:
   sub_population_size: 15

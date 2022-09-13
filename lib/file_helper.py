@@ -3,6 +3,7 @@ import pickle
 from lib.network_lib import NN
 from os import listdir
 from os.path import isfile
+import yaml
 
 def loadTrial(trialname: str)->Dict:
     return pickle.load(open("trials/"+trialname+".pkl", "rb"))
@@ -22,9 +23,11 @@ def getLatestTrialName()->str:
 def getNewTrialName()->str:
     return "trial_"+str(int(getLatestTrialNum())+1)
 
-def saveTrial(save_data: Dict, trial_num: Optional[str]=None)->None:
+def saveTrial(save_data: Dict, config: Dict, trial_num: Optional[str]=None)->None:
     if trial_num is None:
         trial_name = getNewTrialName()
+        trial_num = trial_name.split("_")[1]
     else:
         trial_name = "trial_"+trial_num
+    yaml.dump(config, "configs/config_"+trial_num+".yaml")
     pickle.dump(save_data, open("trials/"+trial_name+".pkl", "wb"))
