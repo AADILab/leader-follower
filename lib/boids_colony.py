@@ -1,3 +1,4 @@
+from cgitb import reset
 from typing import List, Tuple, Optional
 
 import numpy as np
@@ -92,7 +93,9 @@ class BoidsColony():
         self.dt = dt
 
     def reset(self, reset_state: BoidsColonyState) -> None:
-        self.state = reset_state
+        self.state.__dict__.update(reset_state.__dict__)
+        #  = reset_state
+        # destination.__dict__.update(source.__dict__)
 
     def getLeaders(self) -> BoidArray:
         """Get all the leaders in an array"""
@@ -216,6 +219,10 @@ class BoidsColony():
         """Update all positions, velocities, and headings with the input kinematics using Euler integration.
         Bound kinematics according to specified boundaries. Ex: max_velocity
         """
+        print("applyKinematics()")
+        print("angular vel: ", angular_velocities[0])
+        print("linear acc: ", linear_accelerations[0])
+        print("before: ", self.state.positions[0])
         # Update headings
         self.state.headings += angular_velocities*self.dt
         # Apply circular cutoff
@@ -236,6 +243,7 @@ class BoidsColony():
         self.state.positions[:,1][self.state.positions[:,1]<0] = 0
         # Apply upper bound
         self.state.positions[:,1][self.state.positions[:,1]>self.bounds.map_dimensions[1]] = self.bounds.map_dimensions[1]
+        print("after: ", self.state.positions[0])
 
     def updateLeaderInfluence(self):
         for follower in self.getFollowers():
@@ -246,6 +254,7 @@ class BoidsColony():
 
     def step(self, leader_desired_velocities: Optional[NDArray[np.float64]] = None, leader_desired_headings: Optional[NDArray[np.float64]] = None) -> None:
         """Step forward the boid colony with the input leader actions"""
+        print("BoidsColony.step()")
         # Update which leader each follower is being influenced by
         self.updateLeaderInfluence()
 
@@ -305,3 +314,9 @@ class BoidsColony():
         angular_velocities, linear_accelerations = self.calculateKinematics(delta_velocities, delta_headings)
         # Apply angular velocity and linear acceleration to each boid
         self.applyKinematics(angular_velocities, linear_accelerations)
+
+        # This should just print the same position twice
+        # When I call this with the env wrapper, these are different
+        # When I call this normally, they are the same
+        print("BC P: ", self.boids[0].position, self.state.positions[0])
+        print("BC S: ", id(self.boids[0].colony_state), id(self.state))

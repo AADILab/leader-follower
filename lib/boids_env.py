@@ -74,6 +74,7 @@ class parallel_env(ParallelEnv):
             bounds=self.state_bounds,
             **env_config["BoidsColony"]
         )
+        print("bc: ",id(self.boids_colony))
         self.poi_spawner = POISpawner(
             map_dimensions=self.map_dimensions,
             **env_config["POISpawner"]
@@ -133,6 +134,7 @@ class parallel_env(ParallelEnv):
                 observation_manager=self.observation_manager,
                 **self.env_config["Renderer"]
             )
+            self.render_mode = mode
 
         self.renderer.renderFrame()
 
@@ -181,19 +183,19 @@ class parallel_env(ParallelEnv):
         leader_desired_velocities = np.zeros(self.state_bounds.num_leaders)
         leader_desired_headings = np.zeros(self.state_bounds.num_leaders)
 
-        print(actions)
-
         # Populate actions from dictionary
         for agent_id, agent_name in enumerate(self.agents):
-            print(agent_id, agent_name, actions[agent_name])
-            # leader_desired_velocities[agent_id] = actions[agent_name][0]
-            # leader_desired_headings[agent_id] = actions[agent_name][1]
+            leader_desired_velocities[agent_id] = actions[agent_name][0]
+            leader_desired_headings[agent_id] = actions[agent_name][1]
+
+        print(leader_desired_headings, leader_desired_velocities)
 
         # Step forward simulation with leader actions
         self.boids_colony.step(
             leader_desired_velocities=leader_desired_velocities,
             leader_desired_headings=leader_desired_headings
         )
+        print("BE bc: ", id(self.boids_colony))
 
         # Get leader observations
         observations = self.getObservations()

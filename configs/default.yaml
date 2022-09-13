@@ -1,7 +1,7 @@
 ---
 env:
   max_steps: !eval 5*60
-  render_mode: none
+  render_mode: human
   env_config:
     map_dimensions:
       x: 100
