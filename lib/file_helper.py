@@ -15,6 +15,8 @@ def loadPopulation(trialname:str)->List[NN]:
 def getLatestTrialNum()->int:
     filenames = [f for f in listdir("trials") if isfile("trials/"+f) and f[-4:] == ".pkl" and f[:6] == "trial_"]
     numbers = [int(f[6:-4]) for f in filenames]
+    if len(numbers) == 0:
+        return -1
     return str(max(numbers))
 
 def getLatestTrialName()->str:
@@ -29,5 +31,6 @@ def saveTrial(save_data: Dict, config: Dict, trial_num: Optional[str]=None)->Non
         trial_num = trial_name.split("_")[1]
     else:
         trial_name = "trial_"+trial_num
-    yaml.dump(config, "configs/config_"+trial_num+".yaml")
+    with open("configs/config_"+trial_num+".yaml", "w") as file:
+        yaml.dump(config, file)
     pickle.dump(save_data, open("trials/"+trial_name+".pkl", "wb"))
