@@ -63,7 +63,7 @@ def computeAction(net, observation, env):
     # Map [-1,+1] to [-pi,+pi]
     heading = out[0] * np.pi
     # Map [-1,+1] to [0, max_velocity]
-    velocity = (out[1]+1.0)/2*env.bm.max_velocity
+    velocity = (out[1]+1.0)/2*env.state_bounds.max_velocity
     return np.array([heading, velocity])
 
 class EvaluationWorker():
@@ -145,7 +145,7 @@ class CCEA():
         self.mutation_probability = mutation_probability
         self.iterations = 0
         self.num_workers = num_workers
-        self.env_kwargs = config
+        self.config = config
         self.best_fitness_list = []
         self.best_team_data = None
         self.use_difference_rewards = use_difference_evaluations
@@ -193,9 +193,13 @@ class CCEA():
             stop_event=self.stop_event,
             id=worker_id,
             use_difference_rewards=self.use_difference_rewards,
-            env_kwargs=self.env_kwargs["BoidsEnv"],
+            env_kwargs=self.config["BoidsEnv"],
             team_size=self.num_agents,
-            nn_kwargs={"num_inputs": self.nn_inputs, "num_hidden": self.nn_hidden, "num_outputs": self.nn_outputs}
+            nn_kwargs={
+                "num_inputs": self.nn_inputs,
+                "num_hidden": self.nn_hidden,
+                "num_outputs": self.nn_outputs
+            }
         )
         for worker_id in range(self.num_workers)
     ]

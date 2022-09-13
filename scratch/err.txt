@@ -1,0 +1,41 @@
+pygame 2.1.2 (SDL 2.0.16, Python 3.6.9)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+e:  False
+  0%|                                                                                                                                                                                                                                                                                              | 0/1 [00:00<?, ?it/s]running while
+Weights are being set incorrectly in setWeights().
+Dimensions for new weights and network weights do not match!
+New weights dim != Network weights dim
+[(6, 4),(2, 6)] != [(5, 6),(7, 2)]
+Error on 7! Exiting program. Error: Weights are being set incorrectly in setWeights().
+Dimensions for new weights and network weights do not match!
+New weights dim != Network weights dim
+[(6, 4),(2, 6)] != [(5, 6),(7, 2)]
+Full Traceback:
+Traceback (most recent call last):
+  File "/home/egonzalez/leaders/learner_lib.py", line 116, in evaluationWorker
+    fitness = self.evaluateGenome(genome, seed, False)
+  File "/home/egonzalez/leaders/learner_lib.py", line 138, in evaluateGenome
+    net.setWeights(genome)
+  File "/home/egonzalez/leaders/network_lib.py", line 33, in setWeights
+    raise Exception("Weights are being set incorrectly in setWeights().\n"\
+Exception: Weights are being set incorrectly in setWeights().
+Dimensions for new weights and network weights do not match!
+New weights dim != Network weights dim
+[(6, 4),(2, 6)] != [(5, 6),(7, 2)]
+
+Exiting 7
+Exiting 2
+Exiting 5
+Exiting 8
+Exiting 3
+Exiting 6
+Exiting 9
+Exiting 0
+Exiting 1
+Exiting 4
+Timeout reached on waiting for a response!
+Currently received 0 out of 1 responses!
+Work: 0, Fitnesses: 0
+stop:  True
+Exiting main program.
+  0%|

@@ -13,8 +13,8 @@ CCEA:
   use_difference_evaluations: True
   config:
     BoidsEnv:
-      max_steps: !eval 5*60
-      render_mode: human
+      max_steps: !eval 5*5
+      render_mode: none
       config:
         map_dimensions:
           x: 100
@@ -38,7 +38,7 @@ CCEA:
           orientation_multiplier: 1
           attraction_multiplier: 1
           wall_avoidance_multiplier: 1
-          dt: !eval 1/60
+          dt: !eval 1/5
         POISpawner:
           poi_spawn_rule: BoundedRandom
           num_pois: 10
