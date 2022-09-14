@@ -1,22 +1,17 @@
 from lib.ccea_lib import CCEA
 from time import time
+import sys
 import numpy as np
-from lib.file_helper import loadPopulation, getLatestTrialName, saveTrial
-import myaml
+from lib.file_helper import saveTrial, loadConfig, setupInitialPopulation
 
 # Load in config
-config = myaml.safe_load("configs/default.yaml")
+config = loadConfig()
 
-if config["load_population"] is not None:
-    if config["load_population"] == "latest":
-        config["load_population"] = getLatestTrialName()
-    initial_population = loadPopulation(config["load_population"])
-else:
-    initial_population = None
-
+# Start clock
 start = time()
 
-learner = CCEA(**config["CCEA"])
+# Setup learner
+learner = CCEA(**config["CCEA"], init_population=setupInitialPopulation(config))
 
 try:
     learner.train(num_generations=config["num_generations"])
@@ -38,3 +33,5 @@ save_data = {
 saveTrial(save_data, config)
 
 print("Experiment time: ", time() - start, " seconds. Completed ", finished_iterations, " out of ", config["num_generations"], " generations.")
+
+sys.exit()

@@ -96,7 +96,7 @@ class Renderer():
         pygame.gfxdraw.filled_polygon(self.screen, pix_coords, color)
 
     def renderBoids(self):
-        print("P: ", self.boids_colony.boids[0].position)
+        # print("P: ", self.boids_colony.boids[0].position)
         for boid in self.boids_colony.boids:
             self.renderBoid(boid)
 
@@ -140,8 +140,6 @@ class Renderer():
             self.renderObservation(observation, leader)
 
     def renderFrame(self):
-        print("renderFrame()")
-        print("RF bc: ", id(self.boids_colony))
         self.screen.fill((255,255,255))
         self.renderObservations()
         self.renderBoids()

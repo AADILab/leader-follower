@@ -97,7 +97,7 @@ class BoidsEnv(ParallelEnv):
             dtype=np.float64
         )
 
-    def render(self, mode: Optional[Union[RenderMode, str]] = None):
+    def render(self, mode: Optional[Union[RenderMode, str]] = 'human'):
         if type(mode) == str:
             mode = RenderMode[mode]
 

@@ -112,7 +112,7 @@ class EvaluationWorker():
         self.setupTeamPolicies(team_data)
 
         # Run network on boids environment
-        observations = self.env.reset()
+        observations = self.env.reset(seed=team_data.evaluation_seed)
         done = False
         while not done:
             if draw:
@@ -241,9 +241,11 @@ class CCEA():
             # new_genome.append(layer + np.random.normal(0.0, self.sigma_mutation, size=(layer.shape)))
         return new_genome
 
-    def randomTeams(self):
+    def randomTeams(self, evaluation_seed: Optional[int] = None):
         # Form random teams from sub populations
-        random_teams = [TeamData(team=[], id=id) for id in range(self.sub_population_size)]
+        random_teams = [
+            TeamData(team=[], id=id, evaluation_seed=evaluation_seed) for id in range(self.sub_population_size)
+        ]
 
         # Shuffle subpopulations for random ordering of policies in each subpopulation
         shuffled_sub_populations = [copy(sub_pop) for sub_pop in self.population]
@@ -256,8 +258,13 @@ class CCEA():
         return random_teams
 
     def evaluatePopulation(self):
+        # Generate random seed for evaluation.
+        # This ensures each genome from a specific population is evaluated on the same task.
+        # Otherwise, one team might seem better than others just because it solved an easy task.
+        evaluation_seed = generateSeed()
+
         # Form random teams from population
-        random_teams = self.randomTeams()
+        random_teams = self.randomTeams(evaluation_seed = evaluation_seed)
 
         # Send teams to Evaluation Workers for evaluation
         for team_data in random_teams:
@@ -295,7 +302,7 @@ class CCEA():
         evaluated_teams.sort(reverse=True)
         if self.best_team_data is None or evaluated_teams[0].fitness > self.best_team_data.fitness:
             self.best_team_data = deepcopy(evaluated_teams[0])
-            print(self.best_team_data.fitness)
+            print(self.best_team_data.fitness, self.best_team_data.evaluation_seed)
 
     def mutatePopulation(self):
         # Mutate policies

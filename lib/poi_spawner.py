@@ -12,6 +12,7 @@ class POISpawnRule(IntEnum):
     UniformRandom = 1 # Randomly distribute pois accross entire map
     BoundedRandom = 2 # Randomly distribute pois bounded by a certain limit
     # EdgeRandom = 2 # Randomly place POIs on only near the edges of the map (Possible future implementation)
+    BoundedCircle = 3 # Randomly place POIs within two concentric circular bands
 
 class POISpawner():
     def __init__(self,
@@ -20,6 +21,8 @@ class POISpawner():
         num_pois: Optional[int] = None,
         # Bounds
         bound_fraction: Optional[float] = None,
+        inner_circle_bound_fraction: Optional[float] = None,
+        outer_circle_bound_fraction: Optional[float] = None,
         # Whether to fix spawns
         fix_poi_spawns: bool = False,
         # Map dimensions for generated spawns
@@ -35,6 +38,8 @@ class POISpawner():
         self.spawn_rule = poi_spawn_rule
         self.num_pois = num_pois
         self.bound_fraction = bound_fraction
+        self.inner_circle_bound_fraction = inner_circle_bound_fraction
+        self.outer_circle_bound_fraction = outer_circle_bound_fraction
         self.fix_poi_spawns = fix_poi_spawns
         self.map_dimensions = map_dimensions
         self.edge_min_fraction = edge_min_fraction
@@ -52,6 +57,20 @@ class POISpawner():
             low_bounds = self.map_dimensions/2 * (1-self.bound_fraction)
             high_bounds = self.map_dimensions/2 * self.bound_fraction + self.map_dimensions/2
             return randomPositions(low_bounds=low_bounds, high_bounds=high_bounds, num_positions=self.num_pois)
+        elif self.spawn_rule.value == POISpawnRule.BoundedCircle.value:
+            return self.generateBoundedCircle()
+
+    def generateBoundedCircle(self):
+        # Generate a bunch of radii from 0 to bound (outer - inner)
+        outer_bound = np.min(self.map_dimensions)/2 * self.outer_circle_bound_fraction
+        inner_bound = np.min(self.map_dimensions)/2 * self.inner_circle_bound_fraction
+        threshold = outer_bound - inner_bound
+        radii = inner_bound + np.random.uniform(0, threshold, size=(self.num_pois,1))
+        thetas = np.random.uniform(0, 2*np.pi, size=(self.num_pois,1))
+        return self.map_dimensions/2 +  np.hstack((
+            radii*np.cos(thetas),
+            radii*np.sin(thetas)
+        ))
 
     def getSpawnPositions(self):
         if self.fix_poi_spawns:

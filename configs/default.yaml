@@ -1,18 +1,18 @@
 ---
-num_generations: 1
-load_population: ~
+num_generations: 1000
+load_population: latest
 CCEA:
   sub_population_size: 15
   num_parents: 5
   mutation_rate: 0.15
-  mutation_probability: 0.15
+  mutation_probability: 0.5
   nn_hidden:
     - 10
   num_workers: 4
   use_difference_evaluations: True
   config:
     BoidsEnv:
-      max_steps: !eval 5*5
+      max_steps: !eval 5*20
       render_mode: none
       config:
         map_dimensions:
@@ -29,6 +29,7 @@ CCEA:
           spawn_rule: Circle
           radius_fraction: !eval 1/5
           velocity_fraction: !eval 1/2
+          fix_all: False
         BoidsColony:
           radius_repulsion: 2
           radius_orientation: 3
@@ -39,9 +40,12 @@ CCEA:
           wall_avoidance_multiplier: 1
           dt: !eval 1/5
         POISpawner:
-          poi_spawn_rule: BoundedRandom
+          poi_spawn_rule: BoundedCircle
           num_pois: 10
           bound_fraction: !eval 1/2
+          inner_circle_bound_fraction: !eval 2/5
+          outer_circle_bound_fraction: !eval 3/5
+          fix_poi_spawns: False
         POIColony:
           observation_radius: 5
           coupling: 5

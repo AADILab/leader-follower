@@ -4,6 +4,7 @@ from lib.network_lib import NN
 from os import listdir
 from os.path import isfile
 import yaml
+import myaml
 
 def loadTrial(trialname: str)->Dict:
     return pickle.load(open("trials/"+trialname+".pkl", "rb"))
@@ -34,3 +35,15 @@ def saveTrial(save_data: Dict, config: Dict, trial_num: Optional[str]=None)->Non
     with open("configs/config_"+trial_num+".yaml", "w") as file:
         yaml.dump(config, file)
     pickle.dump(save_data, open("trials/"+trial_name+".pkl", "wb"))
+
+def loadConfig(config_name: str = "default.yaml"):
+    return myaml.safe_load("configs/"+config_name)
+
+def setupInitialPopulation(config: Dict):
+    if config["load_population"] is not None:
+        if config["load_population"] == "latest":
+            config["load_population"] = getLatestTrialName()
+        return loadPopulation(config["load_population"])
+    else:
+        return None
+
