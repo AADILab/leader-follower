@@ -76,6 +76,7 @@ class BoidsEnv(ParallelEnv):
         else:
             self.renderer = None
         self.possible_agents = ["leader_" + str(n) for n in range(self.state_bounds.num_leaders)]
+        self.agents = self.possible_agents
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(len(self.possible_agents))))
         )

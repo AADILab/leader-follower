@@ -29,7 +29,7 @@ def calculateDeltaHeading(current_heading: float, desired_heading: float) -> flo
 def randomPositions(high_bounds: NDArray[np.float64], num_positions: int, low_bounds: NDArray[np.float64] = np.array([0.,0.])) -> NDArray[np.float64]:
     """Generate an array of random positions according to the given constraints"""
     return np.hstack((
-                np.random.uniform(low_bounds[0], high_bounds[1], size=(num_positions,1)),
+                np.random.uniform(low_bounds[0], high_bounds[0], size=(num_positions,1)),
                 np.random.uniform(low_bounds[1], high_bounds[1], size=(num_positions,1))
             ))
 

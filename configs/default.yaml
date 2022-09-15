@@ -1,18 +1,19 @@
 ---
-num_generations: 1000
-load_population: latest
+num_generations: 5000
+load_population: ~
 CCEA:
   sub_population_size: 15
   num_parents: 5
   mutation_rate: 0.15
-  mutation_probability: 0.5
+  mutation_probability: 0.15
   nn_hidden:
     - 10
   num_workers: 4
   use_difference_evaluations: True
+  num_evaluations: 5
   config:
     BoidsEnv:
-      max_steps: !eval 5*20
+      max_steps: !eval 5*5
       render_mode: none
       config:
         map_dimensions:
@@ -43,8 +44,8 @@ CCEA:
           poi_spawn_rule: BoundedCircle
           num_pois: 10
           bound_fraction: !eval 1/2
-          inner_circle_bound_fraction: !eval 2/5
-          outer_circle_bound_fraction: !eval 3/5
+          inner_circle_bound_fraction: !eval 1/5
+          outer_circle_bound_fraction: !eval 2/5
           fix_poi_spawns: False
         POIColony:
           observation_radius: 5

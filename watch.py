@@ -8,9 +8,10 @@ from lib.network_lib import createNNfromWeights
 from lib.ccea_lib import computeAction
 from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 
-PLOT_SCORES = False
+PLOT_SCORES = True
 PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
+# TRIALNAME = "trial_21"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME)
@@ -38,22 +39,23 @@ if PLAY_ENV:
     env = BoidsEnv(**config["CCEA"]["config"]["BoidsEnv"])
     dt = env.boids_colony.dt
     networks = [createNNfromWeights(genome_data.genome) for genome_data in best_team_data.team]
-    print(best_team_data.fitness, best_team_data.evaluation_seed)
+    print(best_team_data.fitness, best_team_data.all_evaluation_seeds)
 
-    observations = env.reset(best_team_data.evaluation_seed)
-    for step in range(env.max_steps):
-        start_time = time()
-        actions = {agent: computeAction(network, observations[agent], env) for agent, network in zip(env.possible_agents, networks)}
-        observations, rewards, dones, infos = env.step(actions)
-        env.render()
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                print("Shutdown command recieved. Shutting down.")
-                shutdown = True
-        if shutdown: exit()
-        loop_time = time() - start_time
-        if loop_time < dt:
-            sleep(dt - loop_time)
-        else:
-            print("Loop " + str(step) + " took longer than refresh rate")
-    print(env.fitness_calculator.getTeamFitness())
+    for eval_seed in best_team_data.all_evaluation_seeds:
+        observations = env.reset(eval_seed)
+        for step in range(env.max_steps):
+            start_time = time()
+            actions = {agent: computeAction(network, observations[agent], env) for agent, network in zip(env.possible_agents, networks)}
+            observations, rewards, dones, infos = env.step(actions)
+            env.render()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    print("Shutdown command recieved. Shutting down.")
+                    shutdown = True
+            if shutdown: exit()
+            loop_time = time() - start_time
+            if loop_time < dt:
+                sleep(dt - loop_time)
+            else:
+                print("Loop " + str(step) + " took longer than refresh rate")
+        print("Team Fitness: ", env.fitness_calculator.getTeamFitness(), " | Agent Fitnesses: ", env.fitness_calculator.calculateDifferenceEvaluations())

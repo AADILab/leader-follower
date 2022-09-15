@@ -54,6 +54,7 @@ class TeamData(SortByFitness):
         self.fitness = fitness
         self.difference_evaluations = []
         self.evaluation_seed = evaluation_seed
+        self.all_evaluation_seeds = []
 
 def generateSeed():
     return int((time() % 1) * 1000000)
@@ -67,12 +68,13 @@ def computeAction(net, observation, env):
     return np.array([heading, velocity])
 
 class EvaluationWorker():
-    def __init__(self, in_queue, out_queue, stop_event: Event, id: int, team_size: int, use_difference_rewards: bool, env_kwargs: Dict = {}, nn_kwargs: Dict ={}):
+    def __init__(self, in_queue, out_queue, stop_event: Event, id: int, team_size: int, use_difference_rewards: bool, num_evaluations: int, env_kwargs: Dict = {}, nn_kwargs: Dict ={}):
         self.in_queue = in_queue
         self.out_queue = out_queue
         self.stop_event = stop_event
         self.id = id
         self.use_difference_rewards = use_difference_rewards
+        self.num_evaluations = num_evaluations
         self.env = BoidsEnv(**env_kwargs)
         self.team_policies = [NN(**nn_kwargs) for _ in range(team_size)]
 
@@ -111,20 +113,29 @@ class EvaluationWorker():
         # Load networks with weights from genomes on team
         self.setupTeamPolicies(team_data)
 
-        # Run network on boids environment
-        observations = self.env.reset(seed=team_data.evaluation_seed)
-        done = False
-        while not done:
-            if draw:
-                self.env.render()
-            # Collect the action for each agent on the team
-            actions = {agent_name: computeAction(net, observations[agent_name], self.env) for agent_name, net in zip(self.env.possible_agents, self.team_policies)}
-            # Step forward the environment
-            observations, rewards, dones, _  = self.env.step(actions)
-            # Save done
-            done = True in dones.values()
-        self.env.close()
-        return rewards["team"], [rewards[self.env.possible_agents[agent_id]] for agent_id in range(self.env.num_agents)]
+        team_data.all_evaluation_seeds = [team_data.evaluation_seed+n for n in range(self.num_evaluations)]
+
+        fitnesses = np.zeros((self.num_evaluations, 1+self.env.num_agents))
+
+        for eval_count, evaluation_seed in enumerate(team_data.all_evaluation_seeds):
+            # Run network on boids environment
+            observations = self.env.reset(seed=evaluation_seed)
+            done = False
+            while not done:
+                if draw:
+                    self.env.render()
+                # Collect the action for each agent on the team
+                actions = {agent_name: computeAction(net, observations[agent_name], self.env) for agent_name, net in zip(self.env.possible_agents, self.team_policies)}
+                # Step forward the environment
+                observations, rewards, dones, _  = self.env.step(actions)
+                # Save done
+                done = True in dones.values()
+            self.env.close()
+            fitnesses[eval_count] = np.array([rewards["team"]]+[rewards[agent] for agent in self.env.agents])
+        team_fitness = np.average(fitnesses[:,0])
+        agent_fitnesses = [np.average(fitnesses[:,num_agent+1]) for num_agent in range(self.env.num_agents)]
+        # return rewards["team"], [rewards[self.env.possible_agents[agent_id]] for agent_id in range(self.env.num_agents)]
+        return team_fitness, agent_fitnesses
 
 class CCEA():
     def __init__(self,
@@ -132,6 +143,7 @@ class CCEA():
         mutation_rate: float, mutation_probability: float,
         nn_hidden: int,
         num_workers: int = 4,
+        num_evaluations: int = 1, # This is for when initial state is random. Evaluating several times ensures we dont just take policies that happen to get lucky with an easy start.
         init_population = None,
         use_difference_evaluations: bool = True,
         config: Dict = {}
@@ -145,6 +157,7 @@ class CCEA():
         self.mutation_probability = mutation_probability
         self.iterations = 0
         self.num_workers = num_workers
+        self.num_evaluations = num_evaluations
         self.config = config
         self.best_fitness_list = []
         self.best_team_data = None
@@ -193,6 +206,7 @@ class CCEA():
             stop_event=self.stop_event,
             id=worker_id,
             use_difference_rewards=self.use_difference_rewards,
+            num_evaluations=self.num_evaluations,
             env_kwargs=self.config["BoidsEnv"],
             team_size=self.num_agents,
             nn_kwargs={
