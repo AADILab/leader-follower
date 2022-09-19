@@ -156,17 +156,17 @@ class BoidsEnv(ParallelEnv):
         '''
         # Format leader actions
         leader_desired_velocities = np.zeros(self.state_bounds.num_leaders)
-        leader_desired_headings = np.zeros(self.state_bounds.num_leaders)
+        leader_desired_delta_headings = np.zeros(self.state_bounds.num_leaders)
 
         # Populate actions from dictionary
         for agent_id, agent_name in enumerate(self.agents):
             leader_desired_velocities[agent_id] = actions[agent_name][0]
-            leader_desired_headings[agent_id] = actions[agent_name][1]
+            leader_desired_delta_headings[agent_id] = actions[agent_name][1]
 
         # Step forward simulation with leader actions
         self.boids_colony.step(
             leader_desired_velocities=leader_desired_velocities,
-            leader_desired_headings=leader_desired_headings
+            leader_desired_delta_headings=leader_desired_delta_headings
         )
 
         # Get leader observations
