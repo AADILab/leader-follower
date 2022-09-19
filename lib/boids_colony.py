@@ -252,7 +252,7 @@ class BoidsColony():
                 if boid.isLeader():
                     follower.leader_influence[boid.id]+=1
 
-    def step(self, leader_desired_velocities: Optional[NDArray[np.float64]] = None, leader_desired_headings: Optional[NDArray[np.float64]] = None) -> None:
+    def step(self, leader_desired_velocities: Optional[NDArray[np.float64]] = None, leader_desired_delta_headings: Optional[NDArray[np.float64]] = None) -> None:
         """Step forward the boid colony with the input leader actions"""
         # print("BoidsColony.step()")
         # Update which leader each follower is being influenced by
@@ -301,11 +301,10 @@ class BoidsColony():
                 delta_velocities[follower.id] = delta_velocity
                 delta_headings[follower.id] = delta_heading
         # Check if any leader actions were input
-        if leader_desired_headings is not None and leader_desired_velocities is not None:
+        if leader_desired_delta_headings is not None and leader_desired_velocities is not None:
             # Go through each leader
-            for leader, desired_velocity, desired_heading in zip(self.getLeaders(), leader_desired_velocities, leader_desired_headings):
-                # Calculate delta heading, delta velocity
-                delta_heading = calculateDeltaHeading(leader.heading, desired_heading)
+            for leader, desired_velocity, delta_heading in zip(self.getLeaders(), leader_desired_velocities, leader_desired_delta_headings):
+                # Calculate delta velocity
                 delta_velocity = desired_velocity - leader.velocity
                 # SAVE DELTA HEADING, DELTA VELOCITY FOR LEADER
                 delta_velocities[leader.id] = delta_velocity

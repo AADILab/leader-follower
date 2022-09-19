@@ -78,7 +78,7 @@ om = ObservationManager(
 r = Renderer(boids_colony=bc, poi_colony=pc, observation_manager=om, pixels_per_unit=10)
 
 while not r.checkForPygameQuit():
-    bc.step(leader_desired_velocities=100*np.ones(sb.num_leaders), leader_desired_headings=100*np.ones(sb.num_leaders))
+    bc.step(leader_desired_velocities=0*np.ones(sb.num_leaders), leader_desired_delta_headings=-np.pi*np.ones(sb.num_leaders))
     pc.updatePois(bc.state)
     r.renderFrame()
     sleep(1/60)
