@@ -41,6 +41,7 @@ runExperiment(config)
 
 # Reset to base config
 config = loadConfig()
+config["CCEA"]["num_workers"] = 10
 
 # Experiment with adding more learners
 config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 20
