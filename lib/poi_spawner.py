@@ -13,6 +13,7 @@ class POISpawnRule(IntEnum):
     BoundedRandom = 2 # Randomly distribute pois bounded by a certain limit
     # EdgeRandom = 2 # Randomly place POIs on only near the edges of the map (Possible future implementation)
     BoundedCircle = 3 # Randomly place POIs within two concentric circular bands
+    FixedConcentricCircles = 4 #Place POIS in concentric circles in fixed positions
 
 class POISpawner():
     def __init__(self,
@@ -28,6 +29,9 @@ class POISpawner():
         # Map dimensions for generated spawns
         map_dimensions: Optional[NDArray[np.float64]] = None,
         edge_min_fraction: Optional[float] = None,
+        # FixedConcentricCircles parameters
+        num_pois_concentric: Optional[List[float]] = None, # How many pois to have in each circle.
+        concentric_radii_fraction: Optional[List[float]] = None, # How big each circle should be
         # Positions for preset spawns
         positions: Optional[List[List[float]]] = None
         ) -> None:
@@ -36,7 +40,14 @@ class POISpawner():
             poi_spawn_rule = POISpawnRule[poi_spawn_rule]
 
         self.spawn_rule = poi_spawn_rule
-        self.num_pois = num_pois
+        if self.spawn_rule.value == POISpawnRule.FixedConcentricCircles:
+            self.num_pois = sum(num_pois_concentric)
+        else: # Note: This might cause issues with fixed positions pois where positions are specified but not how many pois
+            self.num_pois = num_pois
+
+        self.num_pois_concentric = num_pois_concentric
+        self.concentric_radii_fraction = concentric_radii_fraction
+
         self.bound_fraction = bound_fraction
         self.inner_circle_bound_fraction = inner_circle_bound_fraction
         self.outer_circle_bound_fraction = outer_circle_bound_fraction
@@ -59,6 +70,20 @@ class POISpawner():
             return randomPositions(low_bounds=low_bounds, high_bounds=high_bounds, num_positions=self.num_pois)
         elif self.spawn_rule.value == POISpawnRule.BoundedCircle.value:
             return self.generateBoundedCircle()
+        elif self.spawn_rule.value == POISpawnRule.FixedConcentricCircles.value:
+            return self.generateConcentricCircles()
+
+    def generateConcentricCircles(self):
+        positions_list = []
+        for num_pois, fraction_radius in zip(self.num_pois_concentric, self.concentric_radii_fraction):
+            radius = fraction_radius * min(self.map_dimensions)/2
+            thetas = np.expand_dims(np.linspace(0, 2*np.pi, num_pois, endpoint=False), axis=1)
+            circle_positions = self.map_dimensions/2 + np.hstack((
+                radius*np.cos(thetas),
+                radius*np.sin(thetas)
+            ))
+            positions_list.append(circle_positions)
+        return np.vstack(positions_list)
 
     def generateBoundedCircle(self):
         # Generate a bunch of radii from 0 to bound (outer - inner)

@@ -13,7 +13,7 @@ CCEA:
   num_evaluations: 5
   config:
     BoidsEnv:
-      max_steps: !eval 5*5
+      max_steps: !eval 20*5
       render_mode: none
       config:
         map_dimensions:
@@ -28,7 +28,7 @@ CCEA:
           num_followers: 40
         BoidSpawner:
           spawn_rule: Circle
-          radius_fraction: !eval 1/5
+          radius_fraction: !eval 1/4
           velocity_fraction: !eval 1/2
           fix_all: False
         BoidsColony:
@@ -41,12 +41,20 @@ CCEA:
           wall_avoidance_multiplier: 1
           dt: !eval 1/5
         POISpawner:
-          poi_spawn_rule: BoundedCircle
-          num_pois: 10
+          poi_spawn_rule: FixedConcentricCircles
+          num_pois: ~
           bound_fraction: !eval 1/2
           inner_circle_bound_fraction: !eval 1/5
           outer_circle_bound_fraction: !eval 2/5
           fix_poi_spawns: False
+          num_pois_concentric:
+            - 3
+            - 20
+            - 30
+          concentric_radii_fraction:
+            - !eval 1/4
+            - !eval 2/4
+            - !eval 3/4
         POIColony:
           observation_radius: 5
           coupling: 5
