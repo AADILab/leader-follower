@@ -6,6 +6,7 @@ from sys import exit
 # Load in config
 config = loadConfig()
 
+config["CCEA"]["num_workers"] = 8
 config["Notes"] ="0 followers. 1 leader. 1 coupling."
 runExperiment(config)
 
