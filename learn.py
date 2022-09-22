@@ -1,9 +1,16 @@
 import sys
 from lib.file_helper import loadConfig
 from lib.learn_helpers import runExperiment
+from sys import exit
 
 # Load in config
 config = loadConfig()
+
+config["Notes"] ="0 followers. 1 leader. 1 coupling."
+runExperiment(config)
+
+exit()
+
 
 # Experiment with adding followers.
 for num_followers in [0,1,2,3,4]:

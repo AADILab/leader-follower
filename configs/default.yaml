@@ -1,5 +1,5 @@
 ---
-num_generations: 1000
+num_generations: 500
 load_population: ~
 CCEA:
   sub_population_size: 15
@@ -8,9 +8,9 @@ CCEA:
   mutation_probability: 0.15
   nn_hidden:
     - 10
-  num_workers: 10
+  num_workers: 4
   use_difference_evaluations: True
-  num_evaluations: 3
+  num_evaluations: 1
   config:
     BoidsEnv:
       max_steps: !eval 20*5
