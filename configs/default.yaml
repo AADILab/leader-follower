@@ -10,7 +10,7 @@ CCEA:
     - 10
   num_workers: 4
   use_difference_evaluations: True
-  num_evaluations: 1
+  num_evaluations: 10
   config:
     BoidsEnv:
       max_steps: !eval 20*5
@@ -50,18 +50,16 @@ CCEA:
           num_pois_concentric:
             - 3
             - 13
-            - 23
           concentric_radii_fraction:
             - !eval 1/7
             - !eval 3/7
-            - !eval 5/7
         POIColony:
           observation_radius: 5
           coupling: 1
         ObservationManager:
           observation_rule: Individual
           num_poi_bins: 4
-          num_swarm_bins: 8
+          num_swarm_bins: 1
           poi_sensor_type: InverseDistance
           swarm_sensor_type: InverseDistance
         Renderer:
