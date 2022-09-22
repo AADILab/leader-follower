@@ -1,5 +1,5 @@
 ---
-num_generations: 500
+num_generations: 5000
 load_population: ~
 CCEA:
   sub_population_size: 15
@@ -10,25 +10,25 @@ CCEA:
     - 10
   num_workers: 4
   use_difference_evaluations: True
-  num_evaluations: 2
+  num_evaluations: 1
   config:
     BoidsEnv:
       max_steps: !eval 10*3
       render_mode: none
       config:
         map_dimensions:
-          x: 100
-          y: 100
+          x: 50
+          y: 50
         StateBounds:
           min_velocity: 0
           max_velocity: 20
           max_acceleration: 10
           max_angular_velocity: !eval 3.14159 * 0.5
-          num_leaders: 2
+          num_leaders: 3
           num_followers: 0
         BoidSpawner:
           spawn_rule: Circle
-          radius_fraction: !eval 1/20
+          radius_fraction: !eval 1/50
           velocity_fraction: !eval 0/1
           fix_all: False
         BoidsColony:
@@ -61,4 +61,4 @@ CCEA:
           poi_sensor_type: InverseDistance
           swarm_sensor_type: InverseDistance
         Renderer:
-          pixels_per_unit: 10
+          pixels_per_unit: 20
