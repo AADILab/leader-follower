@@ -1,5 +1,5 @@
 ---
-num_generations: 5000
+num_generations: 1000
 load_population: ~
 CCEA:
   sub_population_size: 15
@@ -8,9 +8,9 @@ CCEA:
   mutation_probability: 0.15
   nn_hidden:
     - 10
-  num_workers: 4
+  num_workers: 10
   use_difference_evaluations: True
-  num_evaluations: 5
+  num_evaluations: 3
   config:
     BoidsEnv:
       max_steps: !eval 20*5
@@ -24,12 +24,12 @@ CCEA:
           max_velocity: 10
           max_acceleration: 5
           max_angular_velocity: !eval 3.14159 * 0.5
-          num_leaders: 5
-          num_followers: 40
+          num_leaders: 1
+          num_followers: 0
         BoidSpawner:
           spawn_rule: Circle
-          radius_fraction: !eval 1/4
-          velocity_fraction: !eval 1/2
+          radius_fraction: !eval 1/20
+          velocity_fraction: !eval 0/1
           fix_all: False
         BoidsColony:
           radius_repulsion: 2
@@ -49,19 +49,19 @@ CCEA:
           fix_poi_spawns: False
           num_pois_concentric:
             - 3
-            - 20
-            - 30
+            - 13
+            - 23
           concentric_radii_fraction:
-            - !eval 1/4
-            - !eval 2/4
-            - !eval 3/4
+            - !eval 1/7
+            - !eval 3/7
+            - !eval 5/7
         POIColony:
           observation_radius: 5
-          coupling: 5
+          coupling: 1
         ObservationManager:
           observation_rule: Individual
           num_poi_bins: 4
-          num_swarm_bins: 12
+          num_swarm_bins: 8
           poi_sensor_type: InverseDistance
           swarm_sensor_type: InverseDistance
         Renderer:
