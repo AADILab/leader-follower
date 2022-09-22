@@ -10,7 +10,7 @@ CCEA:
     - 10
   num_workers: 4
   use_difference_evaluations: True
-  num_evaluations: 1
+  num_evaluations: 10
   config:
     BoidsEnv:
       max_steps: !eval 10*3
