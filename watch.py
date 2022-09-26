@@ -12,7 +12,7 @@ from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 PLOT_SCORES = True
 PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
-# TRIALNAME = "trial_96"
+# TRIALNAME = "trial_146"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME)

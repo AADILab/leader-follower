@@ -3,16 +3,20 @@ from lib.file_helper import loadConfig
 from lib.learn_helpers import runExperiment
 from sys import exit
 
-# Load in config
+# Try these experiments again but with 2 leaders.
+# The difficulty in learning may come from too many agents, not enough tasks
 config = loadConfig()
-runExperiment(config)
-
+config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 2
 for num_units in [8,10,12,14]:
-    config=loadConfig()
     config["CCEA"]["nn_hidden"] = [num_units]
     runExperiment(config)
 
-    config=loadConfig()
+    config["CCEA"]["nn_hidden"] = [num_units, num_units]
+    runExperiment(config)
+
+# Do a narrow sweep with 3 leaders and more nuerons
+config = loadConfig()
+for num_units in [12,13,14,15,16]:
     config["CCEA"]["nn_hidden"] = [num_units, num_units]
     runExperiment(config)
 
