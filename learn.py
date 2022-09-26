@@ -5,10 +5,16 @@ from sys import exit
 
 # Load in config
 config = loadConfig()
-
-config["CCEA"]["num_workers"] = 8
-config["Notes"] ="0 followers. 1 leader. 1 coupling."
 runExperiment(config)
+
+for num_units in [8,10,12,14]:
+    config=loadConfig()
+    config["CCEA"]["nn_hidden"] = [num_units]
+    runExperiment(config)
+
+    config=loadConfig()
+    config["CCEA"]["nn_hidden"] = [num_units, num_units]
+    runExperiment(config)
 
 exit()
 

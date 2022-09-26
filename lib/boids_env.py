@@ -21,7 +21,7 @@ class RenderMode(IntEnum):
 
 class BoidsEnv(ParallelEnv):
     metadata = {"render_modes": ["human", "none"], "name": "boids_environment"}
-    def __init__(self, max_steps: int, render_mode: Union[RenderMode, str], config: Dict) -> None:
+    def __init__(self, max_steps: int, render_mode: Union[RenderMode, str], init_seed: int, config: Dict) -> None:
         """
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -30,6 +30,7 @@ class BoidsEnv(ParallelEnv):
 
         These attributes should not be changed after initialization.
         """
+        np.random.seed(init_seed)
         self.max_steps = max_steps
         if type(render_mode) == str:
             render_mode = RenderMode[render_mode]

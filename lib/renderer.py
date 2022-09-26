@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,7 +10,7 @@ from lib.poi_colony import POIColony, POI
 from lib.observations_manager import ObservationManager, SensorType
 
 class Renderer():
-    def __init__(self, boids_colony: BoidsColony, poi_colony: POIColony, observation_manager: ObservationManager, pixels_per_unit: int) -> None:
+    def __init__(self, boids_colony: BoidsColony, poi_colony: POIColony, observation_manager: ObservationManager, pixels_per_unit: int, leader_colors: List[Tuple[int]]) -> None:
         # Save variables
         self.boids_colony = boids_colony
         self.poi_colony = poi_colony
@@ -19,13 +19,14 @@ class Renderer():
 
         # Setup colors
         self.follower_color = (0,120,250)
-        self.leader_colors = [
-            (250, 120, 0),
-            (250, 250, 0),
-            (0, 200, 0),
-            (120,0,120),
-            (66,245,242)
-        ]
+        # self.leader_colors = [
+        #     (250, 120, 0),
+        #     (250, 250, 0),
+        #     (0, 200, 0),
+        #     (120,0,120),
+        #     (66,245,242)
+        # ]
+        self.leader_colors = leader_colors
 
         self.poi_observed_color = (0,255,0)
         self.poi_not_observed_color = (255,0,0)
