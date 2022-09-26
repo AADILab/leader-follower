@@ -27,7 +27,7 @@ CCEA:
           max_acceleration: 10
           max_angular_velocity: !eval 3.14159 * 0.5
           num_leaders: 3
-          num_followers: 0
+          num_followers: 10
         BoidSpawner:
           spawn_rule: Circle
           radius_fraction: !eval 1/50
@@ -37,10 +37,10 @@ CCEA:
           radius_repulsion: 2
           radius_orientation: 3
           radius_attraction: 5
-          repulsion_multiplier: 3
-          orientation_multiplier: 1
-          attraction_multiplier: 1
-          wall_avoidance_multiplier: 1
+          repulsion_multiplier: .3
+          orientation_multiplier: .1
+          attraction_multiplier: .1
+          wall_avoidance_multiplier: .1
           dt: !eval 1/3
         POISpawner:
           poi_spawn_rule: FixedConcentricCircles
@@ -55,11 +55,11 @@ CCEA:
             - !eval 3/7
         POIColony:
           observation_radius: 5
-          coupling: 1
+          coupling: 5
         ObservationManager:
           observation_rule: Individual
           num_poi_bins: 4
-          num_swarm_bins: 4
+          num_swarm_bins: 8
           poi_sensor_type: InverseDistance
           swarm_sensor_type: InverseDistance
         Renderer:

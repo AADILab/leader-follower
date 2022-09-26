@@ -4,6 +4,9 @@ from lib.learn_helpers import runExperiment
 from sys import exit
 
 config = loadConfig()
+runExperiment(config)
+exit()
+
 for coupling in [1,2,3,4]:
     config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = coupling
     runExperiment(config)
