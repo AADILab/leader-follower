@@ -7,7 +7,8 @@ CCEA:
   mutation_rate: 0.15
   mutation_probability: 0.15
   nn_hidden:
-    - 9
+    - 14
+    - 14
   num_workers: 8
   use_difference_evaluations: True
   num_evaluations: 1

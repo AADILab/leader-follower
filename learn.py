@@ -3,6 +3,12 @@ from lib.file_helper import loadConfig
 from lib.learn_helpers import runExperiment
 from sys import exit
 
+config = loadConfig()
+for coupling in [1,2,3,4]:
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = coupling
+    runExperiment(config)
+exit()
+
 # Try these experiments again but with 2 leaders.
 # The difficulty in learning may come from too many agents, not enough tasks
 config = loadConfig()
