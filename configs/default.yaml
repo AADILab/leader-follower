@@ -14,13 +14,13 @@ CCEA:
   num_evaluations: 1
   config:
     BoidsEnv:
-      max_steps: !eval 10*3
+      max_steps: !eval 15*2
       render_mode: none
       init_seed: 0
       config:
         map_dimensions:
-          x: 50
-          y: 50
+          x: 100
+          y: 100
         StateBounds:
           min_velocity: 0
           max_velocity: 20
@@ -30,18 +30,18 @@ CCEA:
           num_followers: 10
         BoidSpawner:
           spawn_rule: Circle
-          radius_fraction: !eval 1/50
-          velocity_fraction: !eval 0/1
+          radius_fraction: !eval 0.08
+          velocity_fraction: !eval 0
           fix_all: True
         BoidsColony:
           radius_repulsion: 2
           radius_orientation: 3
           radius_attraction: 5
-          repulsion_multiplier: .3
-          orientation_multiplier: .1
-          attraction_multiplier: .1
-          wall_avoidance_multiplier: .1
-          dt: !eval 1/3
+          repulsion_multiplier: !eval 3*0.3
+          orientation_multiplier: !eval 1*0.3
+          attraction_multiplier: !eval 1*0.3
+          wall_avoidance_multiplier: !eval 1*0.3
+          dt: !eval 1/2
         POISpawner:
           poi_spawn_rule: FixedConcentricCircles
           num_pois: ~
@@ -50,9 +50,11 @@ CCEA:
           outer_circle_bound_fraction: !eval 2/5
           fix_poi_spawns: False
           num_pois_concentric:
-            - 13
+            - 3
+            - 15
           concentric_radii_fraction:
-            - !eval 3/7
+            - 0.2
+            - 0.5
         POIColony:
           observation_radius: 5
           coupling: 5
@@ -63,7 +65,7 @@ CCEA:
           poi_sensor_type: InverseDistance
           swarm_sensor_type: InverseDistance
         Renderer:
-          pixels_per_unit: 20
+          pixels_per_unit: 10
           leader_colors:
             - [250, 120, 0]
             - [120, 0, 250]
