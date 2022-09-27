@@ -9,6 +9,7 @@ runExperiment(config)
 config = loadConfig()
 config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 5
 config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
+runExperiment(config)
 exit()
 
 for coupling in [1,2,3,4]:
