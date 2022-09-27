@@ -5,6 +5,10 @@ from sys import exit
 
 config = loadConfig()
 runExperiment(config)
+
+config = loadConfig()
+config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 5
+config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
 exit()
 
 for coupling in [1,2,3,4]:
