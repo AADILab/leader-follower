@@ -3,14 +3,23 @@ from lib.file_helper import loadConfig
 from lib.learn_helpers import runExperiment
 from sys import exit
 
-config = loadConfig()
-runExperiment(config)
+
+for mut_rate in [0.1, 0.15, 0.2, 0.25, 0.3]:
+    for mut_prob in [0.15, 0.2, 0.25, 0.3]:
+        for nn_hidden in [10,11,12,13,14,15]:
+            for _ in range(3):
+                config = loadConfig()
+                config["CCEA"]["nn_hidden"] = nn_hidden
+                config["CCEA"]["mutation_probability"] = mut_prob
+                config["CCEA"]["mutation_rate"] = mut_rate
+                runExperiment(config)
+
+exit()
 
 config = loadConfig()
 config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 5
 config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
 runExperiment(config)
-exit()
 
 for coupling in [1,2,3,4]:
     config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = coupling

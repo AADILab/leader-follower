@@ -249,13 +249,23 @@ class CCEA():
         except:
             pass
 
-    def mutateGenome(self, genome: Genome) -> Genome:
-        # """Mutate weights of genome with zero-mean gaussian noise."""
+    def mutateGenome(self, genome: Genome, seed: int = None) -> Genome:
+        """Mutate weights of genome with zero-mean gaussian noise."""
+        # Make sure seed is random for mutations
+        if seed is None:
+            seed = generateSeed()
+        np.random.seed(seed)
+
         new_genome = []
         for layer in genome:
             new_layer = layer.copy()
-            rand = np.reshape(np.random.uniform(low=0.0,high=1.0,size=new_layer.size), new_layer.shape)
-            new_layer[rand < self.mutation_probability] += np.random.normal(0.0, self.sigma_mutation, size=new_layer[rand<self.mutation_probability].size)*new_layer[rand < self.mutation_probability]
+            rand = np.reshape(
+                np.random.uniform(low=0.0,high=1.0,size=new_layer.size),
+                new_layer.shape
+            )
+            print("r:\n", rand)
+            weight_multipliers = np.random.normal(0.0, self.sigma_mutation, size=new_layer[rand<self.mutation_probability].size)
+            new_layer[rand < self.mutation_probability] += weight_multipliers*new_layer[rand < self.mutation_probability]
             new_genome.append(new_layer)
         return new_genome
 
@@ -352,7 +362,6 @@ class CCEA():
 
     def downSelectPopulation(self):
         """Take a population which has already been evaluated and create a new population for the next generation with n-elites binary tournament"""
-
         new_population = [[] for _ in range(self.num_agents)]
 
         # Run binary tournament for each sub population

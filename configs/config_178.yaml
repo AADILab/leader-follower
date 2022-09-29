@@ -68,12 +68,12 @@ CCEA:
           x: 50
           y: 50
       init_seed: 0
-      max_steps: 20*3
+      max_steps: 30
       render_mode: none
   mutation_probability: 0.15
   mutation_rate: 0.15
   nn_hidden:
-  - 15
+  - 10
   num_evaluations: 1
   num_workers: 8
   sub_population_size: 30
