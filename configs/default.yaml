@@ -68,7 +68,7 @@ CCEA:
           x: 50
           y: 50
       init_seed: 0
-      max_steps: 20*3
+      max_steps: !eval 20*3
       render_mode: none
   mutation_probability: 0.15
   mutation_rate: 0.15
