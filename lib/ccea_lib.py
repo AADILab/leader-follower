@@ -263,7 +263,6 @@ class CCEA():
                 np.random.uniform(low=0.0,high=1.0,size=new_layer.size),
                 new_layer.shape
             )
-            print("r:\n", rand)
             weight_multipliers = np.random.normal(0.0, self.sigma_mutation, size=new_layer[rand<self.mutation_probability].size)
             new_layer[rand < self.mutation_probability] += weight_multipliers*new_layer[rand < self.mutation_probability]
             new_genome.append(new_layer)
