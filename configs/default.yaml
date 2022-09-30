@@ -68,7 +68,7 @@ CCEA:
           x: 50
           y: 50
       init_seed: 0
-      max_steps: !eval 30*3
+      max_steps: !eval 20*2
       render_mode: none
   mutation_probability: 0.15
   mutation_rate: 0.1
@@ -79,4 +79,4 @@ CCEA:
   sub_population_size: 30
   use_difference_evaluations: true
 load_population: null
-num_generations: 5000
+num_generations: 1000
