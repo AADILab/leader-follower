@@ -8,29 +8,29 @@ CCEA:
           spawn_rule: Circle
           velocity_fraction: 0
         BoidsColony:
-          dt: 0.333333
-          radius_attraction: 5
-          radius_orientation: 3
-          radius_repulsion: 2
+          dt: 0.5
+          radius_attraction: !eval 5*3/5
+          radius_orientation: !eval 3*3/5
+          radius_repulsion: !eval 2*3/5
           attraction_multiplier: 0.2
           orientation_multiplier: 0.2
           repulsion_multiplier: 0.6
           wall_avoidance_multiplier: 0.6
         ObservationManager:
           num_poi_bins: 4
-          num_swarm_bins: 12
+          num_swarm_bins: 4
           observation_rule: Individual
           poi_sensor_type: InverseDistance
           swarm_sensor_type: InverseDistance
         POIColony:
-          coupling: 10
-          observation_radius: 5
+          coupling: 5
+          observation_radius: 3
         POISpawner:
           bound_fraction: 0.5
           concentric_radii_fraction:
           - 0.428571
           fix_poi_spawns: true
-          inner_circle_bound_fraction: 0.2
+          inner_circle_bound_fraction: 0.3
           outer_circle_bound_fraction: 1.0
           num_pois: 20
           num_pois_concentric:
@@ -62,18 +62,18 @@ CCEA:
           max_angular_velocity: 1.570795
           max_velocity: 20
           min_velocity: 0
-          num_followers: 20
+          num_followers: 10
           num_leaders: 5
         map_dimensions:
-          x: 100
-          y: 100
+          x: 50
+          y: 50
       init_seed: 0
-      max_steps: !eval 20*3
+      max_steps: !eval 30*3
       render_mode: none
   mutation_probability: 0.15
   mutation_rate: 0.1
   nn_hidden:
-  - 15
+  - 10
   num_evaluations: 1
   num_workers: 8
   sub_population_size: 30

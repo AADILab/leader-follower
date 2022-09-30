@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 from lib.file_helper import loadConfig
 from lib.learn_helpers import runExperiment
 from sys import exit
@@ -6,13 +7,13 @@ from sys import exit
 # Try same task with different ratios of learners to followers
 config = loadConfig()
 
-num_learners =  [ 5, 10, 15, 20, 25]
-num_followers = [20, 15, 10, 5,   0]
+team_size = 15
+num_learners =  np.arange(team_size)+1
 
-for num_learn, num_follow in zip(num_learners, num_followers):
+for num_learn in num_learners:
     for _ in range(3):
         config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = num_learn
-        config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = num_follow
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = team_size - num_learn
         runExperiment(config)
 exit()
 
