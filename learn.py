@@ -11,7 +11,6 @@ team_size = 15
 num_learners =  np.arange(team_size)+1
 
 for num_learn in num_learners:
-    print(num_learn, team_size - num_learn)
     for _ in range(3):
         config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = int(num_learn)
         config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = int(team_size - num_learn)
