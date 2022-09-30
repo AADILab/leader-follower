@@ -62,8 +62,8 @@ CCEA:
           max_angular_velocity: 1.570795
           max_velocity: 20
           min_velocity: 0
-          num_followers: 10
-          num_leaders: 5
+          num_followers: 15
+          num_leaders: 0
         map_dimensions:
           x: 50
           y: 50
