@@ -1,10 +1,12 @@
+# Configs 247 - 291. Sweep of different numbers of learners to followers
+
 import sys; sys.path.append("/home/egonzalez/leaders")
 import numpy as np
 import matplotlib.pyplot as plt
 from lib.file_helper import loadConfig, loadTrial
 
-start_trial = 179
-num_var = 6
+start_trial = 247
+num_var = 15
 
 configs = ["config_"+str(i+start_trial)+".yaml" for i in range(num_var*3)]
 trials = ["trial_"+str(i+start_trial) for i in range(num_var*3)]
@@ -16,16 +18,18 @@ averages = [np.average(best_fitnesses[(3*i):(3*i)+3]) for i in range(num_var)]
 uppers = [averages[i]+np.std(best_fitnesses[(3*i):(3*i)+3]) for i in range(num_var)]
 lowers = [averages[i]-np.std(best_fitnesses[(3*i):(3*i)+3]) for i in range(num_var)]
 
-# Get the recorded number of hidden units
+# Get the recorded ratio of learners to followers
 config_dicts = [loadConfig(config) for config in configs]
-hiddens = [config_dict["CCEA"]["nn_hidden"] for config_dict in config_dicts][::3]
+num_followers = [config_dict["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"]  for config_dict in config_dicts][::3]
+# ratios = [(15.-num_follow)/num_follow for num_follow in num_followers]
 
 plt.figure(0)
-plt.ylim([0.0,1.0])
-plt.fill_between(x=hiddens,y1=lowers, y2=uppers, alpha=0.2)
-plt.plot(hiddens, averages)
-plt.xticks(hiddens)
+plt.ylim([0.0, 1.0])
+
+plt.fill_between(x=num_followers,y1=lowers, y2=uppers, alpha=0.2)
+plt.plot(num_followers, averages)
+plt.xticks(num_followers)
 plt.ylabel("System Performance")
-plt.xlabel("Number of Hidden Units")
-plt.title("Varying Hidden Layer Size")
+plt.xlabel("Number of Followers")
+plt.title("Varying Number of Followers out of 15 agents.")
 plt.show()
