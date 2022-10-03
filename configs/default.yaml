@@ -73,7 +73,8 @@ CCEA:
   mutation_probability: 0.15
   mutation_rate: 0.1
   nn_hidden:
-  - 10
+  - 14
+  - 14
   num_evaluations: 1
   num_workers: 8
   sub_population_size: 30
