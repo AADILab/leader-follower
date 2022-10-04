@@ -1,0 +1,83 @@
+CCEA:
+  config:
+    BoidsEnv:
+      config:
+        BoidSpawner:
+          fix_all: true
+          radius_fraction: 0.2
+          spawn_rule: Circle
+          velocity_fraction: 0
+        BoidsColony:
+          attraction_multiplier: 0.2
+          dt: 0.5
+          orientation_multiplier: 0.2
+          radius_attraction: 3
+          radius_orientation: 1.8
+          radius_repulsion: 1.2
+          repulsion_multiplier: 0.6
+          wall_avoidance_multiplier: 0.6
+        ObservationManager:
+          num_poi_bins: 4
+          num_swarm_bins: 4
+          observation_rule: Individual
+          poi_sensor_type: InverseDistance
+          swarm_sensor_type: InverseDistance
+        POIColony:
+          coupling: 5
+          observation_radius: 3
+        POISpawner:
+          bound_fraction: 0.5
+          concentric_radii_fraction:
+          - 0.428571
+          fix_poi_spawns: true
+          inner_circle_bound_fraction: 0.3
+          num_pois: 20
+          num_pois_concentric:
+          - 13
+          outer_circle_bound_fraction: 1.0
+          poi_spawn_rule: BoundedCircle
+        Renderer:
+          leader_colors:
+          - - 250
+            - 120
+            - 0
+          - - 120
+            - 0
+            - 250
+          - - 250
+            - 250
+            - 0
+          - - 0
+            - 200
+            - 0
+          - - 120
+            - 0
+            - 120
+          - - 66
+            - 245
+            - 242
+          pixels_per_unit: 10
+        StateBounds:
+          max_acceleration: 10
+          max_angular_velocity: 1.570795
+          max_velocity: 20
+          min_velocity: 0
+          num_followers: 6
+          num_leaders: 9
+        map_dimensions:
+          x: 50
+          y: 50
+      init_seed: 0
+      max_steps: 40
+      render_mode: none
+  mutation_probability: 0.15
+  mutation_rate: 0.1
+  nn_hidden:
+  - 14
+  - 14
+  num_evaluations: 1
+  num_workers: 8
+  sub_population_size: 30
+  use_difference_evaluations: true
+load_population: null
+num_generations: 1000
