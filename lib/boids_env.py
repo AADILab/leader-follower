@@ -65,6 +65,7 @@ class BoidsEnv(ParallelEnv):
         self.observation_manager = ObservationManager(
             boids_colony=self.boids_colony,
             poi_colony=self.poi_colony,
+            map_dimensions=self.map_dimensions,
             **config["ObservationManager"]
         )
         if render_mode.value == RenderMode.human:

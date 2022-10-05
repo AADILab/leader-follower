@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from lib.file_helper import loadConfig, loadTrial
 
-start_trial = 247
+start_trial = 292
 num_var = 15
 
 configs = ["config_"+str(i+start_trial)+".yaml" for i in range(num_var*3)]

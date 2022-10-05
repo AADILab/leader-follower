@@ -1,41 +1,33 @@
-pygame 2.1.2 (SDL 2.0.16, Python 3.6.9)
-Hello from the pygame community. https://www.pygame.org/contribute.html
-e:  False
-  0%|                                                                                                                                                                                                                                                                                              | 0/1 [00:00<?, ?it/s]running while
-Weights are being set incorrectly in setWeights().
-Dimensions for new weights and network weights do not match!
-New weights dim != Network weights dim
-[(6, 4),(2, 6)] != [(5, 6),(7, 2)]
-Error on 7! Exiting program. Error: Weights are being set incorrectly in setWeights().
-Dimensions for new weights and network weights do not match!
-New weights dim != Network weights dim
-[(6, 4),(2, 6)] != [(5, 6),(7, 2)]
-Full Traceback:
-Traceback (most recent call last):
-  File "/home/egonzalez/leaders/learner_lib.py", line 116, in evaluationWorker
-    fitness = self.evaluateGenome(genome, seed, False)
-  File "/home/egonzalez/leaders/learner_lib.py", line 138, in evaluateGenome
-    net.setWeights(genome)
-  File "/home/egonzalez/leaders/network_lib.py", line 33, in setWeights
-    raise Exception("Weights are being set incorrectly in setWeights().\n"\
-Exception: Weights are being set incorrectly in setWeights().
-Dimensions for new weights and network weights do not match!
-New weights dim != Network weights dim
-[(6, 4),(2, 6)] != [(5, 6),(7, 2)]
-
-Exiting 7
-Exiting 2
-Exiting 5
-Exiting 8
-Exiting 3
-Exiting 6
-Exiting 9
-Exiting 0
-Exiting 1
-Exiting 4
-Timeout reached on waiting for a response!
-Currently received 0 out of 1 responses!
-Work: 0, Fitnesses: 0
-stop:  True
-Exiting main program.
-  0%|
+(leaders) egonzalez@egonzalez-Latitude-5480:~/leaders$ /home/python_envs/leaders/bin/python /home/egonzalez/leaders/learn.py
+Weights of agents:  [96.89625184184314, 86.53804362140656, 87.83222039540702, 83.32817068311002, 98.73016385062839, 79.80394958113439, 95.00209542986624, 77.10752738994475, 85.76641875823255, 84.17103022969502, 80.69700681940893, 90.87639027366917, 94.41369860087565, 76.15127473565687, 93.87839686819248, 93.68350820300061, 78.98403190453936, 84.12857402035675, 91.77094975624324, 92.08670706438852, 80.52081894604163, 85.74818777417815, 89.52208092290176, 88.32486427068922, 86.4740381869986, 84.56063734696075, 80.6052415807138, 94.12973644977788, 88.20856856015598, 93.22485694599936]
+seeds:  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+shuffled population:  [9, 12, 25, 16, 18, 20, 1, 10, 23, 6, 5, 13, 8, 27, 24, 0, 17, 4, 2, 29, 15, 21, 3, 7, 22, 11, 26, 28, 19, 14]
+agents on random teams (id):  [9, 12, 25, 16, 18, 20, 1, 10, 23, 6, 5, 13, 8, 27, 24, 0, 17, 4, 2, 29, 15, 21, 3, 7, 22, 11, 26, 28, 19, 14]
+Agent 10 Fitness from evaluateTeam():  1.0  | Weights:  [80.69700681940893]
+agents on teams (id):  [9, 12, 25, 16, 18, 20, 1, 10, 23, 6, 5, 13, 8, 27, 24, 0, 17, 4, 2, 29, 15, 21, 3, 7, 22, 11, 26, 28, 19, 14] 30
+agents on teams (uid):  [9, 12, 25, 16, 18, 20, 1, 10, 23, 6, 5, 13, 8, 27, 24, 0, 17, 4, 2, 29, 15, 21, 3, 7, 22, 11, 26, 28, 19, 14] 30
+teams: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Team Fitness:  1.0  | Agent Fitnesses:  [1.0]
+Weights of agents:  [96.89625184184314, 86.53804362140656, 87.83222039540702, 83.32817068311002, 98.73016385062839, 79.80394958113439, 95.00209542986624, 77.10752738994475, 85.76641875823255, 84.17103022969502, 80.69700681940893, 90.87639027366917, 94.41369860087565, 76.15127473565687, 93.87839686819248, 93.68350820300061, 78.98403190453936, 84.12857402035675, 91.77094975624324, 92.08670706438852, 80.52081894604163, 85.74818777417815, 89.52208092290176, 88.32486427068922, 86.4740381869986, 84.56063734696075, 80.6052415807138, 94.12973644977788, 88.20856856015598, 93.22485694599936]
+Agent 10:  [80.69700681940893]
+0
+Pre tournament
+agent ids:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+agent uids:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+agent scores:  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Post Tournament
+new agent ids:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+new agent uids:  [10, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58]
+new agent scores:  [1.0, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+seeds:  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+shuffled population:  [25, 3, 8, 11, 21, 6, 17, 19, 10, 16, 14, 13, 26, 4, 29, 1, 24, 18, 23, 15, 2, 12, 28, 9, 22, 7, 5, 0, 27, 20]
+agents on random teams (id):  [25, 3, 8, 11, 21, 6, 17, 19, 10, 16, 14, 13, 26, 4, 29, 1, 24, 18, 23, 15, 2, 12, 28, 9, 22, 7, 5, 0, 27, 20]
+Agent 10 Fitness from evaluateTeam():  0.0  | Weights:  [80.69700681940893]
+agents on teams (id):  [25, 3, 8, 11, 21, 6, 17, 19, 10, 16, 14, 13, 26, 4, 29, 1, 24, 18, 23, 15, 2, 12, 28, 9, 22, 7, 5, 0, 27, 20] 30
+agents on teams (uid):  [54, 32, 37, 40, 50, 35, 46, 48, 39, 45, 43, 42, 55, 33, 58, 30, 53, 47, 52, 44, 31, 41, 57, 38, 51, 36, 34, 10, 56, 49] 30
+teams: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Weights of agents:  [80.69700681940893, 94.32369389659739, 77.30994081759168, 81.05679019249499, 93.32221250761637, 90.5302374062473, 84.43689096214106, 79.16837568085626, 81.3152804102248, 83.21089339566952, 88.68744967614883, 93.9640953885399, 93.22787189042702, 94.32007646467633, 80.81953487667113, 85.69280467385094, 84.51381405837677, 81.29732366847192, 80.58566951172838, 86.31263848315065, 77.89216274076303, 83.22842411634855, 84.32942791320315, 88.79418151144206, 85.78437737826457, 93.29156790209872, 76.92176114125147, 97.25513150897962, 78.52541669945084, 88.1785552347406]
+Agent 10:  [80.69700681940893]
+Shutting down EvaluationWorker 0
+Experiment time:  0.2099623680114746  seconds. Completed  1  out of  1  generations.
+Shutting down EvaluationWorker 1

@@ -1,7 +1,6 @@
 import queue
 from re import sub
 from typing import List, Dict, Optional, Callable, Tuple, Union
-import random
 import traceback
 from multiprocessing import Event, Process, Queue
 from time import time
@@ -43,10 +42,11 @@ class SortByFitness():
 
 
 class GenomeData(SortByFitness):
-    def __init__(self, genome: Genome, id: int, fitness: Optional[float]=None) -> None:
+    def __init__(self, genome: Genome, id: int, fitness: Optional[float]=None, uid: Optional[int]=None) -> None:
         self.genome = genome
         self.id = id
         self.fitness = fitness
+        self.uid = uid
 
 class TeamData(SortByFitness):
     def __init__(self, team: List[GenomeData], id: int, fitness: Optional[float]=None, evaluation_seed: Optional[int]=None) -> None:
@@ -57,8 +57,19 @@ class TeamData(SortByFitness):
         self.evaluation_seed = evaluation_seed
         self.all_evaluation_seeds = []
 
-def generateSeed():
-    return int((time() % 1) * 1000000)
+class SeedGenerator():
+    def __init__(self) -> None:
+        self.counter = 0
+
+    def generateSeed(self):
+        seed = self.counter
+        self.counter+=1
+        return seed
+
+# def generateSeed():
+#     seed = SEED_COUNTER
+#     SEED_COUNTER+=1
+#     return seed
 
 def computeAction(net, observation, env):
     out = net.forward(observation)
@@ -118,9 +129,12 @@ class EvaluationWorker():
 
         fitnesses = np.zeros((self.num_evaluations, 1+self.env.num_agents))
 
+        traj = np.zeros((self.env.max_steps+1, 2))
+
         for eval_count, evaluation_seed in enumerate(team_data.all_evaluation_seeds):
             # Run network on boids environment
             observations = self.env.reset(seed=evaluation_seed)
+            traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
             done = False
             while not done:
                 if draw:
@@ -131,7 +145,11 @@ class EvaluationWorker():
                 observations, rewards, dones, _  = self.env.step(actions)
                 # Save done
                 done = True in dones.values()
+                traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
             self.env.close()
+            if team_data.team[0].uid == 10:
+                print("Agent 10 Fitness from evaluateTeam(): ", rewards["team"], " | Weights: ", [np.sum([np.sum(np.abs(weights)) for weights in genome_data.genome]) for genome_data in team_data.team])
+                print("Trajectory:\n", traj)
             if self.use_difference_rewards:
                 fitnesses[eval_count] = np.array([rewards["team"]]+[rewards[agent] for agent in self.env.agents])
             else:
@@ -168,6 +186,7 @@ class CCEA():
         self.best_team_data = None
         self.current_best_team_data = None
         self.use_difference_rewards = use_difference_evaluations
+        self.genome_uid = 0
 
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + config["BoidsEnv"]["config"]["ObservationManager"]["num_swarm_bins"]
@@ -177,7 +196,11 @@ class CCEA():
             self.population = self.randomPopulation()
         else:
             self.population = init_population
+        print("Weights of agents: ", [np.sum([np.sum(np.abs(weights)) for weights in genome_data.genome]) for genome_data in self.population[0]])
         self.fitnesses = self.initFitnesses()
+
+        # Setup object for deterministic random seed generation
+        self.seed_generator = SeedGenerator()
 
         # Process event - set flag to True to turn off workers
         self.stop_event = Event()
@@ -188,12 +211,20 @@ class CCEA():
         self.workers = self.setupEvaluationWorkers(init_workers)
         self.startEvaluationWorkers()
 
+    def generateSeed(self):
+        return self.seed_generator.generateSeed()
+
+    def generateUid(self):
+        _id=self.genome_uid
+        self.genome_uid+=1
+        return _id
+
     def randomGenome(self):
         # Create a NN with random weights and get the weights as the genome
         return NN(num_inputs=self.nn_inputs, num_hidden=self.nn_hidden, num_outputs=self.nn_outputs).getWeights()
 
     def randomSubPopulation(self):
-        return [GenomeData(self.randomGenome(), id=id) for id in range(self.sub_population_size)]
+        return [GenomeData(self.randomGenome(), id=id, uid=self.generateUid()) for id in range(self.sub_population_size)]
 
     def randomPopulation(self):
         return [self.randomSubPopulation() for _ in range(self.num_agents)]
@@ -252,13 +283,13 @@ class CCEA():
     def mutateGenome(self, genome: Genome, seed: int = None) -> Genome:
         """Mutate weights of genome with zero-mean gaussian noise."""
         # Make sure seed is random for mutations
-        if seed is None:
-            seed = generateSeed()
-        np.random.seed(seed)
+        # if seed is None:
+        #     seed = generateSeed()
+        # np.random.seed(seed)
 
         new_genome = []
         for layer in genome:
-            new_layer = layer.copy()
+            new_layer = deepcopy(layer)
             rand = np.reshape(
                 np.random.uniform(low=0.0,high=1.0,size=new_layer.size),
                 new_layer.shape
@@ -280,14 +311,17 @@ class CCEA():
         random_teams = [
             TeamData(team=[], id=id, evaluation_seed=evaluation_seed) for id in range(self.sub_population_size)
         ]
+        print("seeds: ",[team_data.evaluation_seed for team_data in random_teams])
         # Shuffle subpopulations for random ordering of policies in each subpopulation
         shuffled_sub_populations = [copy(sub_pop) for sub_pop in self.population]
 
         for sub_pop in shuffled_sub_populations:
-            random.shuffle(sub_pop)
+            np.random.shuffle(sub_pop)
+        print("shuffled population: ", [genome_data.id for genome_data in shuffled_sub_populations[0]])
         for sub_population in shuffled_sub_populations:
             for team_ind, genome_data in enumerate(sub_population):
                 random_teams[team_ind].team.append(genome_data)
+        print("agents on random teams (id): ", [team_data.team[0].id for team_data in random_teams])
 
         return random_teams
 
@@ -295,7 +329,7 @@ class CCEA():
         # Generate random seed for evaluation.
         # This ensures each genome from a specific population is evaluated on the same task.
         # Otherwise, one team might seem better than others just because it solved an easy task.
-        evaluation_seed = generateSeed()
+        evaluation_seed = self.generateSeed()
 
         # Form random teams from population
         random_teams = self.randomTeams(evaluation_seed = evaluation_seed)
@@ -307,14 +341,14 @@ class CCEA():
         # Keep track of which teams have been recieved after evaluation
         receieved = [False for _ in random_teams]
         timeout = 10 # seconds
-        self.teams = []
+        self.teams = [None for _ in random_teams]
 
         while not all(receieved) and not self.stop_event.is_set():
             try:
                 # Grab latest evaluated team from workers
                 team_data = self.fitness_queue.get(timeout=timeout)
                 # Store the team
-                self.teams.append(team_data)
+                self.teams[team_data.id] = team_data
                 # Update received
                 receieved[team_data.id] = True
             except queue.Empty:
@@ -341,6 +375,11 @@ class CCEA():
                     self.population[agent_id][genome_data.id].fitness = evaluated_team_data.fitness
                 covered[agent_id][genome_data.id] += 1
 
+        print("agents on teams (id): ", [team_data.team[0].id for team_data in self.teams], len([team_data.team[0].id for team_data in self.teams]))
+        print("agents on teams (uid): ", [team_data.team[0].uid for team_data in self.teams], len([team_data.team[0].uid for team_data in self.teams]))
+        # print("sorted: ", sorted([team_data.team[0].id for team_data in self.teams]), len(sorted([team_data.team[0].id for team_data in self.teams])))
+        print("teams:", [team_data.fitness for team_data in self.teams])
+
         # Save the team with the highest fitness. Both a filtered one and the current best
         self.teams.sort(reverse=True)
         self.current_best_team_data = deepcopy(self.teams[0])
@@ -357,7 +396,7 @@ class CCEA():
             for new_id, parent_data in enumerate(sub_pop[:self.num_parents]):
                 parent_data.id = new_id
             # Mutate the highest scoring policies and replace low scoring policies
-            sub_pop[self.num_parents:] = [GenomeData(genome=self.mutateGenome(random.choice(sub_pop[self.num_parents:]).genome), id=self.num_parents+child_num) for child_num in range(self.num_children)]
+            sub_pop[self.num_parents:] = [GenomeData(genome=self.mutateGenome(np.random.choice(sub_pop[self.num_parents:]).genome), id=self.num_parents+child_num, uid=self.generateUid()) for child_num in range(self.num_children)]
 
     def downSelectPopulation(self):
         """Take a population which has already been evaluated and create a new population for the next generation with n-elites binary tournament"""
@@ -365,12 +404,25 @@ class CCEA():
 
         # Run binary tournament for each sub population
         for n_agent in range(self.num_agents):
+            print("Pre tournament")
+            print("agent ids: ", [genome_data.id for genome_data in self.population[n_agent]])
+            print("agent uids: ", [genome_data.uid for genome_data in self.population[n_agent]])
+            print("agent scores: ",[genome_data.fitness for genome_data in self.population[n_agent]])
             # First store n unmutated highest scoring policies
             n=1
             self.population[n_agent].sort(reverse=True)
-            new_population[n_agent]+=self.population[n_agent][:n]
+            # elite_population = [
+            #     GenomeData(
+            #         genome=genome_data.genome,
+            #         id=_id,
+            #         fitness=genome_data.fitness
+            #     )
+            #     for _id, genome_data in enumerate(self.population[n_agent][:n])
+            # ]
+            # new_population[n_agent]+=elite_population
+            new_population[n_agent]+=deepcopy(self.population[n_agent][:n])
             # Make sure ids are consistent
-            for _id, genome_data in enumerate(self.population[n_agent]):
+            for _id, genome_data in enumerate(new_population[n_agent]):
                 genome_data.id = _id
             # Generate new policies until we have the correct number of policies
             while len(new_population[n_agent]) < self.sub_population_size:
@@ -381,9 +433,14 @@ class CCEA():
                 # Mutate that genome and add it to the new population
                 mutated_genome = GenomeData(
                     genome=self.mutateGenome(genome_winner.genome),
-                    id = len(new_population[n_agent])
+                    id = len(new_population[n_agent]),
+                    uid = self.generateUid()
                 )
                 new_population[n_agent].append(mutated_genome)
+            print("Post Tournament")
+            print("new agent ids: ", [genome_data.id for genome_data in new_population[n_agent]])
+            print("new agent uids: ", [genome_data.uid for genome_data in new_population[n_agent]])
+            print("new agent scores: ", [policy.fitness for policy in new_population[n_agent]])
 
                 # sub_pop[self.num_parents:] = [GenomeData(genome=self.mutateGenome(random.choice(sub_pop[self.num_parents:]).genome), id=self.num_parents+child_num) for child_num in range(self.num_children)]
 
@@ -423,10 +480,16 @@ class CCEA():
         """Train the learner for a set number of generations. Track performance data."""
         # Evaluate the initial random policies
         self.evaluatePopulation()
+        print("Weights of agents: ", [np.sum([np.sum(np.abs(weights)) for weights in genome_data.genome]) for genome_data in self.population[0]])
+        print("Agent 10: ", [np.sum([np.sum(np.abs(weights)) for weights in genome_data.genome]) for genome_data in self.population[0] if genome_data.uid == 10])
+
         # Save fitnesses for initial random policies as generation 0
         self.saveFitnesses()
-        for _ in tqdm(range(num_generations)):
+        for _ in range(num_generations):
+            print(_)
             self.step()
             # Track fitness over time
             self.saveFitnesses()
+            print("Weights of agents: ", [np.sum([np.sum(np.abs(weights)) for weights in genome_data.genome]) for genome_data in self.population[0]])
+            print("Agent 10: ", [np.sum([np.sum(np.abs(weights)) for weights in genome_data.genome]) for genome_data in self.population[0] if genome_data.uid == 10])
         return None

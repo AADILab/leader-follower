@@ -13,17 +13,21 @@ class ObservationRule(IntEnum):
     Individual = 0
 
 class SensorType(IntEnum):
-    InverseDistance = 0
+    InverseDistanceCentroid = 0
+    Density = 1
 
 class ObservationManager():
     def __init__(self,
         observation_rule: Union[ObservationRule, str],
         boids_colony: BoidsColony,
         poi_colony: POIColony,
+        map_dimensions: Optional[List[float]],
+        observation_radius: Optional[int],
         num_poi_bins: Optional[int],
         num_swarm_bins: Optional[int],
         poi_sensor_type: Optional[Union[SensorType, str]],
-        swarm_sensor_type: Optional[Union[SensorType, str]]
+        swarm_sensor_type: Optional[Union[SensorType, str]],
+        full_observability: bool = False
         ) -> None:
 
         if type(observation_rule) == str:
@@ -37,6 +41,11 @@ class ObservationManager():
         self.boids_colony = boids_colony
         self.poi_colony = poi_colony
 
+        if full_observability:
+            self.observation_radius = np.sqrt(np.max(map_dimensions)**2 + np.max(map_dimensions)**2)
+        else:
+            self.observation_radius = observation_radius
+
         self.num_poi_bins = num_poi_bins
         self.num_swarm_bins = num_swarm_bins
 
@@ -46,13 +55,21 @@ class ObservationManager():
     def getObservationSpace(self):
         # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
 
-        if self.poi_sensor_type.value == SensorType.InverseDistance:
+        if self.poi_sensor_type.value == SensorType.InverseDistanceCentroid:
             low_poi = 0
-            high_poi = self.boids_colony.radius_attraction
+            high_poi = self.observation_radius
 
-        if self.swarm_sensor_type.value == SensorType.InverseDistance:
+        elif self.poi_sensor_type.value == SensorType.Density:
+            low_poi = 0
+            high_poi = 1.0
+
+        if self.swarm_sensor_type.value == SensorType.InverseDistanceCentroid:
             low_swarm = 0
-            high_swarm = self.boids_colony.radius_attraction
+            high_swarm = self.observation_radius
+
+        elif self.poi_sensor_type.value == SensorType.Density:
+            low_swarm = 0
+            high_swarm = 1.0
 
         lows =  [low_poi for _ in range(self.num_poi_bins)]  + [low_swarm for _ in range(self.num_swarm_bins)]
         highs = [high_poi for _ in range(self.num_poi_bins)] + [high_swarm for _ in range(self.num_swarm_bins)]
@@ -64,7 +81,7 @@ class ObservationManager():
         )
 
     def getSensorReading(self, bin: List[Union[Boid,POI]], boid: Boid, sensor_type: SensorType) -> float:
-        if sensor_type.value == SensorType.InverseDistance:
+        if sensor_type.value == SensorType.InverseDistanceCentroid:
             if len(bin) == 0:
                 return 0.0
             else:
@@ -73,7 +90,7 @@ class ObservationManager():
                 # Calculate the centroid of the positions
                 center_position = calculateCentroid(relative_positions)
                 # Distance to centroid
-            return self.boids_colony.radius_attraction - np.linalg.norm(center_position)
+            return self.observation_radius - np.linalg.norm(center_position)
 
     def getSensorReadings(self, bins: List[List[Union[Boid,POI]]], boid: Boid, sensor_type: SensorType) -> float:
         return [self.getSensorReading(bin, boid, sensor_type) for bin in bins]
@@ -84,7 +101,7 @@ class ObservationManager():
         for item in items:
             relative_position = item.position - boid.position
             distance = np.linalg.norm(relative_position)
-            if distance <= self.boids_colony.radius_attraction:
+            if distance <= self.observation_radius:
                 # Bin POI according to angle into correct bin
                 # Angle is in world frame from boid to poi
                 angle = np.arctan2(relative_position[1], relative_position[0])

@@ -25,6 +25,7 @@ class VelocityRule(IntEnum):
 class HeadingRule(IntEnum):
     UniformRandom = 0
     Set = 1
+    FixedStart = 2
 
 class BoidSpawner():
     def __init__(self,
@@ -50,7 +51,8 @@ class BoidSpawner():
         follower_velocities: Optional[List[float]] = None,
         # Heading parameters
         leader_headings: Optional[List[float]] = None,
-        follower_headings: Optional[List[float]] = None
+        follower_headings: Optional[List[float]] = None,
+        start_heading: Optional[float] = None
         ) -> None:
 
         if type(spawn_rule) == str:
@@ -66,8 +68,14 @@ class BoidSpawner():
         self.spawn_rule = spawn_rule
 
         self.radius_fraction = radius_fraction
-        self.leader_positions = leader_positions
-        self.follower_positions = follower_positions
+        if leader_positions is not None:
+            self.leader_positions = np.array(leader_positions, dtype=float)
+        else:
+            self.leader_positions = None
+        if follower_positions is not None:
+            self.follower_positions = np.array(follower_positions, dtype=float)
+        else:
+            self.follower_positions = None
 
         self.velocity_fraction = velocity_fraction
         self.leader_velocities = leader_velocities
@@ -75,6 +83,7 @@ class BoidSpawner():
 
         self.leader_headings = leader_headings
         self.follower_headings = follower_headings
+        self.start_heading = start_heading
 
         # Set rules for position, velocity, heading using overall spawn rule
         if self.spawn_rule.value == BoidSpawnRule.Individual.value:
@@ -133,6 +142,13 @@ class BoidSpawner():
                 radii*np.cos(theta),
                 radii*np.sin(theta)
             ))
+        elif self.position_rule.value == PositionRule.Set.value:
+            if self.follower_positions is None:
+                return self.leader_positions
+            elif self.leader_positions is None:
+                return self.follower_positions
+            else:
+                return np.vstack((self.leader_positions, self.follower_positions))
 
     def generateVelocities(self) -> NDArray[np.float64]:
         if self.velocity_rule.value == VelocityRule.UniformRandom.value:
@@ -144,6 +160,8 @@ class BoidSpawner():
     def generateHeadings(self) -> NDArray[np.float64]:
         if self.heading_rule.value == HeadingRule.UniformRandom.value:
             return np.random.uniform(0, 2*np.pi, size=self.bounds.num_total)
+        elif self.heading_rule.value == HeadingRule.FixedStart.value:
+            return self.start_heading * np.ones(self.bounds.num_total)
 
     def generateIsLeader(self) -> NDArray[np.bool_]:
         # Leaders, Followers

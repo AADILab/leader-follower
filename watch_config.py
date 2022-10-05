@@ -2,8 +2,8 @@
 from lib.file_helper import loadConfig
 from lib.watch_helpers import watchConfig
 
-
 # Loading in default config
 config = loadConfig()
-# Watch that config
-watchConfig(config)
+for i in range(10):
+    # Watch that config
+    watchConfig(config)
