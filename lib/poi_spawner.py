@@ -61,7 +61,7 @@ class POISpawner():
 
     def generatePositions(self) -> NDArray[np.float64]:
         if self.spawn_rule.value == POISpawnRule.Set.value:
-            return np.array(self.positions)
+            return np.array(self.positions).copy()
         elif self.spawn_rule.value == POISpawnRule.UniformRandom.value:
             return randomPositions(self.map_dimensions, self.num_pois)
         elif self.spawn_rule.value == POISpawnRule.BoundedRandom.value:

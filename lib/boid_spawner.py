@@ -144,11 +144,11 @@ class BoidSpawner():
             ))
         elif self.position_rule.value == PositionRule.Set.value:
             if self.follower_positions is None:
-                return self.leader_positions
+                return self.leader_positions.copy()
             elif self.leader_positions is None:
-                return self.follower_positions
+                return self.follower_positions.copy()
             else:
-                return np.vstack((self.leader_positions, self.follower_positions))
+                return np.vstack((self.leader_positions, self.follower_positions)).copy()
 
     def generateVelocities(self) -> NDArray[np.float64]:
         if self.velocity_rule.value == VelocityRule.UniformRandom.value:

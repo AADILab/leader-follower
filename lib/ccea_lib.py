@@ -147,8 +147,8 @@ class EvaluationWorker():
                 done = True in dones.values()
                 traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
             self.env.close()
-            if team_data.team[0].uid == 10:
-                print("Agent 10 Fitness from evaluateTeam(): ", rewards["team"], " | Weights: ", [np.sum([np.sum(np.abs(weights)) for weights in genome_data.genome]) for genome_data in team_data.team])
+            if team_data.team[0].uid == 16:
+                print("Agent 16 Fitness from evaluateTeam(): ", rewards["team"], " | Weights: ", [np.sum([np.sum(np.abs(weights)) for weights in genome_data.genome]) for genome_data in team_data.team])
                 print("Trajectory:\n", traj)
             if self.use_difference_rewards:
                 fitnesses[eval_count] = np.array([rewards["team"]]+[rewards[agent] for agent in self.env.agents])
