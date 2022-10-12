@@ -6,7 +6,9 @@ from sys import exit
 
 # Try same task with different ratios of learners to followers
 config = loadConfig()
-runExperiment(config)
+for _ in range(10):
+    runExperiment(config)
+
 exit()
 
 team_size = 15
