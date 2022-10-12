@@ -90,7 +90,7 @@ class ObservationManager():
                 # Calculate the centroid of the positions
                 center_position = calculateCentroid(relative_positions)
                 # Distance to centroid
-            return self.observation_radius - np.linalg.norm(center_position)
+            return (self.observation_radius - np.linalg.norm(center_position))/self.observation_radius
 
     def getSensorReadings(self, bins: List[List[Union[Boid,POI]]], boid: Boid, sensor_type: SensorType) -> float:
         return [self.getSensorReading(bin, boid, sensor_type) for bin in bins]

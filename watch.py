@@ -12,7 +12,7 @@ from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 PLOT_SCORES = True
 PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
-# TRIALNAME = "trial_275"
+# TRIALNAME = "trial_647"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME)
@@ -78,6 +78,7 @@ if PLAY_ENV:
             actions = {agent: computeAction(network, observations[agent], env) for agent, network in zip(env.possible_agents, networks)}
             observations, rewards, dones, infos = env.step(actions)
             env.render()
+            # input()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     print("Shutdown command recieved. Shutting down.")

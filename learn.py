@@ -4,7 +4,6 @@ from lib.file_helper import loadConfig
 from lib.learn_helpers import runExperiment
 from sys import exit
 
-np.random.seed(0)
 # Try same task with different ratios of learners to followers
 config = loadConfig()
 runExperiment(config)

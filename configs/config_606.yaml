@@ -3,46 +3,49 @@ CCEA:
     BoidsEnv:
       config:
         BoidSpawner:
-          spawn_rule: Individual
-          position_rule: Set
-          velocity_rule: FixedStart
+          follower_positions:
+          - - 27
+            - 27
+          - - 23
+            - 27
+          - - 27
+            - 23
+          - - 23
+            - 23
           heading_rule: FixedStart
-          velocity_fraction: 0.0
-          start_heading: !eval 3.14159/2
           leader_positions:
-            - [22, 24]
-            - [24, 24]
-            - [26, 24]
-            - [28, 24]
-          leader_headings: ~
-          follower_positions: ~
+          - - 25
+            - 25
+          position_rule: Set
+          spawn_rule: Individual
+          start_heading: 1.570795
+          velocity_fraction: 0.0
+          velocity_rule: FixedStart
         BoidsColony:
-          dt: !eval 1/5
-          radius_attraction: !eval 5
-          radius_orientation: !eval 1.000000001
-          radius_repulsion: !eval   1
           attraction_multiplier: 1
+          dt: 0.2
           orientation_multiplier: 0
+          radius_attraction: 5
+          radius_orientation: 1
+          radius_repulsion: 1
           repulsion_multiplier: 1
           wall_avoidance_multiplier: 1
         ObservationManager:
-          num_poi_bins: 8
-          num_swarm_bins: 8
+          full_observability: true
+          num_poi_bins: 4
+          num_swarm_bins: 4
+          observation_radius: null
           observation_rule: Individual
           poi_sensor_type: InverseDistanceCentroid
           swarm_sensor_type: InverseDistanceCentroid
-          observation_radius: ~
-          full_observability: true
         POIColony:
-          coupling: 1
+          coupling: 5
           observation_radius: 5
         POISpawner:
-          positions:
-            - [35, 35]
-            - [15, 15]
-            - [15, 35]
-            - [35, 15]
           poi_spawn_rule: Set
+          positions:
+          - - 0
+            - 0
         Renderer:
           leader_colors:
           - - 250
@@ -69,13 +72,13 @@ CCEA:
           max_angular_velocity: 1.570795
           max_velocity: 10
           min_velocity: 0
-          num_followers: 0
-          num_leaders: 4
+          num_followers: 4
+          num_leaders: 1
         map_dimensions:
           x: 50
           y: 50
       init_seed: 1
-      max_steps: !eval 7*5
+      max_steps: 100
       render_mode: none
   mutation_probability: 0.15
   mutation_rate: 0.1
