@@ -91,9 +91,19 @@ class ObservationManager():
                 center_position = calculateCentroid(relative_positions)
                 # Distance to centroid
             return (self.observation_radius - np.linalg.norm(center_position))/self.observation_radius
+        elif sensor_type.value == SensorType.Density:
+            if len(bin) == 0:
+                return 0.0
+            else:
+                # Get all the positions in this quadrant
+                relative_positions = np.array([item.position - boid.position for item in bin])
+                # Calculate distance to all these positions
+                distances = np.linalg.norm(relative_positions, axis=1)
+                # Turn that into density
+                return np.sum([1-distance/self.observation_radius for distance in distances])
 
     def getSensorReadings(self, bins: List[List[Union[Boid,POI]]], boid: Boid, sensor_type: SensorType) -> float:
-        return [self.getSensorReading(bin, boid, sensor_type) for bin in bins]
+        return np.array([self.getSensorReading(bin, boid, sensor_type) for bin in bins])
 
     def generateBins(self, boid: Boid, num_bins: int, items: List[Union[Boid,POI]]):
         bins = [[] for _ in range(num_bins)]
@@ -119,6 +129,8 @@ class ObservationManager():
         return self.generateBins(boid, self.num_poi_bins, self.poi_colony.pois)
 
     def getPoiSensorReadings(self, bins: List[List[POI]], boid: Boid):
+        if self.poi_sensor_type == SensorType.Density:
+            return self.getSensorReadings(bins, boid, self.poi_sensor_type)/float(self.poi_colony.num_pois)
         return self.getSensorReadings(bins, boid, self.poi_sensor_type)
 
     def getPoiObservation(self, boid: Boid):
@@ -132,6 +144,8 @@ class ObservationManager():
         return self.generateBins(boid, self.num_swarm_bins, self.boids_colony.getObservableBoids(boid))
 
     def getSwarmSensorReadings(self, bins: List[List[Boid]], boid: Boid):
+        if self.swarm_sensor_type == SensorType.Density:
+            return self.getSensorReadings(bins, boid, self.swarm_sensor_type)/float(self.boids_colony.bounds.num_total)
         return self.getSensorReadings(bins, boid, self.swarm_sensor_type)
 
     def getSwarmObservation(self, boid: Boid):

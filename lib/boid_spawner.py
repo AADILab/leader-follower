@@ -162,6 +162,13 @@ class BoidSpawner():
             return np.random.uniform(0, 2*np.pi, size=self.bounds.num_total)
         elif self.heading_rule.value == HeadingRule.FixedStart.value:
             return self.start_heading * np.ones(self.bounds.num_total)
+        elif self.heading_rule.value == HeadingRule.Set.value:
+            if self.follower_headings is None:
+                return self.leader_headings.copy()
+            elif self.leader_headings is None:
+                return self.follower_headings.copy()
+            else:
+                return np.hstack((self.leader_headings, self.follower_headings)).copy()
 
     def generateIsLeader(self) -> NDArray[np.bool_]:
         # Leaders, Followers

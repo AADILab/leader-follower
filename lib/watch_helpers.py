@@ -25,6 +25,7 @@ def watchConfig(config: Dict):
         start_time = time()
         actions = {agent: computeAction(network, observations[agent], env) for agent, network in zip(env.agents, networks)}
         observations, rewards, dones, infos = env.step(actions)
+        print(list(observations["leader_0"][0:8]))
         env.render()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
