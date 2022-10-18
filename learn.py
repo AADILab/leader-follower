@@ -4,6 +4,10 @@ from lib.file_helper import loadConfig
 from lib.learn_helpers import runExperiment
 from sys import exit
 
+# config = loadConfig()
+# runExperiment(config)
+# exit()
+
 # Run each experiment 10 times
 for _ in range(10):
     # First run the experiment where we have 2 Follow per leader. 4 leaders. 4 pois with 3 coupling. Learn with G.
