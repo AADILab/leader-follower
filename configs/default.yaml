@@ -96,4 +96,4 @@ CCEA:
   sub_population_size: 30
   use_difference_evaluations: false
 load_population: null
-num_generations: 1
+num_generations: 100
