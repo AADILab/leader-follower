@@ -10,7 +10,7 @@ from copy import deepcopy
 
 ######## Data Wrangling
 
-start_trial = 707
+start_trial = 783
 vars = ["G with Followers", r"D$_{swarm}$ with Followers", "G", "D"]
 markers = ['o', '^', 'p', 'x']
 num_var = len(vars)
@@ -50,6 +50,10 @@ for n_var, var in enumerate(vars):
     data_dict[var]["upper_std_dev_team_fitness_arr"] = data_dict[var]["avg_team_fitness_arr"] + data_dict[var]["std_dev_team_fitness_arr"]
     # Save the lower std deviation
     data_dict[var]["lower_std_dev_team_fitness_arr"] = data_dict[var]["avg_team_fitness_arr"] - data_dict[var]["std_dev_team_fitness_arr"]
+    # Save the upper range
+    data_dict[var]["upper_range"] = np.max(data_dict[var]["avg_team_fitness_arr"], axis=0)
+    # Save the lower range
+    data_dict[var]["lower_range"] = np.min(data_dict[var]["avg_team_fitness_arr"], axis=0)
 
 ######## Plot data
 
@@ -63,6 +67,12 @@ for var, m in zip(vars, markers):
 plt.legend(vars)
 for var in vars:
     plt.fill_between(num_generations_arr, data_dict[var]["upper_std_dev_team_fitness_arr"], data_dict[var]["lower_std_dev_team_fitness_arr"], alpha=0.2)
+# for var in vars:
+    # plt.fill_between(num_generations_arr, data_dict[var]["upper_range"], data_dict[var]["lower_range"], alpha=0.2)
+plt.title("Different Learning Methods for AUV Observation Domain")
+plt.xlabel("Number of Generations")
+plt.ylabel("Average Team Fitness Score")
+plt.tight_layout()
 plt.show()
 
 ######### This was an attempt to plot all agent fitnesses accross all trials in one plot
