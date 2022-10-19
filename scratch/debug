@@ -1,0 +1,176 @@
+BoidsManager
+
+pygame 2.1.2 (SDL 2.0.16, Python 3.9.13)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+1.5707963267948966 0.0
+-1.5707963267948966 0.0
+1.5707963267948966 0.0
+
+1.5707963267948966 5.0
+-1.5707963267948966 0.0
+1.5707963267948966 0.0
+
+1.5707963267948966 5.0
+-1.5707963267948966 0.0
+-1.5707963267948966 0.0
+
+BoidsColony
+
+pygame 2.1.2 (SDL 2.0.16, Python 3.9.13)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+1.5707963267948966 5.0
+-1.5707963267948966 0.0
+1.5707963267948966 0.0
+
+1.5707963267948966 5.0
+-1.5707963267948966 0.06250000000009348
+-1.5707963267948966 5.0
+
+1.5707963267948966 5.0
+-1.5707963267948966 0.13677677796404203
+1.5707963267948966 5.0
+
+--------------------------------------------------------------------------------
+
+(leaders) egonzalez@egonzalez-Latitude-5480:~/leaders$ /home/python_envs/leaders/bin/python /home/egonzalez/leaders/watch_colony.py
+pygame 2.1.2 (SDL 2.0.16, Python 3.9.13)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+Sum vecs
+[-2.25  0.  ]
+[0. 0.]
+[2.25 0.  ]
+Deltas:
+1.5707963267948966 0.0
+-1.0471975511965976 0.0
+3.141592653589793 0.0
+Sum vecs
+[-2.25  0.  ]
+[0. 0.]
+[2.25 0.  ]
+Deltas:
+1.5446163880149817 2.25
+-1.0210176124166828 0.0
+3.115412714809878 0.0
+Sum vecs
+[-2.55107452 -1.04888501]
+[ 5.45166211e-05 -1.04023910e-03]
+[2.44629358 0.94629358]
+Deltas:
+1.908521382728567 -0.08333333333333333
+-2.513274122873856 0.0
+-2.8248530959989906 0.0
+
+(leaders) egonzalez@egonzalez-Latitude-5480:~/leaders$ /home/python_envs/leaders/bin/python /home/egonzalez/leaders/watch_manager.py
+pygame 2.1.2 (SDL 2.0.16, Python 3.9.13)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+Sum vecs
+[-2.25  0.  ]
+[0. 0.]
+[2.25 0.  ]
+Deltas:
+[1.57079633] [0.]
+[-1.04719755] [0.]
+[3.14159265] [0.]
+Sum vecs
+[-2.25  0.  ]
+[0. 0.]
+[2.25 0.  ]
+Deltas:
+[1.54461639] [2.25]
+[-1.02101761] [0.]
+[3.11541271] [0.]
+Sum vecs
+[-2.49873857 -0.05025548]
+[ 5.45166211e-05 -1.04023910e-03]
+[1.44766404 0.99862953]
+Deltas:
+[1.53854608] [2.41591056]
+[-2.51327412] [0.]
+[-2.59009061] [0.]
+
+------------------------------------------------------------------------------------------------
+
+(leaders) egonzalez@egonzalez-Latitude-5480:~/leaders$ /home/python_envs/leaders/bin/python /home/egonzalez/leaders/watch_colony.py
+pygame 2.1.2 (SDL 2.0.16, Python 3.9.13)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+Positions:
+[2. 2.]
+[3. 3.]
+[2. 3.]
+Headings:
+1.5707963267948966
+1.0471975511965976
+-3.141592653589793
+Wall vecs:
+[0. 0.]
+[0. 0.]
+[0. 0.]
+
+Positions:
+[2. 2.]
+[3.00072569 3.00118422]
+[1.99861159 3.00003636]
+Headings:
+1.5969762655748114
+1.0210176124166828
+3.115412714809878
+Wall vecs:
+[0. 0.]
+[0. 0.]
+[0.00138841 0.        ]
+
+Positions:
+[2. 2.]
+[3.00223858 3.00351386]
+[1.99583762 3.00018173]
+Headings:
+1.6231562043547263
+0.9948376736367678
+3.089232776029963
+Wall vecs:
+[0. 0.]
+[0. 0.]
+[0.00416238 0.        ]
+
+
+(leaders) egonzalez@egonzalez-Latitude-5480:~/leaders$ /home/python_envs/leaders/bin/python /home/egonzalez/leaders/watch_manager.py
+pygame 2.1.2 (SDL 2.0.16, Python 3.9.13)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+Positions:
+[2. 2.]
+[3. 3.]
+[2. 3.]
+Headings:
+[1.57079633]
+[1.04719755]
+[-3.14159265]
+Wall vecs:
+[0. 0.]
+[0. 0.]
+[0. 0.]
+
+Positions:
+[2. 2.]
+[3.00072569 3.00118422]
+[1.99861159 3.00003636]
+Headings:
+[1.59697627]
+[1.02101761]
+[3.11541271]
+Wall vecs:
+[0. 0.]
+[0. 0.]
+[0.00416524 0.        ]
+
+Positions:
+[2. 2.]
+[3.00223858 3.00351386]
+[1.99583762 3.00018173]
+Headings:
+[1.6231562]
+[0.99483767]
+[3.08923278]
+Wall vecs:
+[0. 0.]
+[0. 0.]
+[0.01248715 0.        ]

@@ -1,38 +1,150 @@
-from learner_lib import Learner
-from time import time
+import sys
 import numpy as np
-import pickle
+from lib.file_helper import loadConfig
+from lib.learn_helpers import runExperiment
+from sys import exit
+from time import time
 
-NUM_GENERATIONS = 50
-EXPERIMENT_NAME = "trial_11"
+# config = loadConfig()
+# runExperiment(config)
+# exit()
 
-filename = EXPERIMENT_NAME + ".pkl"
+# Run each experiment 10 times
+for _ in range(10):
+    # First run the experiment where we have 2 Follow per leader. 4 leaders. 4 pois with 3 coupling. Learn with G.
+    np.random.seed(int(time()))
+    config = loadConfig()
+    runExperiment(config)
 
-start_positions = np.array([[40.,40.], [10,40],[40,10]])
-start_velocities = np.array([[0.,0.,0.]]).T
-start_headings = np.array([[-np.pi/2,-np.pi/2,-np.pi]]).T
+    # Second run the experiment where we have 2 Follow per leader. 4 leaders. 4 pois with 3 coupling. Learn with Dswarm
+    np.random.seed(int(time()))
+    config = loadConfig()
+    config["CCEA"]["use_difference_evaluations"] = True
+    runExperiment(config)
 
-start = time()
-env_kwargs = {"num_leaders": 3, "num_followers": 0, "FPS": 60, "num_steps": 6*60, "render_mode": 'none', "positions": start_positions, "velocities": start_velocities, "headings": start_headings}
-learner = Learner(population_size=15, num_parents=5, sigma_mutation=0.25, nn_inputs=2, nn_hidden=5, nn_outputs=2, env_kwargs=env_kwargs)
+    # Third run the experiment with all leaders and use G
+    np.random.seed(int(time()))
+    config = loadConfig()
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 12
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = [
+        [10, 5],
+        [20, 5],
+        [30, 5],
+        [40, 5],
+        [12, 2],
+        [8, 2],
+        [22, 2],
+        [18, 2],
+        [32, 2],
+        [28, 2],
+        [42, 2],
+        [38, 2]
+    ]
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = None
+    runExperiment(config)
 
-try:
-    learner.train(num_generations=NUM_GENERATIONS)
-except KeyboardInterrupt:
-    print("Program interrupted by user keyboard interrupt. Exiting program and saving experiment data.")
+    # Fourth run the experiment with all leaders and use D
+    np.random.seed(int(time()))
+    config = loadConfig()
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 12
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = [
+        [10, 5],
+        [20, 5],
+        [30, 5],
+        [40, 5],
+        [12, 2],
+        [8, 2],
+        [22, 2],
+        [18, 2],
+        [32, 2],
+        [28, 2],
+        [42, 2],
+        [38, 2]
+    ]
+    config["CCEA"]["use_difference_evaluations"] = True
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = None
+    runExperiment(config)
+exit()
 
-learner.stop_event.set()
+team_size = 15
+num_learners =  np.arange(team_size)+1
 
-scores_list, final_scores, final_population, finished_iterations = learner.getFinalMetrics()
+for num_learn in num_learners:
+    for _ in range(3):
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = int(num_learn)
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = int(team_size - num_learn)
+        runExperiment(config)
+exit()
 
-# Save data
-save_data = {
-    "scores_list": scores_list,
-    "final_scores": final_scores,
-    "final_population": final_population,
-    "finished_iterations": finished_iterations,
-    "env_kwargs": env_kwargs
-}
-pickle.dump(save_data, open(filename, "wb"))
+config = loadConfig()
+config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 5
+config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
+runExperiment(config)
 
-print("Experiment time: ", time() - start, " seconds. Completed ", finished_iterations, " out of ", NUM_GENERATIONS, " generations.")
+for coupling in [1,2,3,4]:
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = coupling
+    runExperiment(config)
+exit()
+
+# Try these experiments again but with 2 leaders.
+# The difficulty in learning may come from too many agents, not enough tasks
+config = loadConfig()
+config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 2
+for num_units in [8,10,12,14]:
+    config["CCEA"]["nn_hidden"] = [num_units]
+    runExperiment(config)
+
+    config["CCEA"]["nn_hidden"] = [num_units, num_units]
+    runExperiment(config)
+
+# Do a narrow sweep with 3 leaders and more nuerons
+config = loadConfig()
+for num_units in [12,13,14,15,16]:
+    config["CCEA"]["nn_hidden"] = [num_units, num_units]
+    runExperiment(config)
+
+exit()
+
+
+# Experiment with adding followers.
+for num_followers in [0,1,2,3,4]:
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = num_followers
+    config["Notes"] = str(num_followers)+" followers. 1 leader. 1 coupling."
+    runExperiment(config)
+
+# Raise the coupling to 2
+config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 2
+
+# Experiment with adding followers.
+for num_followers in [1,2,3,4]:
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = num_followers
+    config["Notes"] = str(num_followers)+" followers. 1 leader. 2 coupling."
+    runExperiment(config)
+
+# Raise the coupling to 3
+config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 3
+
+# Experiment with adding followers.
+for num_followers in [2,3,4]:
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = num_followers
+    config["Notes"] = str(num_followers)+" followers. 1 leader. 3 coupling."
+    runExperiment(config)
+
+# Raise the coupling to 4
+config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 4
+
+# Experiment with adding followers.
+for num_followers in [3,4]:
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = num_followers
+    config["Notes"] = str(num_followers)+" followers. 1 leader. 4 coupling."
+    runExperiment(config)
+
+# Raise the coupling to 5
+config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 5
+config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 4
+config["Notes"] = "4 followers. 1 leader. 5 coupling."
+runExperiment(config)
+
+sys.exit()
