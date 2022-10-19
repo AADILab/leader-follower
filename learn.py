@@ -11,61 +11,57 @@ from time import time
 
 # Run each experiment 10 times
 for _ in range(10):
-    # First run the experiment where we have 2 Follow per leader. 4 leaders. 4 pois with 3 coupling. Learn with G.
-    np.random.seed(int(time()))
-    config = loadConfig()
-    runExperiment(config)
+    # # First run the experiment where we have 2 Follow per leader. 4 leaders. 4 pois with 3 coupling. Learn with G.
+    # config = loadConfig()
+    # runExperiment(config)
 
     # Second run the experiment where we have 2 Follow per leader. 4 leaders. 4 pois with 3 coupling. Learn with Dswarm
-    np.random.seed(int(time()))
     config = loadConfig()
     config["CCEA"]["use_difference_evaluations"] = True
     runExperiment(config)
 
-    # Third run the experiment with all leaders and use G
-    np.random.seed(int(time()))
-    config = loadConfig()
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 12
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = [
-        [10, 5],
-        [20, 5],
-        [30, 5],
-        [40, 5],
-        [12, 2],
-        [8, 2],
-        [22, 2],
-        [18, 2],
-        [32, 2],
-        [28, 2],
-        [42, 2],
-        [38, 2]
-    ]
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = None
-    runExperiment(config)
+    # # Third run the experiment with all leaders and use G
+    # config = loadConfig()
+    # config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 12
+    # config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
+    # config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = [
+    #     [10, 5],
+    #     [20, 5],
+    #     [30, 5],
+    #     [40, 5],
+    #     [12, 2],
+    #     [8, 2],
+    #     [22, 2],
+    #     [18, 2],
+    #     [32, 2],
+    #     [28, 2],
+    #     [42, 2],
+    #     [38, 2]
+    # ]
+    # config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = None
+    # runExperiment(config)
 
-    # Fourth run the experiment with all leaders and use D
-    np.random.seed(int(time()))
-    config = loadConfig()
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 12
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = [
-        [10, 5],
-        [20, 5],
-        [30, 5],
-        [40, 5],
-        [12, 2],
-        [8, 2],
-        [22, 2],
-        [18, 2],
-        [32, 2],
-        [28, 2],
-        [42, 2],
-        [38, 2]
-    ]
-    config["CCEA"]["use_difference_evaluations"] = True
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = None
-    runExperiment(config)
+    # # Fourth run the experiment with all leaders and use D
+    # config = loadConfig()
+    # config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 12
+    # config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
+    # config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = [
+    #     [10, 5],
+    #     [20, 5],
+    #     [30, 5],
+    #     [40, 5],
+    #     [12, 2],
+    #     [8, 2],
+    #     [22, 2],
+    #     [18, 2],
+    #     [32, 2],
+    #     [28, 2],
+    #     [42, 2],
+    #     [38, 2]
+    # ]
+    # config["CCEA"]["use_difference_evaluations"] = True
+    # config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = None
+    # runExperiment(config)
 exit()
 
 team_size = 15
