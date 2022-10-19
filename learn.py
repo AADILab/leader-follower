@@ -12,18 +12,18 @@ from time import time
 # Run each experiment 10 times
 for _ in range(10):
     # First run the experiment where we have 2 Follow per leader. 4 leaders. 4 pois with 3 coupling. Learn with G.
-    np.random.seed(time())
+    np.random.seed(int(time()))
     config = loadConfig()
     runExperiment(config)
 
     # Second run the experiment where we have 2 Follow per leader. 4 leaders. 4 pois with 3 coupling. Learn with Dswarm
-    np.random.seed(time())
+    np.random.seed(int(time()))
     config = loadConfig()
     config["CCEA"]["use_difference_evaluations"] = True
     runExperiment(config)
 
     # Third run the experiment with all leaders and use G
-    np.random.seed(time())
+    np.random.seed(int(time()))
     config = loadConfig()
     config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 12
     config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
@@ -45,7 +45,7 @@ for _ in range(10):
     runExperiment(config)
 
     # Fourth run the experiment with all leaders and use D
-    np.random.seed(time())
+    np.random.seed(int(time()))
     config = loadConfig()
     config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 12
     config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 0
