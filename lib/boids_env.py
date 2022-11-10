@@ -15,12 +15,15 @@ from lib.fitness_calculator import FitnessCalculator
 from lib.observations_manager import ObservationManager
 from lib.renderer import Renderer
 
+
 class RenderMode(IntEnum):
     human = 0
     none = 1
 
+
 class BoidsEnv(ParallelEnv):
     metadata = {"render_modes": ["human", "none"], "name": "boids_environment"}
+
     def __init__(self, max_steps: int, render_mode: Union[RenderMode, str], init_seed: int, config: Dict) -> None:
         """
         The init method takes in environment arguments and should define the following attributes:
@@ -30,13 +33,14 @@ class BoidsEnv(ParallelEnv):
 
         These attributes should not be changed after initialization.
         """
-        np.random.seed(init_seed)
+        # todo yell at Ever
+        # np.random.seed(init_seed)
         self.max_steps = max_steps
         if type(render_mode) == str:
             render_mode = RenderMode[render_mode]
         self.render_mode = render_mode
 
-        self.map_dimensions = np.array([config["map_dimensions"]["x"],config["map_dimensions"]["y"]], dtype=np.float64)
+        self.map_dimensions = np.array([config["map_dimensions"]["x"], config["map_dimensions"]["y"]], dtype=np.float64)
         self.state_bounds = StateBounds(
             map_dimensions=self.map_dimensions,
             **config["StateBounds"]
@@ -95,8 +99,8 @@ class BoidsEnv(ParallelEnv):
     def action_space(self, agent=None):
         # Action space is desired velocity, desired heading
         return Box(
-            low= np.array([self.state_bounds.min_velocity, -np.pi], dtype=np.float64),
-            high=np.array([self.state_bounds.max_velocity,  np.pi], dtype=np.float64),
+            low=np.array([self.state_bounds.min_velocity, -np.pi], dtype=np.float64),
+            high=np.array([self.state_bounds.max_velocity, np.pi], dtype=np.float64),
             dtype=np.float64
         )
 
@@ -131,6 +135,7 @@ class BoidsEnv(ParallelEnv):
         Returns the observations for each agent
         '''
         if seed is not None:
+            # todo yell at every about possible issues with how this flows
             np.random.seed(seed)
         self.agents = self.possible_agents[:]
         self.num_steps = 0
@@ -178,7 +183,7 @@ class BoidsEnv(ParallelEnv):
         self.poi_colony.updatePois(self.boids_colony.state)
 
         # Step forward and check if simulation is done
-        self.num_steps +=1
+        self.num_steps += 1
         if self.num_steps >= self.max_steps:
             env_done = True
         else:
