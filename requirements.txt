@@ -1,0 +1,10 @@
+myaml~=1.0.1
+numpy~=1.23.4
+pygame~=2.1.2
+setuptools~=60.2.0
+matplotlib~=3.6.2
+tqdm~=4.64.1
+gym~=0.26.2
+PettingZoo~=1.22.0
+PyYAML~=6.0
+scipy~=1.9.3
