@@ -149,9 +149,9 @@ class BoidSpawner:
                 radii * np.sin(theta)
             ))
         elif self.position_rule.value == PositionRule.Set.value:
-            if self.follower_positions is None:
+            if len(self.follower_positions) == 0:
                 return self.leader_positions.copy()
-            elif self.leader_positions is None:
+            elif len(self.leader_positions) == 0:
                 return self.follower_positions.copy()
             else:
                 return np.vstack((self.leader_positions, self.follower_positions)).copy()

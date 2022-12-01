@@ -77,7 +77,8 @@ def compute_action(net, observation, env):
 
 class EvaluationWorker:
     def __init__(self, in_queue, out_queue, stop_event: Event, worker_id: int, team_size: int,
-                 use_difference_rewards: bool, num_evaluations: int, env_kwargs: Dict = None, nn_kwargs: Dict = None):
+                 use_difference_rewards: bool,
+                 num_evaluations: int, env_kwargs: Dict = None, nn_kwargs: Dict = None):
         self.in_queue = in_queue
         self.out_queue = out_queue
         self.stop_event = stop_event
@@ -151,6 +152,7 @@ class EvaluationWorker:
                 traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
             self.env.close()
 
+            # todo derive this variable based on value of difference function in fitness function
             if self.use_difference_rewards:
                 fitnesses[eval_count] = np.array([rewards["team"]] + [rewards[agent] for agent in self.env.agents])
             else:
@@ -166,7 +168,7 @@ class CCEA:
                  sub_population_size: int,
                  mutation_rate: float, mutation_probability: float,
                  nn_hidden: int,
-                 use_difference_evaluations: bool,
+                 use_difference_rewards: bool,
                  num_workers: int,
                  num_evaluations: int,
                  # This is for when initial state is random. Evaluating several times ensures we don't
@@ -175,7 +177,10 @@ class CCEA:
                  init_population=None,
                  ) -> None:
         # Set variables
-        self.num_agents = config["BoidsEnv"]["config"]["StateBounds"]["num_leaders"]
+        leader_positions = config['BoidsEnv']['config']['BoidSpawner']['leader_positions']
+        follower_positions = config['BoidsEnv']['config']['BoidSpawner']['follower_positions']
+        self.num_agents = len(leader_positions)
+
         self.sub_population_size = sub_population_size
         self.sigma_mutation = mutation_rate
         self.mutation_probability = mutation_probability
@@ -190,7 +195,7 @@ class CCEA:
         self.average_agent_fitness_lists_unfiltered = [[] for _ in range(self.num_agents)]
         self.best_team_data = None
         self.current_best_team_data = None
-        self.use_difference_rewards = use_difference_evaluations
+        self.use_difference_rewards = use_difference_rewards
         self.genome_uid = 0
         self.teams: List[Optional[TeamData]] = []
 
@@ -276,7 +281,7 @@ class CCEA:
     def start_eval_workers(self):
         for w in self.workers:
             w.start()
-            return
+        return
 
     def __del__(self):
         self.cleanup()
@@ -334,23 +339,16 @@ class CCEA:
         return random_teams
 
     def eval_population(self):
-        # Generate random seed for evaluation.
-        # This ensures each genome from a specific population is evaluated on the same task.
-        # Otherwise, one team might seem better than others just because it solved an easy task.
-        # evaluation_seed = self.generateSeed()
         evaluation_seed = np.random.randint(0, 100)
-
-        # Form random teams from population
         random_teams = self.random_teams(evaluation_seed=evaluation_seed)
 
-        # Send teams to Evaluation Workers for evaluation
         for team_data in random_teams:
             self.work_queue.put(team_data)
 
         # Keep track of which teams have been received after evaluation
         received = [False for _ in random_teams]
-        timeout = 10  # seconds
-        self.teams: List[TeamData] = [None for _ in random_teams]
+        timeout = 1000  # seconds
+        self.teams: List[TeamData | None] = [None for _ in random_teams]
 
         while not all(received) and not self.stop_event.is_set():
             try:
@@ -380,6 +378,7 @@ class CCEA:
             # Each team is ordered by agent id. And each genome has an id corresponding
             # to its position in the subpopulation
             for agent_id, genome_data in enumerate(evaluated_team_data.team):
+                # todo derive this variable based on value of difference function in fitness function
                 if self.use_difference_rewards:
                     self.population[agent_id][genome_data.id].fitness = evaluated_team_data.difference_evaluations[
                         agent_id]
@@ -428,13 +427,8 @@ class CCEA:
         self.population = new_population
 
     def step(self):
-        # Select genomes for next generation
         self.downselect()
-
-        # Evaluate the population
         fitnesses = self.eval_population()
-
-        # Increase iterations counter
         self.iterations += 1
         return fitnesses
 
@@ -447,7 +441,6 @@ class CCEA:
         # Save bests
         self.best_fitness_list.append(self.best_team_data.fitness)
         self.best_fitness_list_unfiltered.append(self.current_best_team_data.fitness)
-        # average team performance
         self.average_fitness_list_unfiltered.append(np.average([team_data.fitness for team_data in self.teams]))
         # Save best fitness of each individual agent in this generation
         for agent_id in range(self.num_agents):
@@ -468,6 +461,7 @@ class CCEA:
         with tqdm(total=num_generations) as pbar:
             for idx in range(num_generations):
                 self.step()
+                self.save_fitnesses()
                 # Track fitness over time
                 fitnesses = [genome_data.fitness for genome_data in self.best_team_data.team]
                 fitness_str = f'Team fitness: {self.best_team_data.fitness} | Agent Fitnesses: {fitnesses}'

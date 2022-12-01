@@ -8,7 +8,13 @@ from leader_follower.poi_colony import POIColony
 
 class FitnessCalculator:
     def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, fitness):
-        self.fitness_func = fitness
+        fitness_mapping = {
+            'difference_leaders_followers': self.difference_leaders_followers,
+            'difference_leaders': self.difference_leaders,
+            'difference_proximity': self.difference_proximity,
+        }
+
+        self.fitness_func = fitness_mapping.get(fitness, self.difference_leaders_followers)
         self.poi_colony = poi_colony
         self.boids_colony = boids_colony
         return
@@ -28,7 +34,7 @@ class FitnessCalculator:
             poi_colony = self.poi_colony
         return float(poi_colony.num_observed()) / float(poi_colony.num_pois)
 
-    def difference_no_leaders_followers(self, leader: Boid, assigned_follower_ids: List[int]):
+    def difference_leaders_followers(self, leader: Boid, assigned_follower_ids: List[int]):
         # Make a copy of the POI manager and all POIs
         poi_colony_copy = deepcopy(self.poi_colony)
         # Determine if POI would be observed without this agent and its followers
@@ -48,7 +54,7 @@ class FitnessCalculator:
                     break
         return self.global_discrete() - self.global_discrete(poi_colony_copy)
 
-    def difference_no_leaders(self, leader: Boid, assigned_follower_ids: List[int]):
+    def difference_leaders(self, leader: Boid, assigned_follower_ids: List[int]):
         # Make a copy of the POI manager and all POIs
         poi_colony_copy = deepcopy(self.poi_colony)
         # Determine if POI would be observed without this agent
@@ -70,7 +76,7 @@ class FitnessCalculator:
     def difference_proximity(self, leader: Boid, assigned_follower_ids: List[int]):
         # expect to see difference when running golf and hotel
         # hotel - expect leader to not learn to slow down/shepard followers correctly
-        # todo
+        # todo implement proximity rewards
         return
 
     def difference_evaluations(self):
@@ -82,7 +88,7 @@ class FitnessCalculator:
             all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
         difference_rewards = []
         for leader, assigned_followers in zip(self.boids_colony.leaders(), all_assigned_followers):
-            reward = self.fitness_func(self, leader, assigned_followers)
+            reward = self.fitness_func(leader, assigned_followers)
             # reward = self.difference_no_leaders_followers(leader, assigned_followers)
             difference_rewards.append(reward)
         return difference_rewards

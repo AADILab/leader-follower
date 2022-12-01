@@ -47,17 +47,20 @@ class BoidsEnv(ParallelEnv):
 
         These attributes should not be changed after initialization.
         """
-        # todo yell at Ever
-        # np.random.seed(init_seed)
         self.num_steps = 0
         self.max_steps = max_steps
         if type(render_mode) == str:
             render_mode = RenderMode[render_mode]
         self.render_mode = render_mode
 
+        leader_positions = config['BoidSpawner']['leader_positions']
+        follower_positions = config['BoidSpawner']['follower_positions']
+
         self.map_dimensions = np.array([config["map_dimensions"]["x"], config["map_dimensions"]["y"]], dtype=np.float64)
         self.state_bounds = StateBounds(
             map_dimensions=self.map_dimensions,
+            num_leaders=len(leader_positions),
+            num_followers=len(follower_positions),
             **config["StateBounds"]
         )
         self.boid_spawner = BoidSpawner(
@@ -80,7 +83,7 @@ class BoidsEnv(ParallelEnv):
         self.fitness_calculator = FitnessCalculator(
             boids_colony=self.boids_colony,
             poi_colony=self.poi_colony,
-            fitness=FitnessCalculator.difference_no_leaders_followers
+            fitness=config['reward_type']
         )
         self.observation_manager = ObservationManager(
             boids_colony=self.boids_colony,
@@ -148,7 +151,6 @@ class BoidsEnv(ParallelEnv):
         :param kwargs:
         """
         if seed is not None:
-            # todo yell at every about possible issues with how this flows
             np.random.seed(seed)
         self.agents = self.possible_agents[:]
         self.num_steps = 0

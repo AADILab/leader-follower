@@ -7,8 +7,8 @@ class BoidsColonyState:
 
 
 class StateBounds:
-    def __init__(self, map_dimensions, min_velocity, max_velocity, max_acceleration, max_angular_velocity, num_leaders,
-                 num_followers) -> None:
+    def __init__(self, map_dimensions, min_velocity, max_velocity, max_acceleration, max_angular_velocity,
+                 num_leaders, num_followers) -> None:
         self.map_dimensions = map_dimensions
         self.min_velocity = min_velocity
         self.max_velocity = max_velocity

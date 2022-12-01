@@ -6,11 +6,10 @@ import myaml
 import yaml
 
 from leader_follower.network_lib import NN
-from leader_follower.project_properties import data_dir
 
 
 def load_trial(base_dir, trial_name: str) -> Dict:
-    trial_path = Path(base_dir, 'trials', f'{trial_name}.pkl')
+    trial_path = Path(base_dir, 'trials', trial_name)
     with open(trial_path, 'rb') as trial_file:
         trial_data = pickle.load(trial_file)
     return trial_data
@@ -53,19 +52,24 @@ def save_trial(base_dir, save_data: Dict, config: Dict, trial_num: Optional[str]
     config_path = Path(base_dir, 'configs', config_name)
     trial_path = Path(base_dir, 'trials', trial_name)
 
-    # with open("configs/config_" + trial_num + ".yaml", "w") as file:
-    # todo configs should not change trial to trial
+    if not config_path.parent.exists() or not config_path.parent.is_dir():
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not trial_path.parent.exists() or not trial_path.parent.is_dir():
+        trial_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # todo configs should not change between trials
+    # todo save as json for readability
     with open(config_path, 'w') as file:
         yaml.dump(config, file)
     with open(trial_path, 'wb') as file:
         pickle.dump(save_data, file)
-        # pickle.dump(save_data, open("trials/" + trial_name + ".pkl", "wb"))
     return config_path, trial_path
 
 
-def load_config(base_dir: data_dir, config_name: str = 'default.yaml'):
-    return myaml.safe_load(str(Path(base_dir, config_name)))
-    # return myaml.safe_load("configs/" + config_name)
+def load_config(base_dir, config_name):
+    config_path = str(Path(base_dir, config_name))
+    return myaml.safe_load(config_path)
 
 
 def setup_initial_population(base_dir, config: Dict):

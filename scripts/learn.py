@@ -6,14 +6,52 @@ from leader_follower.project_properties import data_dir
 
 
 def main():
-    n_exp = 2
-    # Run each experiment n times
-    for _ in range(n_exp):
-        base_dir = Path(data_dir, 'alpha', 'leaders_followers')
-        config_name = 'default.yaml'
-        config = load_config(base_dir, config_name=config_name)
-        config["CCEA"]["use_difference_evaluations"] = True
-        run_experiment(base_dir, config)
+    experiments = [
+        Path(data_dir, 'alpha', 'all_leaders', 'difference_leader'),
+        # Path(data_dir, 'alpha', 'all_leaders', 'difference_leader_follower'),
+        # Path(data_dir, 'alpha', 'all_leaders', 'global'),
+        #
+        # Path(data_dir, 'alpha', 'leaders_followers', 'difference_leader'),
+        # Path(data_dir, 'alpha', 'leaders_followers', 'difference_leader_follower'),
+        # Path(data_dir, 'alpha', 'leaders_followers', 'global'),
+        #
+        # Path(data_dir, 'charlie', 'all_leaders', 'difference_leader'),
+        # Path(data_dir, 'charlie', 'all_leaders', 'difference_leader_follower'),
+        # Path(data_dir, 'charlie', 'all_leaders', 'global'),
+        #
+        # Path(data_dir, 'charlie', 'leaders_followers', 'difference_leader'),
+        # Path(data_dir, 'charlie', 'leaders_followers', 'difference_leader_follower'),
+        # Path(data_dir, 'charlie', 'leaders_followers', 'global'),
+        #
+        # Path(data_dir, 'echo', 'all_leaders', 'difference_leader'),
+        # Path(data_dir, 'echo', 'all_leaders', 'difference_leader_follower'),
+        # Path(data_dir, 'echo', 'all_leaders', 'global'),
+        #
+        # Path(data_dir, 'echo', 'leaders_followers', 'difference_leader'),
+        # Path(data_dir, 'echo', 'leaders_followers', 'difference_leader_follower'),
+        # Path(data_dir, 'echo', 'leaders_followers', 'global'),
+    ]
+    config_name = 'default.yaml'
+    subpop_size = 50
+    n_gens = 100
+    stat_runs = 5
+    for each_experiment in experiments:
+        # try:
+        print(f'{"=" * 80}')
+        print(f'{each_experiment}')
+        config = load_config(each_experiment, config_name=config_name)
+        config['CCEA']['sub_population_size'] = subpop_size
+        config['num_generations'] = n_gens
+        # todo get stat_runs from config
+        # Run each experiment n times
+        for idx in range(stat_runs):
+            print(f'Running experiment {idx}')
+            run_experiment(each_experiment, config)
+        print(f'{"=" * 80}')
+        # except Exception as e:
+        #     print(f'Experiment {each_experiment}\n'
+        #           f'{e}')
+        #     print(f'{"=" * 80}')
     return
 
 
