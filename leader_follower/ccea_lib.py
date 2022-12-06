@@ -46,12 +46,11 @@ class SortByFitness:
 
 
 class GenomeData(SortByFitness):
-    def __init__(self, genome: Genome, gid: int, fitness: Optional[float] = None, uid: Optional[int] = None) -> None:
+    def __init__(self, genome: Genome, gid, fitness: Optional[float] = None) -> None:
         super().__init__()
         self.genome = genome
-        self.id = gid
+        self.gid = gid
         self.fitness = fitness
-        self.uid = uid
 
 
 class TeamData(SortByFitness):
@@ -119,13 +118,10 @@ class EvaluationWorker:
         finally:
             print(f"Shutting down EvaluationWorker {self.id}")
 
-    def setup_team_policies(self, team_data: TeamData):
-        for genome_data, net in zip(team_data.team, self.team_policies):
-            net.set_weights(genome_data.genome)
-
     def evaluate_team(self, team_data: TeamData, draw: bool = False):
         """Load team into boids environment and calculate a fitness score."""
-        self.setup_team_policies(team_data)
+        for genome_data, net in zip(team_data.team, self.team_policies):
+            net.set_weights(genome_data.genome)
 
         team_data.all_evaluation_seeds = [team_data.evaluation_seed + n for n in range(self.num_evaluations)]
 
@@ -201,55 +197,35 @@ class CCEA:
 
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
-            config["BoidsEnv"]["config"]["ObservationManager"]["num_swarm_bins"]
+                         config["BoidsEnv"]["config"]["ObservationManager"]["num_swarm_bins"]
         self.nn_hidden = nn_hidden
         self.nn_outputs = 2
         if init_population is None:
-            self.population = self.random_population()
+            self.population = [
+                [
+                    GenomeData(
+                        NN(
+                            num_inputs=self.nn_inputs, num_hidden=self.nn_hidden,num_outputs=self.nn_outputs
+                        ).get_weights(),
+                        gid=idx
+                    )
+                    for idx in range(self.sub_population_size)
+                ]
+                for _ in range(self.num_agents)
+            ]
         else:
             self.population = init_population
-        self.fitnesses = self.init_fitnesses()
-
-        # Setup object for deterministic random seed generation
-        # self.seed_generator = SeedGenerator()
+        self.fitnesses = [
+            [None for _ in range(self.sub_population_size)]
+            for _ in range(self.num_agents)
+        ]
 
         # Process event - set flag to True to turn off workers
         self.stop_event = Event()
 
         self.work_queue = Queue(1000)
         self.fitness_queue = Queue(1000)
-        init_workers = self.init_eval_workers()
-        self.workers = self.setup_eval_workers(init_workers)
-        self.start_eval_workers()
-        return
-
-    def generate_uid(self):
-        _id = self.genome_uid
-        self.genome_uid += 1
-        return _id
-
-    def random_genome(self):
-        # Create a NN with random weights and get the weights as the genome
-        weights = NN(num_inputs=self.nn_inputs, num_hidden=self.nn_hidden, num_outputs=self.nn_outputs).get_weights()
-        return weights
-
-    def random_subpopulation(self):
-        return [
-            GenomeData(self.random_genome(), gid=gid, uid=self.generate_uid())
-            for gid in range(self.sub_population_size)
-        ]
-
-    def random_population(self):
-        return [self.random_subpopulation() for _ in range(self.num_agents)]
-
-    def init_subpop_fitnesses(self):
-        return [None for _ in range(self.sub_population_size)]
-
-    def init_fitnesses(self):
-        return [self.init_subpop_fitnesses() for _ in range(self.num_agents)]
-
-    def init_eval_workers(self):
-        return [
+        init_workers = [
             EvaluationWorker(
                 in_queue=self.work_queue,
                 out_queue=self.fitness_queue,
@@ -267,18 +243,13 @@ class CCEA:
             )
             for worker_id in range(self.num_workers)
         ]
-
-    @staticmethod
-    def setup_eval_workers(init_workers):
-        return [
+        self.workers = [
             Process(
                 target=worker,
                 args=(),
             )
             for worker in init_workers
         ]
-
-    def start_eval_workers(self):
         for w in self.workers:
             w.start()
         return
@@ -380,11 +351,11 @@ class CCEA:
             for agent_id, genome_data in enumerate(evaluated_team_data.team):
                 # todo derive this variable based on value of difference function in fitness function
                 if self.use_difference_rewards:
-                    self.population[agent_id][genome_data.id].fitness = evaluated_team_data.difference_evaluations[
+                    self.population[agent_id][genome_data.gid].fitness = evaluated_team_data.difference_evaluations[
                         agent_id]
                 else:
-                    self.population[agent_id][genome_data.id].fitness = evaluated_team_data.fitness
-                covered[agent_id][genome_data.id] += 1
+                    self.population[agent_id][genome_data.gid].fitness = evaluated_team_data.fitness
+                covered[agent_id][genome_data.gid] += 1
 
         # Save the team with the highest fitness. Both a filtered one and the current best
         self.teams.sort(reverse=True)
@@ -418,8 +389,7 @@ class CCEA:
                 # Mutate that genome and add it to the new population
                 mutated_genome = GenomeData(
                     genome=self.mutate_genome(genome_winner.genome),
-                    gid=len(new_population[n_agent]),
-                    uid=self.generate_uid()
+                    gid=len(new_population[n_agent])
                 )
                 new_population[n_agent].append(mutated_genome)
 

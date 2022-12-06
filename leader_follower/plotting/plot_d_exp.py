@@ -77,7 +77,7 @@ def process_experiment(exp_dir, start_trial, stat_runs):
 def main():
     # Data Wrangling
     ##
-    start_trial = 0
+    start_trial = 5
     stat_runs = 5
 
     exp_configs = [

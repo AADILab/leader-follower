@@ -7,7 +7,7 @@ from leader_follower.project_properties import data_dir
 
 def main():
     experiments = [
-        Path(data_dir, 'alpha', 'all_leaders', 'difference_leader'),
+        # Path(data_dir, 'alpha', 'all_leaders', 'difference_leader'),
         # Path(data_dir, 'alpha', 'all_leaders', 'difference_leader_follower'),
         # Path(data_dir, 'alpha', 'all_leaders', 'global'),
         #
@@ -15,13 +15,13 @@ def main():
         # Path(data_dir, 'alpha', 'leaders_followers', 'difference_leader_follower'),
         # Path(data_dir, 'alpha', 'leaders_followers', 'global'),
         #
-        # Path(data_dir, 'charlie', 'all_leaders', 'difference_leader'),
-        # Path(data_dir, 'charlie', 'all_leaders', 'difference_leader_follower'),
-        # Path(data_dir, 'charlie', 'all_leaders', 'global'),
-        #
-        # Path(data_dir, 'charlie', 'leaders_followers', 'difference_leader'),
-        # Path(data_dir, 'charlie', 'leaders_followers', 'difference_leader_follower'),
-        # Path(data_dir, 'charlie', 'leaders_followers', 'global'),
+        Path(data_dir, 'charlie', 'all_leaders', 'difference_leader'),
+        Path(data_dir, 'charlie', 'all_leaders', 'difference_leader_follower'),
+        Path(data_dir, 'charlie', 'all_leaders', 'global'),
+
+        Path(data_dir, 'charlie', 'leaders_followers', 'difference_leader'),
+        Path(data_dir, 'charlie', 'leaders_followers', 'difference_leader_follower'),
+        Path(data_dir, 'charlie', 'leaders_followers', 'global'),
         #
         # Path(data_dir, 'echo', 'all_leaders', 'difference_leader'),
         # Path(data_dir, 'echo', 'all_leaders', 'difference_leader_follower'),
