@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 import myaml
 import yaml
 
-from leader_follower.network_lib import NN
+from leader_follower.learn.network_lib import NN
 
 
 def load_trial(base_dir, trial_name: str) -> Dict:

@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 import numpy as np
 from numpy.typing import NDArray
 
-from leader_follower.colony_helpers import BoidsColonyState, StateBounds
+from leader_follower.agents.colony_helpers import BoidsColonyState, StateBounds
 
 
 class BoidSpawnRule(IntEnum):

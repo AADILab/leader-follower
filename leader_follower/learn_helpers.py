@@ -1,7 +1,7 @@
 from time import time
 from typing import Dict
 
-from leader_follower.ccea_lib import CCEA
+from leader_follower.learn.ccea_lib import CCEA
 from leader_follower.file_helper import save_trial, setup_initial_population
 
 

@@ -3,7 +3,8 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 
-from leader_follower import math_helpers, colony_helpers
+from leader_follower import math_helpers
+from leader_follower.agents import colony_helpers
 
 
 class Boid:

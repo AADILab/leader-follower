@@ -132,5 +132,5 @@ dmypy.json
 /output/
 .idea/
 /data/
-/data/alpha/leaders_followers/trials
-/data/alpha/leaders_followers/configs
+/trials/
+/.idea/

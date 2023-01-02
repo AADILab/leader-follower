@@ -30,6 +30,7 @@ project_path = Path(source_package).parent
 resources_dir = Path(project_path, 'resources')
 log_dir = Path(project_path, 'logs')
 data_dir = Path(project_path, 'data')
+config_dir = Path(project_path, 'configs')
 cached_dir = Path(project_path, 'cached')
 output_dir = Path(project_path, 'output')
 model_dir = Path(project_path, 'models')

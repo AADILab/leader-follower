@@ -1,9 +1,9 @@
 from copy import deepcopy
 from typing import List, Optional
 
-from leader_follower.boids_colony import BoidsColony, Boid
+from leader_follower.agents.boids_colony import BoidsColony, Boid
 from leader_follower.math_helpers import argmax
-from leader_follower.poi_colony import POIColony
+from leader_follower.agents.poi_colony import POIColony
 
 
 class FitnessCalculator:

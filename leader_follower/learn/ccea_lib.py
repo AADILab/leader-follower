@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 from leader_follower.boids_env import BoidsEnv
-from leader_follower.network_lib import NN
+from leader_follower.learn.network_lib import NN
 
 # Genome encodes weights of a network as list of numpy arrays
 Genome = List[np.array]

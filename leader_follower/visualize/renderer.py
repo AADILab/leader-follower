@@ -5,9 +5,9 @@ import pygame
 import pygame.gfxdraw
 from numpy.typing import NDArray
 
-from leader_follower.boids_colony import BoidsColony, Boid
+from leader_follower.agents.boids_colony import BoidsColony, Boid
 from leader_follower.observations_manager import ObservationManager
-from leader_follower.poi_colony import POIColony, POI
+from leader_follower.agents.poi_colony import POIColony, POI
 
 
 class Renderer:

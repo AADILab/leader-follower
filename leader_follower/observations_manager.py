@@ -5,9 +5,9 @@ import numpy as np
 from gym.spaces import Box
 from numpy.typing import NDArray
 
-from leader_follower.boids_colony import BoidsColony, Boid
+from leader_follower.agents.boids_colony import BoidsColony, Boid
 from leader_follower.math_helpers import calc_centroid, bound_angle_pi_pi
-from leader_follower.poi_colony import POIColony, POI
+from leader_follower.agents.poi_colony import POIColony, POI
 
 
 class ObservationRule(IntEnum):
