@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import myaml
-import yaml
 
 from leader_follower.learn.network_lib import NN
 
@@ -43,28 +42,28 @@ def new_trial_name(base_dir) -> str:
 def save_trial(base_dir, save_data: Dict, config: Dict, trial_num: Optional[str] = None):
     if trial_num is None:
         trial_name = new_trial_name(base_dir)
-        trial_num = trial_name.split('_')[1]
+        # trial_num = trial_name.split('_')[1]
     else:
         trial_name = f'trial_{trial_num}'
 
+    # configs should not change between trials
+    # config_name = f'config_{trial_num}.yaml'
+    # config_path = Path(base_dir, 'configs', config_name)
+    # if not config_path.parent.exists() or not config_path.parent.is_dir():
+    #     config_path.parent.mkdir(parents=True, exist_ok=True)
+    # with open(config_path, 'w') as file:
+    #     yaml.dump(config, file)
+
+    # todo save as json for readability
     trial_name = f'{trial_name}.pkl'
-    config_name = f'config_{trial_num}.yaml'
-    config_path = Path(base_dir, 'configs', config_name)
     trial_path = Path(base_dir, 'trials', trial_name)
-
-    if not config_path.parent.exists() or not config_path.parent.is_dir():
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-
     if not trial_path.parent.exists() or not trial_path.parent.is_dir():
         trial_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # todo configs should not change between trials
-    # todo save as json for readability
-    with open(config_path, 'w') as file:
-        yaml.dump(config, file)
     with open(trial_path, 'wb') as file:
         pickle.dump(save_data, file)
-    return config_path, trial_path
+
+    return trial_path
 
 
 def load_config(base_dir, config_name):
