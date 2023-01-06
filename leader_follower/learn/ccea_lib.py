@@ -1,7 +1,4 @@
-import queue
-import traceback
 from copy import copy, deepcopy
-from multiprocessing import Event, Process, Queue
 from typing import List, Dict, Optional
 
 import numpy as np
@@ -74,91 +71,6 @@ def compute_action(net, observation, env):
     return np.array([heading, velocity])
 
 
-class EvaluationWorker:
-    def __init__(self, in_queue, out_queue, stop_event: Event, worker_id: int, team_size: int,
-                 use_difference_rewards: bool,
-                 num_evaluations: int, env_kwargs: Dict = None, nn_kwargs: Dict = None):
-        self.in_queue = in_queue
-        self.out_queue = out_queue
-        self.stop_event = stop_event
-        self.id = worker_id
-        self.use_difference_rewards = use_difference_rewards
-        self.num_evaluations = num_evaluations
-        self.env = BoidsEnv(**env_kwargs)
-        self.team_policies = [NN(**nn_kwargs) for _ in range(team_size)]
-
-    def __call__(self):
-        try:
-            while not self.stop_event.is_set():
-                try:
-                    team_data = self.in_queue.get(timeout=0.01)
-                    # print("Worker ",self.id," just received team_data ", id(team_data))
-                except queue.Empty:
-                    continue
-
-                try:
-                    team_data.fitness, team_data.difference_evaluations = self.evaluate_team(team_data, False)
-                except AttributeError as e:
-                    print(f"AttributeError on EvaluationWorker {self.id}")
-                    print(f'{e}')
-                    print(traceback.format_exc())
-                    team_data.fitness = 0
-
-                self.out_queue.put(team_data)
-
-        except KeyboardInterrupt:
-            print(f"Interrupt on EvaluationWorker {self.id}!")
-            self.stop_event.set()
-        except Exception as e:
-            print(f"Error on EvaluationWorker {self.id}! Exiting program. Error: {e}\n"
-                  f"Full Traceback:\n"
-                  f"{traceback.format_exc()}"
-                  )
-            self.stop_event.set()
-        finally:
-            print(f"Shutting down EvaluationWorker {self.id}")
-
-    def evaluate_team(self, team_data: TeamData, draw: bool = False):
-        """Load team into boids environment and calculate a fitness score."""
-        for genome_data, net in zip(team_data.team, self.team_policies):
-            net.set_weights(genome_data.genome)
-
-        team_data.all_evaluation_seeds = [team_data.evaluation_seed + n for n in range(self.num_evaluations)]
-
-        fitnesses = np.zeros((self.num_evaluations, 1 + self.env.num_agents))
-
-        traj = np.zeros((self.env.max_steps + 1, 2))
-
-        for eval_count, evaluation_seed in enumerate(team_data.all_evaluation_seeds):
-            # Run network on boids environment
-            observations = self.env.reset(seed=evaluation_seed)
-            traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
-            done = False
-            rewards = {}
-            while not done:
-                if draw:
-                    self.env.render()
-                # Collect the action for each agent on the team
-                actions = {agent_name: compute_action(net, observations[agent_name], self.env) for agent_name, net in
-                           zip(self.env.possible_agents, self.team_policies)}
-                # Step forward the environment
-                observations, rewards, dones, _ = self.env.step(actions)
-                # Save done
-                done = True in dones.values()
-                traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
-            self.env.close()
-
-            # todo derive this variable based on value of difference function in fitness function
-            if self.use_difference_rewards:
-                fitnesses[eval_count] = np.array([rewards["team"]] + [rewards[agent] for agent in self.env.agents])
-            else:
-                fitnesses[eval_count] = rewards["team"] * np.ones(1 + len(self.env.agents))
-
-        team_fitness = np.average(fitnesses[:, 0])
-        agent_fitnesses = [np.average(fitnesses[:, num_agent + 1]) for num_agent in range(self.env.num_agents)]
-        return team_fitness, agent_fitnesses
-
-
 class CCEA:
     def __init__(self,
                  sub_population_size: int,
@@ -195,18 +107,25 @@ class CCEA:
         self.genome_uid = 0
         self.teams: List[Optional[TeamData]] = []
 
+        self.env = BoidsEnv(**self.config["BoidsEnv"])
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
                          config["BoidsEnv"]["config"]["ObservationManager"]["num_swarm_bins"]
         self.nn_hidden = nn_hidden
         self.nn_outputs = 2
+        nn_kwargs = {
+            "num_inputs": self.nn_inputs,
+            "num_hidden": self.nn_hidden,
+            "num_outputs": self.nn_outputs
+        }
+        self.team_policies = [NN(**nn_kwargs) for _ in range(self.num_agents)]
+
+
         if init_population is None:
             self.population = [
                 [
                     GenomeData(
-                        NN(
-                            num_inputs=self.nn_inputs, num_hidden=self.nn_hidden,num_outputs=self.nn_outputs
-                        ).get_weights(),
+                        NN(num_inputs=self.nn_inputs, num_hidden=self.nn_hidden, num_outputs=self.nn_outputs).get_weights(),
                         gid=idx
                     )
                     for idx in range(self.sub_population_size)
@@ -219,53 +138,7 @@ class CCEA:
             [None for _ in range(self.sub_population_size)]
             for _ in range(self.num_agents)
         ]
-
-        # Process event - set flag to True to turn off workers
-        self.stop_event = Event()
-
-        self.work_queue = Queue(1000)
-        self.fitness_queue = Queue(1000)
-        init_workers = [
-            EvaluationWorker(
-                in_queue=self.work_queue,
-                out_queue=self.fitness_queue,
-                stop_event=self.stop_event,
-                worker_id=worker_id,
-                use_difference_rewards=self.use_difference_rewards,
-                num_evaluations=self.num_evaluations,
-                env_kwargs=self.config["BoidsEnv"],
-                team_size=self.num_agents,
-                nn_kwargs={
-                    "num_inputs": self.nn_inputs,
-                    "num_hidden": self.nn_hidden,
-                    "num_outputs": self.nn_outputs
-                }
-            )
-            for worker_id in range(self.num_workers)
-        ]
-        self.workers = [
-            Process(
-                target=worker,
-                args=(),
-            )
-            for worker in init_workers
-        ]
-        for w in self.workers:
-            w.start()
         return
-
-    def __del__(self):
-        self.cleanup()
-        return
-
-    def cleanup(self):
-        # End work processes on deletion
-        try:
-            self.stop_event.set()
-            for w in self.workers:
-                w.join()
-        except Exception as e:
-            print(f'ccea cleanup {e}')
 
     def mutate_genome(self, genome: Genome, seed: int = None) -> Genome:
         """Mutate weights of genome with zero-mean gaussian noise."""
@@ -309,28 +182,54 @@ class CCEA:
 
         return random_teams
 
+    def evaluate_team(self, team_data: TeamData, draw: bool = False):
+        """Load team into boids environment and calculate a fitness score."""
+        for genome_data, net in zip(team_data.team, self.team_policies):
+            net.set_weights(genome_data.genome)
+
+        team_data.all_evaluation_seeds = [team_data.evaluation_seed + n for n in range(self.num_evaluations)]
+        fitnesses = np.zeros((self.num_evaluations, 1 + self.env.num_agents))
+        traj = np.zeros((self.env.max_steps + 1, 2))
+
+        for eval_count, evaluation_seed in enumerate(team_data.all_evaluation_seeds):
+            # Run network on boids environment
+            observations = self.env.reset(seed=evaluation_seed)
+            traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
+            done = False
+            rewards = {}
+            while not done:
+                if draw:
+                    self.env.render()
+                # Collect the action for each agent on the team
+                actions = {agent_name: compute_action(net, observations[agent_name], self.env) for agent_name, net in
+                           zip(self.env.possible_agents, self.team_policies)}
+                # Step forward the environment
+                observations, rewards, dones, _ = self.env.step(actions)
+                # Save done
+                done = True in dones.values()
+                traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
+            self.env.close()
+
+            # todo derive this variable based on value of difference function in fitness function
+            if self.use_difference_rewards:
+                fitnesses[eval_count] = np.array([rewards["team"]] + [rewards[agent] for agent in self.env.agents])
+            else:
+                fitnesses[eval_count] = rewards["team"] * np.ones(1 + len(self.env.agents))
+
+        team_fitness = np.average(fitnesses[:, 0])
+        agent_fitnesses = [np.average(fitnesses[:, num_agent + 1]) for num_agent in range(self.env.num_agents)]
+        return team_fitness, agent_fitnesses
+
     def eval_population(self):
         evaluation_seed = np.random.randint(0, 100)
         random_teams = self.random_teams(evaluation_seed=evaluation_seed)
 
-        for team_data in random_teams:
-            self.work_queue.put(team_data)
-
-        # Keep track of which teams have been received after evaluation
-        received = [False for _ in random_teams]
-        timeout = 1000  # seconds
+        #######
         self.teams: List[TeamData | None] = [None for _ in random_teams]
-
-        while not all(received) and not self.stop_event.is_set():
-            try:
-                # Grab latest evaluated team from workers
-                team_data = self.fitness_queue.get(timeout=timeout)
-                # Store the team
-                self.teams[team_data.id] = team_data
-                # Update received
-                received[team_data.id] = True
-            except queue.Empty:
-                pass
+        for team_data in random_teams:
+            # todo add timeout
+            team_data.fitness, team_data.difference_evaluations = self.evaluate_team(team_data, False)
+            self.teams[team_data.id] = team_data
 
         # Go back and assign fitnesses for genomes on teams. This is necessary for keeping metadata consistent.
         # The teams evaluated by the workers contain copies of the genomes, not the originals, meaning we have to
@@ -395,12 +294,7 @@ class CCEA:
 
         # Replace population with newly selected population for next generation
         self.population = new_population
-
-    def step(self):
-        self.downselect()
-        fitnesses = self.eval_population()
-        self.iterations += 1
-        return fitnesses
+        return
 
     def final_metrics(self):
         return self.best_fitness_list, self.best_fitness_list_unfiltered, self.best_agent_fitness_lists_unfiltered, \
@@ -430,7 +324,9 @@ class CCEA:
         self.save_fitnesses()
         with tqdm(total=num_generations) as pbar:
             for idx in range(num_generations):
-                self.step()
+                self.downselect()
+                self.eval_population()
+                self.iterations += 1
                 self.save_fitnesses()
                 # Track fitness over time
                 fitnesses = [genome_data.fitness for genome_data in self.best_team_data.team]

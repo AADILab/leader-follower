@@ -75,7 +75,7 @@ class BoidsColony:
 
     def observable_boids(self, boid: Boid, return_distances: bool = False):
         """Get all boids observable by this boid"""
-        distances = math_helpers.distance(self.state.positions, boid.position)
+        distances = math_helpers.euclidean(self.state.positions, boid.position)
         observable_bool = distances <= self.radius_attraction
         observable_bool[boid.id] = False
         # todo fix return hint

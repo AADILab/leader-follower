@@ -37,12 +37,6 @@ model_dir = Path(project_path, 'models')
 doc_dir = Path(project_path, 'docs')
 
 # --------------------------------------------
-# Project specific paths
-# --------------------------------------------
-raw_data_dir = Path(data_dir, 'raw')
-sound_bytes_dir = Path(resources_dir, 'sound_bytes')
-
-# --------------------------------------------
 # Cached directories
 # these are generally assumed to be in cached_dir
 # no guarantee that a cached dir will exist between runs

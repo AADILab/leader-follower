@@ -2,7 +2,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from leader_follower.agents.colony_helpers import BoidsColonyState
-from leader_follower.math_helpers import distance
+from leader_follower.math_helpers import euclidean
 
 
 class POI:
@@ -29,7 +29,7 @@ class POIColony:
 
     def update(self, boids_colony_state: BoidsColonyState):
         for poi in self.pois:
-            distances = distance(poi.position, boids_colony_state.positions)
+            distances = euclidean(poi.position, boids_colony_state.positions)
             num_observations = np.sum(distances <= self.observation_radius)
             if num_observations >= self.coupling:
                 poi.observed = True

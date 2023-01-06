@@ -2,7 +2,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-def distance(positions_a: NDArray[np.float64], positions_b: NDArray[np.float64]) -> NDArray[np.float64]:
+def euclidean(positions_a: NDArray[np.float64], positions_b: NDArray[np.float64]) -> NDArray[np.float64]:
     """Calculate the distance between positions A and B"""
     return np.linalg.norm(positions_a - positions_b, axis=1)
 
@@ -57,5 +57,4 @@ def calc_centroid(positions):
 
 
 def argmax(iterable):
-    # todo use np.argmax
     return max(enumerate(iterable), key=lambda x: x[1])[0]

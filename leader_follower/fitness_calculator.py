@@ -85,6 +85,7 @@ class FitnessCalculator:
         for follower in self.boids_colony.followers():
             # Get the id of the max number in the influence list
             #   (this is the id of the leader that influenced this follower the most)
+            # todo use np.argmax
             all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
         difference_rewards = []
         for leader, assigned_followers in zip(self.boids_colony.leaders(), all_assigned_followers):
