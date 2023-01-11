@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from leader_follower import project_properties
-from leader_follower.file_helper import load_config, load_trial
+from leader_follower.bak.file_helper import load_config, load_trial
 from leader_follower.project_properties import output_dir
 
 

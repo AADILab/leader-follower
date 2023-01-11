@@ -108,12 +108,11 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
     mutate_func = mutate_gaussian
     downselect_func = downselect_top_n
 
+    # todo fix assumes homogeneous agents in environment
     initial_state = env.state()
     state_size = len(initial_state)
-    # todo
     # action_size = len(Action.__members__)
     action_size = 4
-    num_agents = len(env.agents)
     agent_pops = [
         [
             {
@@ -122,49 +121,49 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
             }
             for _ in range(population_size)
         ]
-        for _ in range(num_agents)
+        for each_agent in env.agents
     ]
     print(f'Using device: {agent_pops[0][0]["network"].device()}')
 
-    # initial fitness evaluation of all networks in population
-    for pop_idx in range(population_size):
-        new_inds = [agent_pops[agent_idx][pop_idx] for agent_idx in range(num_agents)]
-        agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
-        for each_ind, each_fitness in zip(new_inds, agent_rewards):
-            each_ind['fitness'] = each_fitness
-
-    max_fitnesses = []
-    avg_fitnesses = []
-    for gen_idx in tqdm.trange(n_gens):
-        fitnesses = [
-            [ind['fitness'] for ind in each_pop]
-            for each_pop in agent_pops
-        ]
-        max_fitnesses.append(np.max(fitnesses, axis=1))
-        avg_fitnesses.append(np.average(fitnesses, axis=1))
-        sim_pops = [select_func(pop, sim_pop_size) for pop in agent_pops]
-        for sim_pop_idx, each_ind in enumerate(sim_pops):
-            new_inds = [mutate_func(agent_pops[agent_idx][sim_pop_idx]) for agent_idx in range(num_agents)]
-
-            # rollout and evaluate
-            agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
-            for each_agent, each_fitness in zip(new_inds, agent_rewards):
-                each_agent['fitness'] = each_fitness
-
-            # reinsert
-            for each_entire, each_new in zip(agent_pops, new_inds):
-                each_entire.append(each_new)
-        # downselect
-        agent_pops = [downselect_func(pop, population_size) for pop in agent_pops]
-
-    best_policies = []
-    for each_pop in agent_pops:
-        fitness_vals = [pop['fitness'] for pop in each_pop]
-        arg_best = np.argmax(fitness_vals)
-        best_ind = each_pop[arg_best]
-        print(best_ind['fitness'])
-        best_policies.append(best_ind)
-    return best_policies, max_fitnesses, avg_fitnesses
+    # # initial fitness evaluation of all networks in population
+    # for pop_idx in range(population_size):
+    #     new_inds = [agent_pops[agent_idx][pop_idx] for agent_idx in range(num_agents)]
+    #     agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
+    #     for each_ind, each_fitness in zip(new_inds, agent_rewards):
+    #         each_ind['fitness'] = each_fitness
+    #
+    # max_fitnesses = []
+    # avg_fitnesses = []
+    # for gen_idx in tqdm.trange(n_gens):
+    #     fitnesses = [
+    #         [ind['fitness'] for ind in each_pop]
+    #         for each_pop in agent_pops
+    #     ]
+    #     max_fitnesses.append(np.max(fitnesses, axis=1))
+    #     avg_fitnesses.append(np.average(fitnesses, axis=1))
+    #     sim_pops = [select_func(pop, sim_pop_size) for pop in agent_pops]
+    #     for sim_pop_idx, each_ind in enumerate(sim_pops):
+    #         new_inds = [mutate_func(agent_pops[agent_idx][sim_pop_idx]) for agent_idx in range(num_agents)]
+    #
+    #         # rollout and evaluate
+    #         agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
+    #         for each_agent, each_fitness in zip(new_inds, agent_rewards):
+    #             each_agent['fitness'] = each_fitness
+    #
+    #         # reinsert
+    #         for each_entire, each_new in zip(agent_pops, new_inds):
+    #             each_entire.append(each_new)
+    #     # downselect
+    #     agent_pops = [downselect_func(pop, population_size) for pop in agent_pops]
+    #
+    # best_policies = []
+    # for each_pop in agent_pops:
+    #     fitness_vals = [pop['fitness'] for pop in each_pop]
+    #     arg_best = np.argmax(fitness_vals)
+    #     best_ind = each_pop[arg_best]
+    #     print(best_ind['fitness'])
+    #     best_policies.append(best_ind)
+    # return best_policies, max_fitnesses, avg_fitnesses
 
 
 def plot_fitnesses(avg_fitnesses, max_fitnesses, xtag=None, ytag=None):
