@@ -8,6 +8,9 @@
 import numpy as np
 from numpy.typing import NDArray
 
+from leader_follower.bak.colony_helpers import BoidsColonyState
+from leader_follower.utils import euclidean
+
 
 class POI:
     def __init__(self, positions: NDArray[np.float64], id: int) -> None:
@@ -32,7 +35,7 @@ class POIColony:
 
     def updatePois(self, boids_colony_state: BoidsColonyState):
         for poi in self.pois:
-            distances = calculateDistance(poi.position, boids_colony_state.positions)
+            distances = euclidean(poi.position, boids_colony_state.positions)
             num_observations = np.sum(distances <= self.observation_radius)
             if num_observations >= self.coupling:
                 poi.observed = True

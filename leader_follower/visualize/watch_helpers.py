@@ -2,7 +2,7 @@ from typing import Dict
 
 import pygame
 
-from leader_follower.environment.boids_env import BoidsEnv
+from leader_follower.bak.boids_env import BoidsEnv
 from leader_follower.bak.ccea_lib import CCEA, TeamData, compute_action
 from leader_follower.bak.network_lib import NN, create_nn_from_weights
 from time import time, sleep

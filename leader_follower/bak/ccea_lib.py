@@ -1,11 +1,11 @@
 from copy import copy, deepcopy
-from typing import List, Dict, Optional
+from typing import List, Optional
 
 import numpy as np
 from tqdm import tqdm
 
-from leader_follower.environment.boids_env import BoidsEnv
 from leader_follower.bak.network_lib import NN
+from leader_follower.bak.boids_env import BoidsEnv, StateBounds
 
 # Genome encodes weights of a network as list of numpy arrays
 Genome = List[np.array]
@@ -81,12 +81,16 @@ class CCEA:
                  num_evaluations: int,
                  # This is for when initial state is random. Evaluating several times ensures we don't
                  # just take policies that happen to get lucky with an easy start.
-                 config: Dict,
+                 # config: Dict,
                  init_population=None,
+                 **kwargs
                  ) -> None:
         # Set variables
-        leader_positions = config['BoidsEnv']['config']['BoidSpawner']['leader_positions']
-        follower_positions = config['BoidsEnv']['config']['BoidSpawner']['follower_positions']
+        self.kwargs = kwargs
+
+        leader_positions = kwargs['leader_positions']
+        follower_positions = kwargs['follower_positions']
+        poi_positions = kwargs['poi_positions']
         self.num_agents = len(leader_positions)
 
         self.sub_population_size = sub_population_size
@@ -95,7 +99,6 @@ class CCEA:
         self.iterations = 0
         self.num_workers = num_workers
         self.num_evaluations = num_evaluations
-        self.config = config
         self.best_fitness_list = []
         self.best_fitness_list_unfiltered = []
         self.best_agent_fitness_lists_unfiltered = [[] for _ in range(self.num_agents)]
@@ -107,10 +110,16 @@ class CCEA:
         self.genome_uid = 0
         self.teams: List[Optional[TeamData]] = []
 
-        self.env = BoidsEnv(**self.config["BoidsEnv"])
+        state_bounds = StateBounds(
+            x_size = 20, y_size = 20, num_leaders=len(leader_positions), num_followers=len(follower_positions),
+            **kwargs
+        )
+        self.env = BoidsEnv(
+            leaders=leader_positions, boids=follower_positions, pois=poi_positions, state_bounds=state_bounds,
+            **self.kwargs
+        )
         # Setup nn variables
-        self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
-                         config["BoidsEnv"]["config"]["ObservationManager"]["num_swarm_bins"]
+        self.nn_inputs = kwargs["num_poi_bins"] + kwargs["num_swarm_bins"]
         self.nn_hidden = nn_hidden
         self.nn_outputs = 2
         nn_kwargs = {
@@ -188,7 +197,7 @@ class CCEA:
             net.set_weights(genome_data.genome)
 
         team_data.all_evaluation_seeds = [team_data.evaluation_seed + n for n in range(self.num_evaluations)]
-        fitnesses = np.zeros((self.num_evaluations, 1 + self.env.num_agents))
+        fitnesses = np.zeros((self.num_evaluations, 1 + len(self.env.leaders)))
         traj = np.zeros((self.env.max_steps + 1, 2))
 
         for eval_count, evaluation_seed in enumerate(team_data.all_evaluation_seeds):

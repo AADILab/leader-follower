@@ -8,16 +8,16 @@ from gym import Env
 from gym.core import RenderFrame
 from gym.spaces import Box
 
-from leader_follower.agents.colony import Boid
-from leader_follower.agents.leader import Leader
-from leader_follower.agents.poi import POI
+from leader_follower.agents.agent import Leader
+from leader_follower.bak.poi import POI
+from leader_follower.bak.boids_colony import Boid
 
 
 def get_team_fitness(poi_colony: list[POI]):
     return float(poi_colony.numObserved()) / float(poi_colony.num_pois)
 
 
-def calculate_difference_evaluation(poi_colony: list[POI], leader: Boid, assigned_follower_ids: list[int]):
+def calculate_difference_evaluation(poi_colony: list[POI], leader, assigned_follower_ids: list[int]):
     # Make a copy of the POI manager and all POIs
     poi_colony_copy = copy.deepcopy(poi_colony)
     all_removed_ids = assigned_follower_ids + [leader.id]
@@ -38,7 +38,7 @@ def calculate_difference_evaluation(poi_colony: list[POI], leader: Boid, assigne
     return get_team_fitness(poi_colony) - get_team_fitness(poi_colony_copy)
 
 
-def calculate_difference_evaluations(boids_colony: list[Boid]):
+def calculate_difference_evaluations(boids_colony: list):
     # Assign followers to each leader
     all_assigned_followers = [[] for _ in range(boids_colony.bounds.num_leaders)]
     for follower in boids_colony.getFollowers():
@@ -54,7 +54,7 @@ def calculate_difference_evaluations(boids_colony: list[Boid]):
 class StateBounds:
     def __init__(self, x_size, y_size,
                  min_velocity, max_velocity, max_acceleration, max_angular_velocity,
-                 num_leaders, num_followers) -> None:
+                 num_leaders, num_followers, **kwargs) -> None:
         self.map_dimensions = np.array([x_size, y_size], dtype=np.float64)
         self.min_velocity = min_velocity
         self.max_velocity = max_velocity
@@ -79,8 +79,7 @@ class BoidsEnv(Env):
     metadata = {"render_modes": ["human", "none"], "name": "boids_environment"}
 
     def __init__(
-            self, max_steps: int, leaders: list[Leader], boids: list[Boid], pois: list[POI],
-            state_bounds: StateBounds) -> None:
+            self, max_steps: int, leaders: list[Leader], boids: list[Boid], pois: list[POI], state_bounds, **kwargs):
         """
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -89,6 +88,8 @@ class BoidsEnv(Env):
 
         These attributes should not be changed after initialization.
         """
+        self.unused_params = kwargs
+
         self.state_bounds = state_bounds
         self.leaders = leaders
         self.boids = boids

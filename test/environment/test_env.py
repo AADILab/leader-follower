@@ -10,8 +10,8 @@ import time
 import matplotlib.pyplot as plt
 from pettingzoo.test import parallel_api_test
 
-from leader_follower.agent import Poi, Follower, Leader, FollowerRule
-from leader_follower.leader_follower_env import LeaderFollowerEnv
+from leader_follower.agents.agent import Poi, Follower, Leader
+from leader_follower.environment.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.neural_network import NeuralNetwork
 
 

@@ -71,10 +71,10 @@ def load_config(config_name):
     return myaml.safe_load(config_path)
 
 
-def setup_initial_population(base_dir, config: Dict):
-    if config['load_population'] is None:
+def setup_initial_population(base_dir, meta_params):
+    if meta_params['load_population'] is None:
         return None
 
-    if config["load_population"] == "latest":
-        config["load_population"] = latest_trial_name(base_dir)
-    return load_population(base_dir, config["load_population"])
+    if meta_params["load_population"] == "latest":
+        meta_params["load_population"] = latest_trial_name(base_dir)
+    return load_population(base_dir, meta_params["load_population"])
