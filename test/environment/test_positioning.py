@@ -8,8 +8,8 @@ import argparse
 
 import numpy as np
 
-from leader_follower.environment.positions import circle_positions, random_positions, linear_positions
-from leader_follower.environment.positions import scale_configuration, translate_configuration, rotate_configuration
+from leader_follower.positions import circle_positions, random_positions, linear_positions
+from leader_follower.positions import scale_configuration, translate_configuration, rotate_configuration
 
 
 def main(main_args):

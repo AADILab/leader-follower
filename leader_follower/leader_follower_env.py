@@ -3,7 +3,7 @@ import functools
 import numpy as np
 from pettingzoo import ParallelEnv
 
-from leader_follower.agents.agent import Poi, Leader, Follower
+from leader_follower.agent import Poi, Leader, Follower
 
 
 class LeaderFollowerEnv(ParallelEnv):
@@ -137,7 +137,8 @@ class LeaderFollowerEnv(ParallelEnv):
         frame = frame.astype(np.uint8)
         return frame
 
-    def __render_human(self):
+    def __Render_video(self):
+        # todo implement video render
         return []
 
     def render(self, mode: str | None = 'human'):
@@ -156,7 +157,7 @@ class LeaderFollowerEnv(ParallelEnv):
 
         match mode:
             case 'human':
-                frame = self.__render_human()
+                frame = self.__Render_video()
             case 'rgb_array':
                 frame = self.__render_rgb()
             case _:
@@ -264,11 +265,11 @@ class LeaderFollowerEnv(ParallelEnv):
         dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
         """
         # step leaders, followers, and pois
-        # should not matter which order they are stepped in
+        # should not matter which order they are stepped in as long as dt is small enough
         for agent_name, each_action in actions.items():
             agent = self.agent_mapping[agent_name]
-            # each_action[0] is vx
-            # each_action[1] is vy
+            # each_action[0] is dx
+            # each_action[1] is dy
             new_loc = tuple(coord + vel * self.delta_time for coord, vel in zip(agent.location, each_action))
             agent.velocity = each_action
             agent.location = new_loc

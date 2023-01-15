@@ -6,13 +6,16 @@
 """
 import argparse
 import time
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 from pettingzoo.test import parallel_api_test
 
-from leader_follower.agents.agent import Poi, Follower, Leader
-from leader_follower.environment.leader_follower_env import LeaderFollowerEnv
+from leader_follower import project_properties
+from leader_follower.agent import Poi, Follower, Leader
+from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.neural_network import NeuralNetwork
+from leader_follower.utils import load_config
 
 
 def display_finale_agents(env):
@@ -205,62 +208,43 @@ def main(main_args):
     # n_inputs, n_outputs, n_hidden=2, network_func=linear_layer, name=None
     # neural_network = NeuralNetwork(n_inputs=8, n_outputs=2, n_hidden=2)
 
-    # agent_id: int, location, velocity, sensor_resolution, velocity_range, observation_radius,
-    # policy_population: list[NeuralNetwork]
+    config_fn = Path(project_properties.config_dir, 'test.yaml')
+    experiment_config = load_config(str(config_fn))
+
+    # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
     leaders = [
-        Leader(0, (1, 1), (0, 0), state_res, velocity_range, obs_rad,
-               [NeuralNetwork(8, 2, 2)]),
-        Leader(1, (3.5, 1), (0, 0), state_res, velocity_range, obs_rad,
-               [NeuralNetwork(8, 2, 2)]),
-        Leader(2, (6, 1), (0, 0), state_res, velocity_range, obs_rad,
-               [NeuralNetwork(8, 2, 2)]),
-        Leader(3, (8.5, 1), (0, 0), state_res, velocity_range, obs_rad,
-               [NeuralNetwork(8, 2, 2)]),
+        Leader(idx, location=(1, 1), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1,
+               policy_population=[NeuralNetwork(8, 2, 2)])
+        for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
-    # agent_id: int, location, velocity, sensor_resolution, velocity_range, observation_radius,
-    # repulsion, attraction, alignment
+    # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
     followers = [
-        Follower(0, (0.5, 0), (0, 0), state_res, velocity_range, obs_rad,
-                 FollowerRule(1, 1), FollowerRule(2, 1), FollowerRule(3, 1)),
-        Follower(1, (1.5, 0), (0, 0), state_res, velocity_range, obs_rad,
-                 FollowerRule(1, 1), FollowerRule(2, 1), FollowerRule(3, 1)),
-
-        Follower(2, (3, 0), (0, 0), state_res, velocity_range, obs_rad,
-                 FollowerRule(1, 1), FollowerRule(2, 1), FollowerRule(3, 1)),
-        Follower(3, (4, 0), (0, 0), state_res, velocity_range, obs_rad,
-                 FollowerRule(1, 1), FollowerRule(2, 1), FollowerRule(3, 1)),
-
-        Follower(4, (5.5, 0), (0, 0), state_res, velocity_range, obs_rad,
-                 FollowerRule(1, 1), FollowerRule(2, 1), FollowerRule(3, 1)),
-        Follower(5, (6.5, 0), (0, 0), state_res, velocity_range, obs_rad,
-                 FollowerRule(1, 1), FollowerRule(2, 1), FollowerRule(3, 1)),
-
-        Follower(6, (8, 0), (0, 0), state_res, velocity_range, obs_rad,
-                 FollowerRule(1, 1), FollowerRule(2, 1), FollowerRule(3, 1)),
-        Follower(7, (9, 0), (0, 0), state_res, velocity_range, obs_rad,
-                 FollowerRule(1, 1), FollowerRule(2, 1), FollowerRule(3, 1)),
+        Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1,
+                 repulsion_radius=0.25, attraction_radius=2)
+        for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
-    #  agent_id: int, location, velocity, sensor_resolution, velocity_range, observation_radius, value, coupling
+    #  agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling
     pois = [
-        Poi(0, (1, 9), (0, 0), state_res, (0, 0), obs_rad, 1, 2),
-        Poi(1, (3.5, 9), (0, 0), state_res, (0, 0), obs_rad, 1, 2),
-        Poi(2, (6, 9), (0, 0), state_res, (0, 0), obs_rad, 1, 2),
-        Poi(3, (8.5, 9), (0, 0), state_res, (0, 0), obs_rad, 1, 2),
+        Poi(idx, location=(1, 9), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1, coupling=1)
+        for idx, each_pos in enumerate(experiment_config['poi_positions'])
     ]
 
-    # pois: list[Poi], leaders: list[Leader], followers: list[Follower], max_steps: int
+    # leaders: list[Leader], followers: list[Follower], pois: list[Poi], max_steps, delta_time=1, render_mode=None
     env = LeaderFollowerEnv(
-        leaders, followers, pois, max_steps=max_steps, render_mode=render_mode, delta_time=delta_time
+        leaders=leaders, followers=followers, pois=pois, max_steps=100, render_mode=render_mode, delta_time=delta_time
     )
 
-    # test_observations(env)
-    # test_actions(env)
-    # test_render(env)
-    # test_step(env, render=None)
+    test_observations(env)
+    test_actions(env)
+    test_render(env)
+    #
+    test_step(env, render=None)
     test_step(env, render='rgb_array')
-    # test_random(env, render=None)
-    # test_random(env, render='rgb_array')
-    # test_api(env)
+    #
+    test_random(env, render=None)
+    test_random(env, render='rgb_array')
+    #
+    test_api(env)
     return
 
 

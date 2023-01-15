@@ -28,8 +28,8 @@ class Agent(ABC):
     def action(self):
         return self.observation_history[-1]
 
-    def __init__(self, agent_id: int, brain, location: tuple, velocity: tuple,
-                 sensor_resolution, observation_radius: float, value: float):
+    def __init__(self, agent_id: int, location: tuple, velocity: tuple,
+                 sensor_resolution: int, observation_radius: float, value: float):
         self.name = f'agent_{agent_id}'
         self.id = agent_id
         self.type = None
@@ -37,7 +37,6 @@ class Agent(ABC):
         # lower/upper bounds in x, lower/upper bounds in y
         self.velocity_range = ((0, 1), (0, 1))
 
-        self.brain = brain
         self.sensor_resolution = sensor_resolution
         self.observation_radius = observation_radius
         self.value = value
@@ -126,12 +125,14 @@ class Leader(Agent):
     def active_policy(self):
         return self.brain[self.policy_idx]
 
-    def __init__(self, agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value):
-        # agent_id: int, brain, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
-        super().__init__(agent_id, policy_population, location, velocity, sensor_resolution, observation_radius, value)
+    def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value,
+                 policy_population: list[NeuralNetwork]):
+        # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
+        super().__init__(agent_id, location, velocity, sensor_resolution, observation_radius, value)
         self.name = f'leader_{agent_id}'
         self.type = 'learner'
 
+        self.brain = policy_population
         self.policy_idx = 0
 
         self.n_in = 4
@@ -149,7 +150,6 @@ class Leader(Agent):
             dtype=np.float64
         )
         return actions
-
 
     def sense(self, relative_agents, sensor_resolution=None, offset=False):
         """
@@ -173,6 +173,9 @@ class Leader(Agent):
         for idx, agent in enumerate(obs_agents):
             agent_type_idx = 0 if isinstance(agent, Poi) else 1
             angle, dist = self.relative(agent)
+            # todo bug
+            # bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
+            # TypeError: only size-1 arrays can be converted to Python scalars
             bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
             octant_bins[agent_type_idx, bin_idx] += agent.value / max(dist, 0.01)
             counts[agent_type_idx, bin_idx] += 1
@@ -184,7 +187,6 @@ class Leader(Agent):
         octant_bins = np.nan_to_num(octant_bins)
         octant_bins = octant_bins.flatten()
         return octant_bins
-
 
     def set_policy(self, idx):
         self.policy_idx = idx
@@ -213,14 +215,17 @@ class Leader(Agent):
             action = action.numpy()
         return action
 
-
 class Follower(Agent):
 
-    def __init__(self, agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value):
-        # agent_id: int, brain, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
-        super().__init__(agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value)
+    def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value,
+                 repulsion_radius, attraction_radius):
+        # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
+        super().__init__(agent_id, location, velocity, sensor_resolution, observation_radius, value)
         self.name = f'follower_{agent_id}'
         self.type = 'actor'
+
+        self.repulsion_radius = repulsion_radius
+        self.attraction_radius = attraction_radius
         return
 
     def observation_space(self):
@@ -235,14 +240,14 @@ class Follower(Agent):
         )
         return actions
 
-    def __rule_observation(self, relative_agents, rule):
-        # todo
-        self.observation_radius = rule.radius
-        attraction_agents = Agent.observable_agents(self, relative_agents)
+    def __rule_observation(self, relative_agents, rule_radius):
+        # todo test for correctness
+        self.observation_radius = rule_radius
+        rel_agents = Agent.observable_agents(self, relative_agents)
 
-        if len(attraction_agents) > 0:
-            locs = [each_agent.location for each_agent in attraction_agents]
-            vels = [each_agent.velocity for each_agent in attraction_agents]
+        if len(rel_agents) > 0:
+            locs = [each_agent.location for each_agent in rel_agents]
+            vels = [each_agent.velocity for each_agent in rel_agents]
         else:
             locs = [[0, 0]]
             vels = [[0, 0]]
@@ -260,18 +265,17 @@ class Follower(Agent):
         :param relative_agents:
         :return:
         """
-        repulsion_bins = self.__rule_observation(relative_agents, self.repulsion)
-        attraction_bins = self.__rule_observation(relative_agents, self.attraction)
-        alignment_bins = self.__rule_observation(relative_agents, self.alignment)
-        bins = np.concatenate([repulsion_bins, attraction_bins, alignment_bins])
+        repulsion_bins = self.__rule_observation(relative_agents, self.repulsion_radius)
+        attraction_bins = self.__rule_observation(relative_agents, self.attraction_radius)
+        bins = np.concatenate([repulsion_bins, attraction_bins])
         return bins
 
     def get_action(self, observation):
-        v1 = self.update_rule(observation)
+        # v1 = self.update_rule(observation)
 
         # b.velocity = b.velocity + v1 + v2 + v3
         # b.position = b.position + b.velocity
-        # todo
+        # todo implement movement rule based on repulsion/attraction strengths
         action = [0.0, 0.0]
         return action
 
@@ -284,8 +288,8 @@ class Poi(Agent):
         return False
 
     def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling):
-        # agent_id: int, brain, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
-        super().__init__(agent_id, None, location, velocity, sensor_resolution, observation_radius, value)
+        # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
+        super().__init__(agent_id, location, velocity, sensor_resolution, observation_radius, value)
         self.name = f'poi_{agent_id}'
         self.type = 'poi'
 

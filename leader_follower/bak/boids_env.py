@@ -8,7 +8,7 @@ from gym import Env
 from gym.core import RenderFrame
 from gym.spaces import Box
 
-from leader_follower.agents.agent import Leader
+from leader_follower.agent import Leader
 from leader_follower.bak.poi import POI
 from leader_follower.bak.boids_colony import Boid
 
