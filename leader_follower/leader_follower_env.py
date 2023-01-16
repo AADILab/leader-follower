@@ -228,6 +228,17 @@ class LeaderFollowerEnv(ParallelEnv):
             observations[agent_name] = agent_obs
         return observations
 
+    def global_reward(self):
+        return self.num_poi_observed()
+
+    def difference_reward(self):
+        # todo implement difference reward
+        return
+
+    def dpp_reward(self):
+        # todo implement dpp reward
+        return
+
     def num_poi_observed(self):
         return sum(poi.observed for poi in self.pois)
 

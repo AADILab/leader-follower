@@ -26,7 +26,7 @@ def run_experiment(experiment_config):
     # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
     followers = [
         Follower(agent_id=idx, location=each_pos, velocity=(0, 0),sensor_resolution=4, observation_radius=1, value=1,
-                 repulsion_radius=0.25, attraction_radius=2)
+                 repulsion_radius=0.25, repulsion_strength=2, attraction_radius=2, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     #  agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling

@@ -34,9 +34,9 @@ class Agent(ABC):
         self.id = agent_id
         self.type = None
 
-        # lower/upper bounds in x, lower/upper bounds in y
-        self.velocity_range = ((0, 1), (0, 1))
-
+        # lower/upper bounds agent is able to move
+        # same for both x and y directions
+        self.velocity_range = np.array((0, 1))
         self.sensor_resolution = sensor_resolution
         self.observation_radius = observation_radius
         self.value = value
@@ -74,7 +74,9 @@ class Agent(ABC):
         assert isinstance(end_agent, Agent)
         start_loc = self.location
         end_loc = end_agent.location
+        # add very small amount of gaussian noise to make the locations unequal
         assert len(start_loc) == len(end_loc)
+        # assert start_loc != end_loc
 
         dx = end_loc[0] - start_loc[0]
         dy = end_loc[1] - start_loc[1]
@@ -140,16 +142,18 @@ class Leader(Agent):
         return
 
     def observation_space(self):
-        sensor_range = spaces.Box(low=0, high=np.inf, shape=(self.sensor_resolution,), dtype=np.float64)
+        sensor_range = spaces.Box(
+            low=0, high=np.inf,
+            shape=(self.sensor_resolution,), dtype=np.float64
+        )
         return sensor_range
 
     def action_space(self):
-        actions = spaces.Box(
-            low=np.array([self.velocity_range[0], self.velocity_range[0]], dtype=np.float64),
-            high=np.array([self.velocity_range[1], self.velocity_range[1]], dtype=np.float64),
-            dtype=np.float64
+        action_range = spaces.Box(
+            low=self.velocity_range[0], high=self.velocity_range[1],
+            shape=(2,), dtype=np.float64
         )
-        return actions
+        return action_range
 
     def sense(self, relative_agents, sensor_resolution=None, offset=False):
         """
@@ -173,9 +177,6 @@ class Leader(Agent):
         for idx, agent in enumerate(obs_agents):
             agent_type_idx = 0 if isinstance(agent, Poi) else 1
             angle, dist = self.relative(agent)
-            # todo bug
-            # bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
-            # TypeError: only size-1 arrays can be converted to Python scalars
             bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
             octant_bins[agent_type_idx, bin_idx] += agent.value / max(dist, 0.01)
             counts[agent_type_idx, bin_idx] += 1
@@ -218,44 +219,57 @@ class Leader(Agent):
 class Follower(Agent):
 
     def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value,
-                 repulsion_radius, attraction_radius):
+                 repulsion_radius, repulsion_strength ,attraction_radius, attraction_strength):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
         super().__init__(agent_id, location, velocity, sensor_resolution, observation_radius, value)
         self.name = f'follower_{agent_id}'
         self.type = 'actor'
 
         self.repulsion_radius = repulsion_radius
+        self.repulsion_strength = repulsion_strength
+
         self.attraction_radius = attraction_radius
+        self.attraction_strength = attraction_strength
+
+        self.__obs_rule = self.__rule_mass_center
         return
 
     def observation_space(self):
-        sensor_range = spaces.Box(low=-np.inf, high=np.inf, shape=(3, 2), dtype=np.float64)
+        # sum of vectors of agents in each radius
+        #   repulsion
+        #   attraction
+        sensor_range = spaces.Box(low=-np.inf, high=np.inf, shape=(2, 2), dtype=np.float64)
         return sensor_range
 
     def action_space(self):
-        actions = spaces.Box(
-            low=np.array([self.velocity_range[0], self.velocity_range[0]], dtype=np.float64),
-            high=np.array([self.velocity_range[1], self.velocity_range[1]], dtype=np.float64),
-            dtype=np.float64
+        action_range = spaces.Box(
+            low=self.velocity_range[0], high=self.velocity_range[1],
+            shape=(2,), dtype=np.float64
         )
-        return actions
+        return action_range
 
-    def __rule_observation(self, relative_agents, rule_radius):
+    def __rule_loc_velocity(self, relative_agents, rule_radius):
         # todo test for correctness
         self.observation_radius = rule_radius
         rel_agents = Agent.observable_agents(self, relative_agents)
+        rel_agents.append(self)
 
-        if len(rel_agents) > 0:
-            locs = [each_agent.location for each_agent in rel_agents]
-            vels = [each_agent.velocity for each_agent in rel_agents]
-        else:
-            locs = [[0, 0]]
-            vels = [[0, 0]]
+        locs = [each_agent.location for each_agent in rel_agents]
+        vels = [each_agent.velocity for each_agent in rel_agents]
 
         avg_locs = np.average(locs, axis=0)
         avg_vels = np.average(vels, axis=0)
         bins = np.asarray([avg_locs, avg_vels])
         return bins
+
+    def __rule_mass_center(self, relative_agents, rule_radius):
+        self.observation_radius = rule_radius
+        rel_agents = Agent.observable_agents(self, relative_agents)
+        # adding self partially guards against when no other agents are nearby
+        rel_agents.append(self)
+        locs = [each_agent.location for each_agent in rel_agents]
+        avg_locs = np.average(locs, axis=0)
+        return avg_locs
 
     def sense(self, relative_agents):
         """
@@ -265,27 +279,22 @@ class Follower(Agent):
         :param relative_agents:
         :return:
         """
-        repulsion_bins = self.__rule_observation(relative_agents, self.repulsion_radius)
-        attraction_bins = self.__rule_observation(relative_agents, self.attraction_radius)
-        bins = np.concatenate([repulsion_bins, attraction_bins])
+        repulsion_bins = self.__obs_rule(relative_agents, self.repulsion_radius)
+        attraction_bins = self.__obs_rule(relative_agents, self.attraction_radius)
+        bins = np.vstack([repulsion_bins, attraction_bins])
         return bins
 
     def get_action(self, observation):
         # v1 = self.update_rule(observation)
-
         # b.velocity = b.velocity + v1 + v2 + v3
         # b.position = b.position + b.velocity
+
         # todo implement movement rule based on repulsion/attraction strengths
         action = [0.0, 0.0]
         return action
 
 
 class Poi(Agent):
-
-    @property
-    def observed(self):
-        # todo
-        return False
 
     def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
@@ -294,6 +303,8 @@ class Poi(Agent):
         self.type = 'poi'
 
         self.coupling = coupling
+        # flag instead of parsing history for reduce call overhead
+        self.observed = False
         return
 
     def observation_space(self):
@@ -310,6 +321,8 @@ class Poi(Agent):
 
     def sense(self, relative_agents):
         obs = self.observable_agents(relative_agents)
+        # set observed flag if enough agents are observable to meet coupling requirement
+        # self.observed = len(obs) >= self.coupling
         return obs
 
     def get_action(self, observation):

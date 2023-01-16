@@ -81,7 +81,7 @@ def rollout(env, individuals, reward_type=None, render=False):
 
     env.reset()
     done = env.done()
-    global_reward = env.calc_global_reward()
+    global_reward = env.global_reward()
 
     while not done:
         state = env.state()
@@ -90,9 +90,10 @@ def rollout(env, individuals, reward_type=None, render=False):
         if render:
             env.display()
 
-    episode_reward = env.agent_episode_rewards()
-    if reward_type == 'global':
-        episode_reward = [global_reward for _ in episode_reward]
+    episode_reward = [global_reward for _ in env.agents]
+    # episode_reward = env.agent_episode_rewards()
+    # if reward_type == 'global':
+    #     episode_reward = [global_reward for _ in episode_reward]
     return episode_reward
 
 
@@ -107,7 +108,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
     mutate_func = mutate_gaussian
     downselect_func = downselect_top_n
 
-    # todo fix assumes homogeneous agents in environment
+    # only creat sub-pops for agents capable of learning
     agent_pops = [
         [
             {
@@ -127,7 +128,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
 
     # initial fitness evaluation of all networks in population
     for pop_idx in range(population_size):
-        new_inds = [agent_pops[agent_idx][pop_idx] for agent_idx in range(num_agents)]
+        new_inds = [agent_pops[agent_idx][pop_idx] for agent_idx in range(len(agent_pops))]
         agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
         for each_ind, each_fitness in zip(new_inds, agent_rewards):
             each_ind['fitness'] = each_fitness
@@ -143,7 +144,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
         avg_fitnesses.append(np.average(fitnesses, axis=1))
         sim_pops = [select_func(pop, sim_pop_size) for pop in agent_pops]
         for sim_pop_idx, each_ind in enumerate(sim_pops):
-            new_inds = [mutate_func(agent_pops[agent_idx][sim_pop_idx]) for agent_idx in range(num_agents)]
+            new_inds = [mutate_func(agent_pops[agent_idx][sim_pop_idx]) for agent_idx in range(len(agent_pops))]
 
             # rollout and evaluate
             agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)

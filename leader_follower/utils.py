@@ -1,5 +1,12 @@
+import pickle
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import myaml
 import numpy as np
 from numpy.typing import NDArray
+
+from leader_follower.bak.network_lib import NN
 
 
 def euclidean(positions_a: NDArray[np.float64], positions_b: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -51,14 +58,6 @@ def calc_centroid(positions):
 
 def argmax(iterable):
     return max(enumerate(iterable), key=lambda x: x[1])[0]
-
-import pickle
-from pathlib import Path
-from typing import Dict, List, Optional
-
-import myaml
-
-from leader_follower.bak.network_lib import NN
 
 
 def load_trial(base_dir, trial_name: str) -> Dict:

@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 from pettingzoo.test import parallel_api_test
 
 from leader_follower import project_properties
@@ -89,10 +90,10 @@ def test_step(env, render):
     render_delay = 0.1
 
     # action is (vx, vy)
-    forward_action = (0, 1)
-    backwards_action = (0, -1)
-    left_action = (-1, 0)
-    right_action = (1, 0)
+    forward_action = np.array((0, 1.5))
+    backwards_action = np.array((0, -1.5))
+    left_action = np.array((-1.5, 0))
+    right_action = np.array((1.5, 0))
 
     tests = [
         {agent: forward_action for agent in env.agents},
@@ -220,7 +221,7 @@ def main(main_args):
     # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
     followers = [
         Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1,
-                 repulsion_radius=0.25, attraction_radius=2)
+                 repulsion_radius=0.25, repulsion_strength=2, attraction_radius=2, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     #  agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling
@@ -234,10 +235,10 @@ def main(main_args):
         leaders=leaders, followers=followers, pois=pois, max_steps=100, render_mode=render_mode, delta_time=delta_time
     )
 
-    test_observations(env)
-    test_actions(env)
-    test_render(env)
-    #
+    # test_observations(env)
+    # test_actions(env)
+    # test_render(env)
+    # #
     test_step(env, render=None)
     test_step(env, render='rgb_array')
     #
