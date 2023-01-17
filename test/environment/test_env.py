@@ -15,7 +15,6 @@ from pettingzoo.test import parallel_api_test
 from leader_follower import project_properties
 from leader_follower.agent import Poi, Follower, Leader
 from leader_follower.leader_follower_env import LeaderFollowerEnv
-from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.utils import load_config
 
 
@@ -214,8 +213,7 @@ def main(main_args):
 
     # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
     leaders = [
-        Leader(idx, location=(1, 1), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1,
-               policy_population=[NeuralNetwork(8, 2, 2)])
+        Leader(idx, location=(1, 1), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1, policy=None)
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
@@ -238,7 +236,7 @@ def main(main_args):
     # test_observations(env)
     # test_actions(env)
     # test_render(env)
-    # #
+    #
     test_step(env, render=None)
     test_step(env, render='rgb_array')
     #

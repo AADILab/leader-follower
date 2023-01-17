@@ -224,9 +224,31 @@ class LeaderFollowerEnv(ParallelEnv):
         observations = {}
         for agent_name in self.agents:
             agent = self.agent_mapping[agent_name]
+
+            # agent_obs = agent.sense(state)
             agent_obs = agent.sense(self.agent_mapping.values())
             observations[agent_name] = agent_obs
         return observations
+
+    def get_actions(self):
+        observations = self.get_observations()
+        actions = self.get_actions_from_observations(observations)
+        return actions
+
+    def get_actions_from_observations(self, observations):
+        """
+        Returns a dictionary of actions (keyed by the agent name).
+
+        :return:
+        """
+        actions = {}
+        for agent_name in self.agents:
+            agent = self.agent_mapping[agent_name]
+            agent_obs = observations[agent_name]
+
+            agent_action = agent.get_action(agent_obs)
+            actions[agent_name] = agent_action
+        return actions
 
     def global_reward(self):
         return self.num_poi_observed()

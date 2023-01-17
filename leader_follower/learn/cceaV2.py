@@ -14,6 +14,7 @@ from torch.distributions import Normal
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from tqdm import trange
 
+from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.neural_network import NeuralNetwork
 
 
@@ -76,25 +77,31 @@ def get_action(net, observation, env):
     velocity = (out[1] + 1.0) / 2 * env.state_bounds.max_velocity
     return np.array([heading, velocity])
 
-def rollout(env, individuals, reward_type=None, render=False):
-    networks: list[NeuralNetwork] = [ind['network'] for ind in individuals]
-
+def rollout(env: LeaderFollowerEnv, individuals, reward_type=None, render=False):
     env.reset()
-    done = env.done()
-    global_reward = env.global_reward()
+    agent_dones = env.done()
+    done = all(agent_dones.values())
+    rewards = {agent_name: 0 for agent_name in env.agents}
+
+    # select policy to use for each learning agent
+    for agent_name, policy_info in individuals.items():
+        env.agent_mapping[agent_name].policy = policy_info['network']
 
     while not done:
-        state = env.state()
-        next_actions = [get_action(each_net, state, env) for each_net in networks]
-        next_state, agent_reward, global_reward, done = env.step(next_actions, render=False)
+        observations = env.get_observations()
+        next_actions = env.get_actions_from_observations(observations=observations)
+        observations, rewards, agent_dones, truncs, infos = env.step(next_actions)
+        done = all(agent_dones.values())
         if render:
-            env.display()
+            env.render()
 
-    episode_reward = [global_reward for _ in env.agents]
+    return rewards
+
+    # episode_reward = [global_reward for _ in env.agents]
     # episode_reward = env.agent_episode_rewards()
     # if reward_type == 'global':
     #     episode_reward = [global_reward for _ in episode_reward]
-    return episode_reward
+    # return episode_reward
 
 
 def downselect_top_n(population, max_size):
@@ -109,8 +116,8 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
     downselect_func = downselect_top_n
 
     # only creat sub-pops for agents capable of learning
-    agent_pops = [
-        [
+    agent_pops = {
+        agent_name: [
             {
                 'network': NeuralNetwork(
                     n_inputs=env.agent_mapping[agent_name].n_in,
@@ -123,33 +130,45 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
         ]
         for agent_name in env.agents
         if env.agent_mapping[agent_name].type == 'learner'
-    ]
-    print(f'Using device: {agent_pops[0][0]["network"].device()}')
+    }
+    print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
 
     # initial fitness evaluation of all networks in population
+    # todo check reward structure/assignment to make sure reward is being properly assigned
     for pop_idx in range(population_size):
-        new_inds = [agent_pops[agent_idx][pop_idx] for agent_idx in range(len(agent_pops))]
+        new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
         agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
-        for each_ind, each_fitness in zip(new_inds, agent_rewards):
-            each_ind['fitness'] = each_fitness
+        for agent_name, policy_info in agent_pops.items():
+            policy_fitness = agent_rewards[agent_name]
+            policy_info[pop_idx]['fitness'] = policy_fitness
 
     max_fitnesses = []
     avg_fitnesses = []
     for gen_idx in trange(n_gens):
         fitnesses = [
-            [ind['fitness'] for ind in each_pop]
-            for each_pop in agent_pops
+            [
+                policy_info[pop_idx]['fitness']
+                for agent_name, policy_info in agent_pops.items()
+            ]
+            for pop_idx in range(population_size)
         ]
         max_fitnesses.append(np.max(fitnesses, axis=1))
         avg_fitnesses.append(np.average(fitnesses, axis=1))
-        sim_pops = [select_func(pop, sim_pop_size) for pop in agent_pops]
+        sim_pops = [
+            select_func(policy_population, sim_pop_size)
+            for agent_name, policy_population in agent_pops.items()
+        ]
         for sim_pop_idx, each_ind in enumerate(sim_pops):
-            new_inds = [mutate_func(agent_pops[agent_idx][sim_pop_idx]) for agent_idx in range(len(agent_pops))]
+            new_inds = {
+                agent_name: mutate_func(policy_info[sim_pop_idx])
+                for agent_name, policy_info in agent_pops.items()
+            }
 
             # rollout and evaluate
             agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
-            for each_agent, each_fitness in zip(new_inds, agent_rewards):
-                each_agent['fitness'] = each_fitness
+            for agent_name, policy_info in new_inds.items():
+                policy_fitness = agent_rewards[agent_name]
+                policy_info['fitness'] = policy_fitness
 
             # reinsert
             for each_entire, each_new in zip(agent_pops, new_inds):

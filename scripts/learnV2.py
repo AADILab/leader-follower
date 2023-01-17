@@ -12,15 +12,13 @@ from leader_follower import project_properties
 from leader_follower.agent import Leader, Follower, Poi
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.cceaV2 import neuro_evolve
-from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.utils import load_config
 
 
-def run_experiment(experiment_config):
+def run_experiment(experiment_config, meta_config):
     # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
     leaders = [
-        Leader(idx, location=(1, 1), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1,
-               policy_population=[NeuralNetwork(8, 2, 2)])
+        Leader(idx, location=(1, 1), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1, policy=None)
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
@@ -36,7 +34,9 @@ def run_experiment(experiment_config):
     ]
 
     # leaders: list[Leader], followers: list[Follower], pois: list[Poi], max_steps, delta_time=1, render_mode=None
-    env = LeaderFollowerEnv(leaders=leaders, followers=followers, pois=pois, max_steps=100)
+    env = LeaderFollowerEnv(
+        leaders=leaders, followers=followers, pois=pois, max_steps=meta_config['episode_length']
+    )
 
     n_hidden = 2
     subpop_size = 50
@@ -54,7 +54,14 @@ def run_experiment(experiment_config):
     return
 
 def main(main_args):
-    config_fns = [each_fn for each_fn in Path(project_properties.config_dir).rglob('*.yaml')]
+    config_names = [
+        'alpha', 'charlie', 'echo'
+    ]
+    config_fns = [
+        each_fn
+        for each_fn in Path(project_properties.config_dir).rglob('*.yaml')
+        if each_fn.stem in config_names
+    ]
     subpop_size = 50
     n_gens = 100
     stat_runs = 5
@@ -70,7 +77,7 @@ def main(main_args):
 
         exp_config = load_config(each_fn)
         for idx in range(0, stat_runs):
-            run_experiment(exp_config)
+            run_experiment(experiment_config=exp_config, meta_config=meta_params)
     return
 
 

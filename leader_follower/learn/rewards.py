@@ -55,6 +55,7 @@ def calc_difference(pois, global_reward, rov_poi_dist, num_steps=500, observatio
     :param rov_poi_dist: Array containing distances between POI and rovers for entire episode
     :return difference_rewards: Numpy array containing each rover's difference reward
     """
+    # todo add tracking of calls to G
     num_agents = len(rov_poi_dist)
     difference_rewards = np.zeros(num_agents)
     for agent_id in range(num_agents):
@@ -94,6 +95,7 @@ def calc_dpp(pois, global_reward, rov_poi_dist, num_steps=500, observation_radiu
     :param rov_poi_dist: Array containing distances between POI and rovers for entire episode
     :return dpp_rewards: Numpy array containing each rover's D++ reward
     """
+    # todo add tracking of calls to G
     num_agents = len(rov_poi_dist)
     d_rewards = calc_difference(pois, global_reward, rov_poi_dist)
     rewards = np.zeros(num_agents)  # This is just a temporary reward tracker for iterations of counterfactuals

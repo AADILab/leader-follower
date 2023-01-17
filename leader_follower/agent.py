@@ -123,28 +123,23 @@ class Agent(ABC):
 
 class Leader(Agent):
 
-    @property
-    def active_policy(self):
-        return self.brain[self.policy_idx]
-
     def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value,
-                 policy_population: list[NeuralNetwork]):
+                 policy: NeuralNetwork | None):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
         super().__init__(agent_id, location, velocity, sensor_resolution, observation_radius, value)
         self.name = f'leader_{agent_id}'
         self.type = 'learner'
 
-        self.brain = policy_population
-        self.policy_idx = 0
+        self.policy = policy
 
-        self.n_in = 4
-        self.n_out = 4
+        self.n_in = self.sensor_resolution * 2
+        self.n_out = 2
         return
 
     def observation_space(self):
         sensor_range = spaces.Box(
             low=0, high=np.inf,
-            shape=(self.sensor_resolution,), dtype=np.float64
+            shape=(self.sensor_resolution, 2), dtype=np.float64
         )
         return sensor_range
 
@@ -155,17 +150,17 @@ class Leader(Agent):
         )
         return action_range
 
-    def sense(self, relative_agents, sensor_resolution=None, offset=False):
+    def sense(self, other_agents, sensor_resolution=None, offset=False):
         """
         Calculates which pois, leaders, and follower go into which d-hyperoctant, where d is the state
         resolution of the environment.
 
-        :param relative_agents:
+        :param other_agents:
         :param sensor_resolution:
         :param offset:
         :return:
         """
-        obs_agents = Agent.observable_agents(self, relative_agents)
+        obs_agents = Agent.observable_agents(self, other_agents)
 
         bin_size = 360 / self.sensor_resolution
         if offset:
@@ -173,7 +168,7 @@ class Leader(Agent):
             bin_size = offset * 2
 
         octant_bins = np.zeros((2, self.sensor_resolution))
-        counts = np.zeros((2, self.sensor_resolution))
+        counts = np.ones((2, self.sensor_resolution))
         for idx, agent in enumerate(obs_agents):
             agent_type_idx = 0 if isinstance(agent, Poi) else 1
             angle, dist = self.relative(agent)
@@ -189,20 +184,6 @@ class Leader(Agent):
         octant_bins = octant_bins.flatten()
         return octant_bins
 
-    def set_policy(self, idx):
-        self.policy_idx = idx
-        return
-
-    def add_policy(self, policy):
-        self.brain.append(policy)
-        return
-
-    def remove_policy(self, idx=None):
-        if not idx:
-            idx = self.policy_idx
-        policy = self.brain.pop(idx)
-        return policy
-
     def get_action(self, observation):
         """
         Computes the x and y vectors using the active policy and the passed in observation.
@@ -210,7 +191,7 @@ class Leader(Agent):
         :param observation:
         :return:
         """
-        active_policy = self.brain[self.policy_idx]
+        active_policy = self.policy
         with torch.no_grad():
             action = active_policy(observation)
             action = action.numpy()
