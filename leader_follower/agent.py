@@ -6,12 +6,18 @@
 """
 import abc
 from abc import ABC
+from enum import Enum, auto
 
 import numpy as np
 import torch
 from gym.vector.utils import spaces
 
 from leader_follower.learn.neural_network import NeuralNetwork
+
+class AgentType(Enum):
+    Learner = auto()
+    Actor = auto()
+    Static = auto()
 
 
 class Agent(ABC):
@@ -31,7 +37,7 @@ class Agent(ABC):
     def __init__(self, agent_id: int, location: tuple, velocity: tuple, sensor_resolution: int, value: float):
         self.name = f'agent_{agent_id}'
         self.id = agent_id
-        self.type = None
+        self.type = AgentType.Static
 
         # lower/upper bounds agent is able to move
         # same for both x and y directions
@@ -126,7 +132,7 @@ class Leader(Agent):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
         super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'leader_{agent_id}'
-        self.type = 'learner'
+        self.type = AgentType.Learner
 
         self.observation_radius = observation_radius
         self.policy = policy
@@ -196,6 +202,15 @@ class Leader(Agent):
             action = action.numpy()
         return action
 
+    # def get_action(net, observation, env):
+    #     # todo fix to use pytorch backend
+    #     out = net.forward(observation)
+    #     # Map [-1,+1] to [-pi,+pi]
+    #     heading = out[0] * np.pi
+    #     # Map [-1,+1] to [0, max_velocity]
+    #     velocity = (out[1] + 1.0) / 2 * env.state_bounds.max_velocity
+    #     return np.array([heading, velocity])
+
 class Follower(Agent):
 
     def __init__(self, agent_id, location, velocity, sensor_resolution, value,
@@ -203,7 +218,9 @@ class Follower(Agent):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
         super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'follower_{agent_id}'
-        self.type = 'actor'
+        self.type = AgentType.Actor
+
+        self.velocity = 0
 
         self.repulsion_radius = repulsion_radius
         self.repulsion_strength = repulsion_strength
@@ -284,6 +301,7 @@ class Follower(Agent):
         return total_counts, repulsion_counts, attraction_counts
 
     def get_action(self, observation):
+        # todo take into account current velocity
         # todo check repulsion is moving the agent in the correct direction
         repulsion_diff = np.subtract(observation[0], self.location)
         # todo bug fix
@@ -307,7 +325,7 @@ class Poi(Agent):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
         super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'poi_{agent_id}'
-        self.type = 'poi'
+        self.type = AgentType.Static
 
         self.observation_radius = observation_radius
         self.coupling = coupling

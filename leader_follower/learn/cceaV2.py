@@ -6,6 +6,8 @@
 """
 
 import copy
+from functools import partial
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,11 +16,13 @@ from torch.distributions import Normal
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from tqdm import trange
 
+from leader_follower import project_properties
+from leader_follower.agent import AgentType
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.neural_network import NeuralNetwork
 
 
-def select_roulette(population, select_size=1):
+def select_roulette(population, select_size):
     fitness_vals = [pop['fitness'] for pop in population]
 
     # add small amount of noise to each fitness value (help deal with all same value)
@@ -35,7 +39,7 @@ def select_roulette(population, select_size=1):
     return sim_pop
 
 
-def mutate_gaussian(individual, proportion=1, amount=0.05):
+def mutate_gaussian(individual, proportion=0.1, amount=0.05):
     model = individual['network']
     model_copy = copy.deepcopy(model)
 
@@ -55,28 +59,6 @@ def mutate_gaussian(individual, proportion=1, amount=0.05):
     }
     return new_ind
 
-
-# def get_action(self, state):
-#     with torch.no_grad():
-#         pred = self(state)
-#
-#     pred_probab = nn.Softmax(dim=0)(pred)
-#     y_pred = pred_probab.argmax()
-#     # convert from tensor to action
-#     action_val = y_pred.item()
-#     action = list(Action.__members__)[action_val]
-#     action = Action[action]
-#     return action
-
-def get_action(net, observation, env):
-    # todo fix to use pytorch backend
-    out = net.forward(observation)
-    # Map [-1,+1] to [-pi,+pi]
-    heading = out[0] * np.pi
-    # Map [-1,+1] to [0, max_velocity]
-    velocity = (out[1] + 1.0) / 2 * env.state_bounds.max_velocity
-    return np.array([heading, velocity])
-
 def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
     env.reset()
     agent_dones = env.done()
@@ -94,8 +76,8 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
         if render:
             env.render()
 
-    episode_rewards = reward_func(env)
-    return episode_rewards
+    episode_rewards, g_calls = reward_func(env)
+    return episode_rewards, g_calls
 
     # episode_reward = [global_reward for _ in env.agents]
     # episode_reward = env.agent_episode_rewards()
@@ -112,7 +94,7 @@ def downselect_top_n(population, max_size):
 def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_func):
     debug = False
     select_func = select_roulette
-    mutate_func = mutate_gaussian
+    mutate_func = partial(mutate_gaussian, proportion=0.1, amount=0.05)
     downselect_func = downselect_top_n
 
     # only creat sub-pops for agents capable of learning
@@ -129,7 +111,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
             for _ in range(population_size)
         ]
         for agent_name in env.agents
-        if env.agent_mapping[agent_name].type == 'learner'
+        if env.agent_mapping[agent_name].type == AgentType.Learner
     }
     print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
 
@@ -137,7 +119,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
     # todo check reward structure/assignment to make sure reward is being properly assigned
     for pop_idx in range(population_size):
         new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
-        agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=debug)
+        agent_rewards, g_calls = rollout(env, new_inds, reward_func=reward_func, render=debug)
         for agent_name, policy_info in agent_pops.items():
             policy_fitness = agent_rewards[agent_name]
             policy_info[pop_idx]['fitness'] = policy_fitness
@@ -166,7 +148,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
             }
 
             # rollout and evaluate
-            agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=debug)
+            agent_rewards, g_calls = rollout(env, new_inds, reward_func=reward_func, render=debug)
             for agent_name, policy_info in new_inds.items():
                 policy_fitness = agent_rewards[agent_name]
                 policy_info['fitness'] = policy_fitness
@@ -195,6 +177,7 @@ def plot_fitnesses(avg_fitnesses, max_fitnesses, xtag=None, ytag=None):
     avg_fitnesses = np.transpose(avg_fitnesses)
     max_fitnesses = np.transpose(max_fitnesses)
 
+    # todo filter out non-learning agents
     for idx, each_fitness in enumerate(avg_fitnesses):
         axes.plot(each_fitness, label=f'Avg: Agent {idx}')
 
@@ -218,6 +201,11 @@ def plot_fitnesses(avg_fitnesses, max_fitnesses, xtag=None, ytag=None):
     fig.set_size_inches(7, 5)
     fig.set_dpi(100)
 
-    # todo save fitness figure
-    plt.show()
+    fig_dir = Path(project_properties.output_dir, 'figs')
+    if not fig_dir.exists():
+        fig_dir.mkdir(parents=True, exist_ok=True)
+
+    num_figs = len(list(fig_dir.iterdir()))
+    figname = Path(fig_dir, f'fitnesses_{num_figs}.png')
+    plt.savefig(figname)
     return
