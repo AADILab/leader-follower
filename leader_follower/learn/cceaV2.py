@@ -77,11 +77,10 @@ def get_action(net, observation, env):
     velocity = (out[1] + 1.0) / 2 * env.state_bounds.max_velocity
     return np.array([heading, velocity])
 
-def rollout(env: LeaderFollowerEnv, individuals, reward_type=None, render=False):
+def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
     env.reset()
     agent_dones = env.done()
     done = all(agent_dones.values())
-    rewards = {agent_name: 0 for agent_name in env.agents}
 
     # select policy to use for each learning agent
     for agent_name, policy_info in individuals.items():
@@ -95,7 +94,8 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_type=None, render=False)
         if render:
             env.render()
 
-    return rewards
+    episode_rewards = reward_func(env)
+    return episode_rewards
 
     # episode_reward = [global_reward for _ in env.agents]
     # episode_reward = env.agent_episode_rewards()
@@ -109,7 +109,7 @@ def downselect_top_n(population, max_size):
     return sorted_pop[:max_size]
 
 
-def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_type=None):
+def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_func):
     debug = False
     select_func = select_roulette
     mutate_func = mutate_gaussian
@@ -137,7 +137,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
     # todo check reward structure/assignment to make sure reward is being properly assigned
     for pop_idx in range(population_size):
         new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
-        agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
+        agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=debug)
         for agent_name, policy_info in agent_pops.items():
             policy_fitness = agent_rewards[agent_name]
             policy_info[pop_idx]['fitness'] = policy_fitness
@@ -158,6 +158,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
             select_func(policy_population, sim_pop_size)
             for agent_name, policy_population in agent_pops.items()
         ]
+        # todo multiprocess simulating each simulation population
         for sim_pop_idx, each_ind in enumerate(sim_pops):
             new_inds = {
                 agent_name: mutate_func(policy_info[sim_pop_idx])
@@ -165,24 +166,26 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_ty
             }
 
             # rollout and evaluate
-            agent_rewards = rollout(env, new_inds, reward_type=reward_type, render=debug)
+            agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=debug)
             for agent_name, policy_info in new_inds.items():
                 policy_fitness = agent_rewards[agent_name]
                 policy_info['fitness'] = policy_fitness
+                # reinsert new individual into population of policies
+                agent_pops[agent_name].append(policy_info)
 
-            # reinsert
-            for each_entire, each_new in zip(agent_pops, new_inds):
-                each_entire.append(each_new)
         # downselect
-        agent_pops = [downselect_func(pop, population_size) for pop in agent_pops]
+        agent_pops = {
+            agent_name: downselect_func(policy_info, population_size)
+            for agent_name, policy_info in agent_pops.items()
+        }
 
-    best_policies = []
-    for each_pop in agent_pops:
-        fitness_vals = [pop['fitness'] for pop in each_pop]
+    best_policies = {}
+    for agent_name, policy_info in agent_pops.items():
+        fitness_vals = [pop['fitness'] for pop in policy_info]
         arg_best = np.argmax(fitness_vals)
-        best_ind = each_pop[arg_best]
+        best_ind = policy_info[arg_best]
         print(best_ind['fitness'])
-        best_policies.append(best_ind)
+        best_policies[agent_name] = best_ind
     return best_policies, max_fitnesses, avg_fitnesses
 
 

@@ -41,17 +41,17 @@ class LeaderFollowerEnv(ParallelEnv):
         self.delta_time = delta_time
         self.render_mode = render_mode
 
-        self.leaders = leaders
-        self.followers = followers
-        self.pois = pois
+        # self.leaders = leaders
+        # self.followers = followers
+        # self.pois = pois
 
         # def_obs_radius = np.sqrt(np.max(self.map_dimensions) ** 2 + np.max(self.map_dimensions) ** 2)
         # self.observation_radius = observation_radius if observation_radius else def_obs_radius
 
         # todo make possible to determine active from possible agents
-        self._leaders = {f'{each_agent.name}': each_agent for each_agent in self.leaders}
-        self._followers = {f'{each_agent.name}': each_agent for each_agent in self.followers}
-        self._pois = {f'{each_agent.name}': each_agent for each_agent in self.pois}
+        self._leaders = {f'{each_agent.name}': each_agent for each_agent in leaders}
+        self._followers = {f'{each_agent.name}': each_agent for each_agent in followers}
+        self._pois = {f'{each_agent.name}': each_agent for each_agent in pois}
 
         self.agents = [each_agent for each_agent in self.possible_agents]
         self.completed_agents = {}
@@ -97,11 +97,11 @@ class LeaderFollowerEnv(ParallelEnv):
 
     def __render_rgb(self):
         render_resolution = (256, 256)
-        render_bounds = (-5, 15)
+        render_bounds = (-5, 55)
         scaling = np.divide(render_resolution, render_bounds[1] - render_bounds[0])
 
-        agent_colors = {'leader': [255, 0, 0], 'follower': [0, 255, 0], 'poi': [0, 0, 255]}
-        agent_sizes = {'leader': 2, 'follower': 1, 'poi': 3}
+        agent_colors = {'learner': [255, 0, 0], 'actor': [0, 255, 0], 'poi': [0, 0, 255]}
+        agent_sizes = {'learner': 2, 'actor': 1, 'poi': 3}
 
         background_color = [255, 255, 255]
         line_color = [0, 0, 0]
@@ -137,7 +137,7 @@ class LeaderFollowerEnv(ParallelEnv):
         frame = frame.astype(np.uint8)
         return frame
 
-    def __Render_video(self):
+    def __render_video(self):
         # todo implement video render
         return []
 
@@ -157,27 +157,12 @@ class LeaderFollowerEnv(ParallelEnv):
 
         match mode:
             case 'human':
-                frame = self.__Render_video()
+                frame = self.__render_video()
             case 'rgb_array':
                 frame = self.__render_rgb()
             case _:
                 frame = None
         return frame
-
-    # def render(self, mode: Optional[Union[RenderMode, str]] = 'human'):
-    #         if type(mode) == str:
-    #             mode = RenderMode[mode]
-    #
-    #         if mode.value != RenderMode.none and self.render_mode.value == RenderMode.none:
-    #             self.renderer = Renderer(
-    #                 boids_colony=self.boids_colony,
-    #                 poi_colony=self.poi_colony,
-    #                 observation_manager=self.observation_manager,
-    #                 **self.config["Renderer"]
-    #             )
-    #             self.render_mode = mode
-    #
-    #         self.renderer.renderFrame()
 
 
     def close(self):
@@ -203,9 +188,9 @@ class LeaderFollowerEnv(ParallelEnv):
         self.agents = self.possible_agents[:]
         self._current_step = 0
 
-        _ = [each_agent.reset() for each_agent in self.leaders]
-        _ = [each_agent.reset() for each_agent in self.followers]
-        _ = [each_agent.reset() for each_agent in self.pois]
+        _ = [each_agent.reset() for each_agent in self._leaders.values()]
+        _ = [each_agent.reset() for each_agent in self._followers.values()]
+        _ = [each_agent.reset() for each_agent in self._pois.values()]
 
         # add all possible agents to the environment - agents are removed from the actors as they finish the task
         self.agents = [each_agent for each_agent in self.possible_agents]
@@ -250,19 +235,8 @@ class LeaderFollowerEnv(ParallelEnv):
             actions[agent_name] = agent_action
         return actions
 
-    def global_reward(self):
-        return self.num_poi_observed()
-
-    def difference_reward(self):
-        # todo implement difference reward
-        return
-
-    def dpp_reward(self):
-        # todo implement dpp reward
-        return
-
     def num_poi_observed(self):
-        return sum(poi.observed for poi in self.pois)
+        return sum(poi.observed for poi in self._pois.values())
 
     # def __update_poi_state(self):
     #     for poi in self.pois:
@@ -277,7 +251,7 @@ class LeaderFollowerEnv(ParallelEnv):
     #     return
 
     def done(self):
-        all_obs = self.num_poi_observed() == len(self.pois)
+        all_obs = self.num_poi_observed() == len(self._pois.values())
         time_over = self._current_step >= self.max_steps
         val = any([all_obs, time_over])
 

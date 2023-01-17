@@ -28,8 +28,7 @@ class Agent(ABC):
     def action(self):
         return self.observation_history[-1]
 
-    def __init__(self, agent_id: int, location: tuple, velocity: tuple,
-                 sensor_resolution: int, observation_radius: float, value: float):
+    def __init__(self, agent_id: int, location: tuple, velocity: tuple, sensor_resolution: int, value: float):
         self.name = f'agent_{agent_id}'
         self.id = agent_id
         self.type = None
@@ -38,7 +37,6 @@ class Agent(ABC):
         # same for both x and y directions
         self.velocity_range = np.array((0, 1))
         self.sensor_resolution = sensor_resolution
-        self.observation_radius = observation_radius
         self.value = value
 
         self._initial_location = location
@@ -87,7 +85,7 @@ class Agent(ABC):
         dist = np.linalg.norm(np.asarray(end_loc) - np.asarray(start_loc))
         return angle, dist
 
-    def observable_agents(self, relative_agents):
+    def observable_agents(self, relative_agents, observation_radius):
         """
         observable_agents
 
@@ -101,7 +99,7 @@ class Agent(ABC):
                 continue
 
             angle, dist = self.relative(agent)
-            if dist <= self.observation_radius:
+            if dist <= observation_radius:
                 bins.append(agent)
         return bins
 
@@ -123,13 +121,14 @@ class Agent(ABC):
 
 class Leader(Agent):
 
-    def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value,
+    def __init__(self, agent_id, location, velocity, sensor_resolution, value, observation_radius,
                  policy: NeuralNetwork | None):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
-        super().__init__(agent_id, location, velocity, sensor_resolution, observation_radius, value)
+        super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'leader_{agent_id}'
         self.type = 'learner'
 
+        self.observation_radius = observation_radius
         self.policy = policy
 
         self.n_in = self.sensor_resolution * 2
@@ -160,7 +159,7 @@ class Leader(Agent):
         :param offset:
         :return:
         """
-        obs_agents = Agent.observable_agents(self, other_agents)
+        obs_agents = Agent.observable_agents(self, other_agents, self.observation_radius)
 
         bin_size = 360 / self.sensor_resolution
         if offset:
@@ -199,10 +198,10 @@ class Leader(Agent):
 
 class Follower(Agent):
 
-    def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value,
-                 repulsion_radius, repulsion_strength ,attraction_radius, attraction_strength):
+    def __init__(self, agent_id, location, velocity, sensor_resolution, value,
+                 repulsion_radius, repulsion_strength, attraction_radius, attraction_strength):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
-        super().__init__(agent_id, location, velocity, sensor_resolution, observation_radius, value)
+        super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'follower_{agent_id}'
         self.type = 'actor'
 
@@ -213,6 +212,8 @@ class Follower(Agent):
         self.attraction_strength = attraction_strength
 
         self.__obs_rule = self.__rule_mass_center
+
+        self.influence_history = {'repulsion': [], 'attraction': []}
         return
 
     def observation_space(self):
@@ -232,7 +233,7 @@ class Follower(Agent):
     def __rule_loc_velocity(self, relative_agents, rule_radius):
         # todo test for correctness
         self.observation_radius = rule_radius
-        rel_agents = Agent.observable_agents(self, relative_agents)
+        rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
         rel_agents.append(self)
 
         locs = [each_agent.location for each_agent in rel_agents]
@@ -245,12 +246,14 @@ class Follower(Agent):
 
     def __rule_mass_center(self, relative_agents, rule_radius):
         self.observation_radius = rule_radius
-        rel_agents = Agent.observable_agents(self, relative_agents)
+        rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
         # adding self partially guards against when no other agents are nearby
         rel_agents.append(self)
+
         locs = [each_agent.location for each_agent in rel_agents]
         avg_locs = np.average(locs, axis=0)
-        return avg_locs
+        rel_agents.remove(self)
+        return avg_locs, rel_agents
 
     def sense(self, relative_agents):
         """
@@ -260,29 +263,53 @@ class Follower(Agent):
         :param relative_agents:
         :return:
         """
-        repulsion_bins = self.__obs_rule(relative_agents, self.repulsion_radius)
-        attraction_bins = self.__obs_rule(relative_agents, self.attraction_radius)
+        repulsion_bins, repulsion_agents = self.__obs_rule(relative_agents, self.repulsion_radius)
+        attraction_bins, attraction_agents = self.__obs_rule(relative_agents, self.attraction_radius)
+
+        self.influence_history['repulsion'].extend(repulsion_agents)
+        self.influence_history['attraction'].extend(attraction_agents)
+
         bins = np.vstack([repulsion_bins, attraction_bins])
         return bins
 
+    def influence_counts(self):
+        repulsion_names = [agent.name for agent in self.influence_history['repulsion']]
+        repulsion_counts = np.unique(repulsion_names, return_counts=True)
+
+        attraction_names = [agent.name for agent in self.influence_history['attraction']]
+        attraction_counts = np.unique(attraction_names, return_counts=True)
+
+        repulsion_names.extend(attraction_names)
+        total_counts = np.unique(repulsion_names, return_counts=True)
+        return total_counts, repulsion_counts, attraction_counts
+
     def get_action(self, observation):
-        # v1 = self.update_rule(observation)
-        # b.velocity = b.velocity + v1 + v2 + v3
-        # b.position = b.position + b.velocity
+        # todo check repulsion is moving the agent in the correct direction
+        repulsion_diff = np.subtract(observation[0], self.location)
+        # todo bug fix
+        #   RuntimeWarning: invalid value encountered in divide
+        #   unit_repulsion = repulsion_diff / (repulsion_diff**2).sum()**0.5
+        unit_repulsion = repulsion_diff / (repulsion_diff**2).sum()**0.5
+        unit_repulsion = np.nan_to_num(unit_repulsion)
+        weighted_repulsion = - unit_repulsion * self.repulsion_strength
 
-        # todo implement movement rule based on repulsion/attraction strengths
-        action = [0.0, 0.0]
+        attraction_diff = np.subtract(observation[1], self.location)
+        unit_attraction = attraction_diff / (attraction_diff ** 2).sum() ** 0.5
+        unit_attraction = np.nan_to_num(unit_attraction)
+        weighted_attraction = unit_attraction * self.attraction_strength
+
+        action = weighted_attraction - weighted_repulsion
         return action
-
 
 class Poi(Agent):
 
-    def __init__(self, agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling):
+    def __init__(self, agent_id, location, velocity, sensor_resolution, value, observation_radius, coupling):
         # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
-        super().__init__(agent_id, location, velocity, sensor_resolution, observation_radius, value)
+        super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'poi_{agent_id}'
         self.type = 'poi'
 
+        self.observation_radius = observation_radius
         self.coupling = coupling
         # flag instead of parsing history for reduce call overhead
         self.observed = False
@@ -301,11 +328,12 @@ class Poi(Agent):
         return actions
 
     def sense(self, relative_agents):
-        obs = self.observable_agents(relative_agents)
+        obs = self.observable_agents(relative_agents, self.observation_radius)
         # set observed flag if enough agents are observable to meet coupling requirement
-        # self.observed = len(obs) >= self.coupling
+        self.observed = len(obs) >= self.coupling
         return obs
 
     def get_action(self, observation):
+        self.observation_history.append(observation)
         action = np.array([0, 0])
         return action

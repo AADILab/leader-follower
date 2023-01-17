@@ -3,7 +3,7 @@ leader_positions:
   - [ 20, 5 ]
   - [ 30, 5 ]
   - [ 40, 5 ]
-  #
+follower_positions:
   - [ 12, 2 ]
   - [ 8, 2 ]
   - [ 12, 7 ]
@@ -23,8 +23,6 @@ leader_positions:
   - [ 38, 2 ]
   - [ 42, 7 ]
   - [ 38, 7 ]
-follower_positions:
-  []
 poi_positions:
   - [ 10, 30 ]
   - [ 20, 30 ]

@@ -15,6 +15,7 @@ from pettingzoo.test import parallel_api_test
 from leader_follower import project_properties
 from leader_follower.agent import Poi, Follower, Leader
 from leader_follower.leader_follower_env import LeaderFollowerEnv
+from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.utils import load_config
 
 
@@ -138,6 +139,11 @@ def test_step(env, render):
             time.sleep(render_delay)
     display_finale_agents(env)
     print(f'=' * 80)
+    influence_counts = [
+        follower.influence_counts()
+        for follower_name, follower in env._followers.items()
+    ]
+    print(f'{influence_counts=}')
     return
 
 
@@ -186,6 +192,25 @@ def test_random(env, render):
     print(f'=' * 80)
     return
 
+def test_rollout(env, render):
+    render_delay = 0.1
+    env.reset()
+    agent_dones = env.done()
+    done = all(agent_dones.values())
+
+    while not done:
+        observations = env.get_observations()
+        next_actions = env.get_actions_from_observations(observations=observations)
+        observations, rewards, agent_dones, truncs, infos = env.step(next_actions)
+        done = all(agent_dones.values())
+        if render:
+            frame = env.render(render)
+            plt.imshow(frame)
+            plt.show()
+            time.sleep(render_delay)
+
+    return
+
 
 def test_api(env):
     print(f'=' * 80)
@@ -200,8 +225,12 @@ def test_api(env):
 def main(main_args):
     max_steps = 100
     render_mode = 'rgb_array'
-    delta_time = .1
-    obs_rad = 2
+    delta_time = 1
+
+    leader_obs_rad = 5
+    repulsion_rad = 2
+    attraction_rad = 5
+
     velocity_range = (-1, 1)
     state_res = 4
 
@@ -213,18 +242,21 @@ def main(main_args):
 
     # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
     leaders = [
-        Leader(idx, location=(1, 1), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1, policy=None)
+        Leader(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+               observation_radius=leader_obs_rad, policy=NeuralNetwork(n_inputs=8, n_hidden=2, n_outputs=2))
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
     followers = [
-        Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1,
-                 repulsion_radius=0.25, repulsion_strength=2, attraction_radius=2, attraction_strength=1)
+        Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+                 repulsion_radius=repulsion_rad, repulsion_strength=2,
+                 attraction_radius=attraction_rad, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     #  agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling
     pois = [
-        Poi(idx, location=(1, 9), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1, coupling=1)
+        Poi(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+            observation_radius=leader_obs_rad, coupling=1)
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
     ]
 
@@ -236,12 +268,15 @@ def main(main_args):
     # test_observations(env)
     # test_actions(env)
     # test_render(env)
-    #
-    test_step(env, render=None)
-    test_step(env, render='rgb_array')
-    #
-    test_random(env, render=None)
-    test_random(env, render='rgb_array')
+    # #
+    # test_step(env, render=None)
+    # test_step(env, render='rgb_array')
+    # #
+    # test_random(env, render=None)
+    # test_random(env, render='rgb_array')
+    # #
+    # test_rollout(env, render=None)
+    test_rollout(env, render='rgb_array')
     #
     test_api(env)
     return
