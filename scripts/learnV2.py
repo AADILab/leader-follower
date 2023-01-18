@@ -17,9 +17,10 @@ from leader_follower.utils import load_config
 
 
 def run_experiment(experiment_config, meta_config):
-    leader_obs_rad = 5
+    leader_obs_rad = 100 # 15x15 map. Leaders should have infinite obs radius option
+    # Followers should not have repulsion and attraction radii with xy update rules
     repulsion_rad = 0.5
-    attraction_rad = 5
+    attraction_rad = 1
 
     # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
     leaders = [
@@ -53,9 +54,9 @@ def run_experiment(experiment_config, meta_config):
     }
 
     reward_func = reward_map['difference']
-    n_hidden = 2
+    n_hidden = 10
     sim_subpop_size = 15
-    subpop_size = 25
+    subpop_size = 30
     n_gens = 5000
 
     start_time = time.time()
@@ -73,16 +74,17 @@ def run_experiment(experiment_config, meta_config):
 
 def main(main_args):
     config_names = [
-        'alpha', 'charlie', 'echo'
+        'alpha'
     ]
     config_fns = [
         each_fn
         for each_fn in Path(project_properties.config_dir).rglob('*.yaml')
         if each_fn.stem in config_names
     ]
+    print("project_properties.config_dir:", project_properties.config_dir)
     config_name = Path(project_properties.config_dir, 'meta_params.yaml')
     meta_params = load_config(config_name)
-    stat_runs = 5
+    stat_runs = 3
 
     # subpop_size = 50
     # n_gens = 5000
