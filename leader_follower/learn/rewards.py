@@ -30,6 +30,7 @@ def calc_diff_rewards(env: LeaderFollowerEnv):
         for idx, name in enumerate(counts[0]):
             if not name.startswith('leader'):
                 counts[1][idx] = -1
+        # TODO: When run with alpha config, throws ValueError: attempt to get argmax of an empty sequence
         max_idx = np.argmax(counts[1])
         max_influencer = counts[0][max_idx]
         assigned_followers[max_influencer].append(follower_name)
@@ -49,6 +50,7 @@ def calc_diff_rewards(env: LeaderFollowerEnv):
                     if agent.name not in removed_agents
                 ]
                 pruned_history.append(pruned_step)
+            # TODO: When run with atrium config, throws ValueError: max() arg is an empty sequence
             largest_observation = max(pruned_history, key=len)
             poi.observed = len(largest_observation) >= poi.coupling
         difference_global = calc_global(env)
