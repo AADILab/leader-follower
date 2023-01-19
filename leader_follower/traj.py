@@ -10,12 +10,14 @@ def save_trajectories(env: LeaderFollowerEnv):
     traj_dict = {
         leader_name: {
             "state_history": leader.state_history,
-            "action_history": leader.action_history
+            "action_history": leader.action_history,
+            "observation_history": leader.observation_history
         } for leader_name, leader in env.leaders.items()
     } | {
         follower_name: {
             "state_history": follower.state_history,
-            "action_history": follower.action_history
+            "action_history": follower.action_history,
+            "observation_history": follower.observation_history
         } for follower_name, follower in env.followers.items()
     }
     traj_df = DataFrame.from_dict(traj_dict)
