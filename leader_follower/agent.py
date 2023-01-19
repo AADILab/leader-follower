@@ -327,6 +327,11 @@ class Poi(Agent):
         )
         return actions
 
+    def reset(self):
+        Agent.reset(self)
+        self.observed = False
+        return
+
     def sense(self, relative_agents):
         obs = self.observable_agents(relative_agents, self.observation_radius)
         # set observed flag if enough agents are observable to meet coupling requirement

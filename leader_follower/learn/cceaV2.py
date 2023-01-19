@@ -93,7 +93,6 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
         done = all(agent_dones.values())
         if render:
             env.render()
-
     episode_rewards = reward_func(env)
 
     if type(episode_rewards) == float:
