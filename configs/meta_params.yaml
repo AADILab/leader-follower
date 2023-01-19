@@ -22,4 +22,4 @@ sub_population_size: 25
 reward_function: global
 load_population: null
 num_generations: 20
-episode_length: 10
+episode_length: 30

@@ -13,6 +13,7 @@ from leader_follower.agent import Leader, Follower, Poi
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.cceaV2 import neuro_evolve, rollout, plot_fitnesses
 from leader_follower.learn.rewards import calc_global, calc_diff_rewards, calc_dpp
+from leader_follower.traj import save_trajectories
 from leader_follower.utils import load_config
 
 # This may be necessary if matplotlib is not configured properly
@@ -75,12 +76,13 @@ def run_experiment(experiment_config, meta_config):
     rewards = rollout(env, best_solution, reward_func=reward_func)
     print(f'{rewards=}')
     plot_fitnesses(avg_fitnesses=[], max_fitnesses=max_fits)
+    save_trajectories(env=env)
+    # gw.plot_agent_trajectories()
     return
 
 def main(main_args):
     config_names = [
         'atrium'
-        # 'battery'
     ]
     config_fns = [
         each_fn
