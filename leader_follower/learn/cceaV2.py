@@ -95,6 +95,14 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
             env.render()
 
     episode_rewards = reward_func(env)
+
+    if type(episode_rewards) == float:
+        # print(agent_rewards, len(env._leaders)+env._followers))
+        # agent_rewards = [agent_rewards] * (len(env._leaders)+len(env._followers))
+        episode_rewards = {
+            agent_name: episode_rewards for agent_name, _ in individuals.items()
+        }
+
     return episode_rewards
 
     # episode_reward = [global_reward for _ in env.agents]
@@ -152,8 +160,8 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
             ]
             for pop_idx in range(population_size)
         ]
-        max_fitnesses.append(np.max(fitnesses, axis=1))
-        avg_fitnesses.append(np.average(fitnesses, axis=1))
+        max_fitnesses.append(np.max(fitnesses, axis=0))
+        avg_fitnesses.append(np.average(fitnesses, axis=0))
         sim_pops = [
             select_func(policy_population, sim_pop_size)
             for agent_name, policy_population in agent_pops.items()
@@ -196,10 +204,10 @@ def plot_fitnesses(avg_fitnesses, max_fitnesses, xtag=None, ytag=None):
     max_fitnesses = np.transpose(max_fitnesses)
 
     for idx, each_fitness in enumerate(avg_fitnesses):
-        axes.plot(each_fitness, label=f'Avg: Agent {idx}')
+        axes.plot(each_fitness, label=f'Avg: Agent {idx+1}')
 
     for idx, each_fitness in enumerate(max_fitnesses):
-        axes.plot(each_fitness, label=f'Max: Agent {idx}')
+        axes.plot(each_fitness, label=f'Max: Agent {idx+1}')
 
     axes.xaxis.grid()
     axes.yaxis.grid()

@@ -44,4 +44,4 @@ sub_population_size: 25
 use_difference_rewards: true
 load_population: null
 num_generations: 20
-episode_length: 50
+episode_length: 1

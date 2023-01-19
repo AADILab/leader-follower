@@ -15,9 +15,13 @@ from leader_follower.learn.cceaV2 import neuro_evolve, rollout, plot_fitnesses
 from leader_follower.learn.rewards import calc_global, calc_diff_rewards
 from leader_follower.utils import load_config
 
+# This may be necesssary if matplotlib is not configured properly
+# import matplotlib
+# matplotlib.rcParams['backend'] = 'TkAgg'
 
 def run_experiment(experiment_config, meta_config):
     leader_obs_rad = 100 # 15x15 map. Leaders should have infinite obs radius option
+    poi_obs_rad = 1
     # Followers should not have repulsion and attraction radii with xy update rules
     repulsion_rad = 0.5
     attraction_rad = 1
@@ -37,7 +41,7 @@ def run_experiment(experiment_config, meta_config):
     ]
     #  agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling
     pois = [
-        Poi(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1, observation_radius=leader_obs_rad,
+        Poi(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1, observation_radius=poi_obs_rad,
             coupling=1)
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
     ]
@@ -57,7 +61,7 @@ def run_experiment(experiment_config, meta_config):
     n_hidden = 10
     sim_subpop_size = 15
     subpop_size = 30
-    n_gens = 5000
+    n_gens = 5
 
     start_time = time.time()
     # env, n_hidden, population_size, n_gens, sim_pop_size, reward_func
@@ -68,13 +72,13 @@ def run_experiment(experiment_config, meta_config):
 
     rewards = rollout(env, best_solution, reward_func=reward_func)
     print(f'{rewards=}')
-    plot_fitnesses(avg_fitnesses=avg_fits, max_fitnesses=max_fits)
+    plot_fitnesses(avg_fitnesses=[], max_fitnesses=max_fits)
     # gw.plot_agent_trajectories()
     return
 
 def main(main_args):
     config_names = [
-        'alpha'
+        'battery'
     ]
     config_fns = [
         each_fn
@@ -84,7 +88,7 @@ def main(main_args):
     print("project_properties.config_dir:", project_properties.config_dir)
     config_name = Path(project_properties.config_dir, 'meta_params.yaml')
     meta_params = load_config(config_name)
-    stat_runs = 3
+    stat_runs = 1
 
     # subpop_size = 50
     # n_gens = 5000

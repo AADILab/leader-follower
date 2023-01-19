@@ -40,7 +40,7 @@ def calc_diff_rewards(env: LeaderFollowerEnv):
         assigned_followers[max_influencer].append(follower_name)
 
     global_reward = calc_global(env)
-    difference_rewards = {}
+    difference_rewards = {"G": global_reward}
     for leader, removed_agents in assigned_followers.items():
         removed_agents.append(leader)
 
@@ -62,6 +62,7 @@ def calc_diff_rewards(env: LeaderFollowerEnv):
         difference_global = calc_global(env)
         difference_rewards[leader] = global_reward - difference_global
         env._pois = poi_copy
+    # print(global_reward, difference_rewards)
     return difference_rewards
 
 # def calc_difference(env: LeaderFollowerEnv):
