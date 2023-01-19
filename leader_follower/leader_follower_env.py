@@ -3,7 +3,7 @@ import functools
 import numpy as np
 from pettingzoo import ParallelEnv
 
-from leader_follower.agent import Poi, Leader, Follower
+from leader_follower.agent import Poi, Leader, Follower, AgentType
 
 
 class LeaderFollowerEnv(ParallelEnv):
@@ -11,7 +11,7 @@ class LeaderFollowerEnv(ParallelEnv):
 
     @property
     def agent_mapping(self):
-        return self._leaders | self._followers | self._pois
+        return self.leaders | self.followers | self.pois
 
     @property
     @functools.lru_cache(maxsize=None)
@@ -49,9 +49,9 @@ class LeaderFollowerEnv(ParallelEnv):
         # self.observation_radius = observation_radius if observation_radius else def_obs_radius
 
         # todo make possible to determine active from possible agents
-        self._leaders = {f'{each_agent.name}': each_agent for each_agent in leaders}
-        self._followers = {f'{each_agent.name}': each_agent for each_agent in followers}
-        self._pois = {f'{each_agent.name}': each_agent for each_agent in pois}
+        self.leaders = {f'{each_agent.name}': each_agent for each_agent in leaders}
+        self.followers = {f'{each_agent.name}': each_agent for each_agent in followers}
+        self.pois = {f'{each_agent.name}': each_agent for each_agent in pois}
 
         self.agents = [each_agent for each_agent in self.possible_agents]
         self.completed_agents = {}
@@ -101,8 +101,8 @@ class LeaderFollowerEnv(ParallelEnv):
         render_bounds = (-5, 55)
         scaling = np.divide(render_resolution, render_bounds[1] - render_bounds[0])
 
-        agent_colors = {'learner': [255, 0, 0], 'actor': [0, 255, 0], 'poi': [0, 0, 255]}
-        agent_sizes = {'learner': 5, 'actor': 3, 'poi': 6}
+        agent_colors = {AgentType.Learner: [255, 0, 0], AgentType.Actor: [0, 255, 0], AgentType.Static: [0, 0, 255]}
+        agent_sizes = {AgentType.Learner: 2, AgentType.Actor: 1, AgentType.Static: 3}
 
         background_color = [255, 255, 255]
         line_color = [0, 0, 0]
@@ -192,9 +192,9 @@ class LeaderFollowerEnv(ParallelEnv):
         self.agents = self.possible_agents[:]
         self._current_step = 0
 
-        _ = [each_agent.reset() for each_agent in self._leaders.values()]
-        _ = [each_agent.reset() for each_agent in self._followers.values()]
-        _ = [each_agent.reset() for each_agent in self._pois.values()]
+        _ = [each_agent.reset() for each_agent in self.leaders.values()]
+        _ = [each_agent.reset() for each_agent in self.followers.values()]
+        _ = [each_agent.reset() for each_agent in self.pois.values()]
 
         # add all possible agents to the environment - agents are removed from the actors as they finish the task
         self.agents = [each_agent for each_agent in self.possible_agents]
@@ -240,7 +240,7 @@ class LeaderFollowerEnv(ParallelEnv):
         return actions
 
     def num_poi_observed(self):
-        return sum(poi.observed for poi in self._pois.values())
+        return sum(poi.observed for poi in self.pois.values())
 
     # def __update_poi_state(self):
     #     for poi in self.pois:
@@ -255,7 +255,7 @@ class LeaderFollowerEnv(ParallelEnv):
     #     return
 
     def done(self):
-        all_obs = self.num_poi_observed() == len(self._pois.values())
+        all_obs = self.num_poi_observed() == len(self.pois.values())
         time_over = self._current_step >= self.max_steps
         val = any([all_obs, time_over])
 
