@@ -53,7 +53,6 @@ class Agent(ABC):
 
         # state keeps track of the location history of the agent
         self.state_history = [self.location]
-
         # observation history is the record of observations passed in to `get_action()`
         self.observation_history = []
         # action history is the record of actions computed by `get_action()`
