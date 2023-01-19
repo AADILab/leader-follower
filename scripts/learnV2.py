@@ -78,7 +78,8 @@ def run_experiment(experiment_config, meta_config):
 
 def main(main_args):
     config_names = [
-        'battery'
+        'atrium'
+        # 'battery'
     ]
     config_fns = [
         each_fn
