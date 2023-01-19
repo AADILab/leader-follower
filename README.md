@@ -1,7 +1,33 @@
 Leader Follower
 =====
 
-## Roadmap
+# License
+
+See the [LICENSE file](LICENSE) for license rights and limitations (MIT).
+
+# Index
+
+- [Roadmap](#roadmap)
+- [Quick State](#quick-start)
+  - [Configurations](#configurations)
+  - [Experiments](#experiments)
+- [Installation](#installation)
+  - [Local Package](#local-package)
+  - [Pytorch](#pytorch)
+- [Testing](#testing)
+  - [Agents](#agents)
+  - [Environment](#environment)
+  - [Rewards](#rewards)
+- [Simulator](#simulator)
+  - [LeaderFollowerEnv](#leaderfollowerenv)
+- [Learning](#learning)
+  - [CCEA](#ccea)
+    - [Mutation](#mutation)
+    - [Selection](#selection)
+- [Development](#development)
+  - [Style guide](#style-guide)
+
+# Roadmap
 
 <img src="docs/simulator.jpg" alt="simulator" width="250" height="250">
 
@@ -25,12 +51,32 @@ Meetings:
 -[ ] Meet to prepare for Tuesday presentation. 11 am Thursday. Recurring meeting. 
 -[ ] Sit together and get Ever up to speed on code. (also 11 am Thursday)
 
-## Quick Start
+# Quick Start
 
-## Installation
+## Configurations
+## Experiments
 
-## Testing
+# Installation
 
-## Simulator
+## Local package
+## Pytorch
 
-## Learning
+# Testing
+
+## Agents
+## Environment
+## Rewards
+
+# Simulator
+
+## LeaderFollowerEnv
+
+# Learning
+
+## CCEA
+### Mutation
+### Selection
+
+# Development
+
+## Style guide
