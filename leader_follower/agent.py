@@ -28,11 +28,11 @@ class Agent(ABC):
 
     @property
     def observation(self):
-        return self.action_history[-1]
+        return self.observation_history[-1]
 
     @property
     def action(self):
-        return self.observation_history[-1]
+        return self.action_history[-1]
 
     def __init__(self, agent_id: int, location: tuple, velocity: tuple, sensor_resolution: int, value: float):
         self.name = f'agent_{agent_id}'
@@ -46,13 +46,14 @@ class Agent(ABC):
         self.value = value
 
         self._initial_location = location
-        self._initial_velocity = velocity
+        # self._initial_velocity = velocity
 
         self.location = location
-        self.velocity = velocity
+        # self.velocity = velocity
 
         # location, velocity
-        state = np.asarray([location, velocity])
+        # state = np.asarray([location, velocity])
+        state = np.asarray([location])
         self.state_history: list[np.ndarray] = [state]
 
         # observation history is the record of observations passed in to `get_action()`
@@ -66,9 +67,10 @@ class Agent(ABC):
 
     def reset(self):
         self.location = self._initial_location
-        self.velocity = self._initial_velocity
+        # self.velocity = self._initial_velocity
 
-        state = np.asarray([self.location, self.velocity])
+        # state = np.asarray([self.location, self.velocity])
+        state = np.asarray([self.location])
         self.state_history: list[np.ndarray] = [state]
         self.observation_history = []
         self.action_history: list[np.ndarray] = []
@@ -80,7 +82,6 @@ class Agent(ABC):
         end_loc = end_agent.location
         # add very small amount of gaussian noise to make the locations unequal
         assert len(start_loc) == len(end_loc)
-        # assert start_loc != end_loc
 
         dx = end_loc[0] - start_loc[0]
         dy = end_loc[1] - start_loc[1]
@@ -96,6 +97,7 @@ class Agent(ABC):
         observable_agents
 
         :param relative_agents:
+        :param observation_radius:
         :return:
         """
         bins = []
@@ -148,10 +150,7 @@ class Leader(Agent):
         return sensor_range
 
     def action_space(self):
-        action_range = spaces.Box(
-            low=self.velocity_range[0], high=self.velocity_range[1],
-            shape=(2,), dtype=np.float64
-        )
+        action_range = spaces.Box(low=self.velocity_range[0], high=self.velocity_range[1], shape=(2,), dtype=np.float64)
         return action_range
 
     def sense(self, other_agents, sensor_resolution=None, offset=False):
@@ -203,15 +202,6 @@ class Leader(Agent):
         self.action_history.append(action)
         return action
 
-    # def get_action(net, observation, env):
-    #     # todo fix to use pytorch backend
-    #     out = net.forward(observation)
-    #     # Map [-1,+1] to [-pi,+pi]
-    #     heading = out[0] * np.pi
-    #     # Map [-1,+1] to [0, max_velocity]
-    #     velocity = (out[1] + 1.0) / 2 * env.state_bounds.max_velocity
-    #     return np.array([heading, velocity])
-
 class Follower(Agent):
 
     def __init__(self, agent_id, location, velocity, sensor_resolution, value,
@@ -241,25 +231,22 @@ class Follower(Agent):
         return sensor_range
 
     def action_space(self):
-        action_range = spaces.Box(
-            low=self.velocity_range[0], high=self.velocity_range[1],
-            shape=(2,), dtype=np.float64
-        )
+        action_range = spaces.Box(low=self.velocity_range[0], high=self.velocity_range[1], shape=(2,), dtype=np.float64)
         return action_range
 
-    def __rule_loc_velocity(self, relative_agents, rule_radius):
-        # todo test for correctness
-        self.observation_radius = rule_radius
-        rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
-        rel_agents.append(self)
-
-        locs = [each_agent.location for each_agent in rel_agents]
-        vels = [each_agent.velocity for each_agent in rel_agents]
-
-        avg_locs = np.average(locs, axis=0)
-        avg_vels = np.average(vels, axis=0)
-        bins = np.asarray([avg_locs, avg_vels])
-        return bins
+    # def __rule_loc_velocity(self, relative_agents, rule_radius):
+    #     # todo test for correctness
+    #     self.observation_radius = rule_radius
+    #     rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
+    #     rel_agents.append(self)
+    #
+    #     locs = [each_agent.location for each_agent in rel_agents]
+    #     vels = [each_agent.velocity for each_agent in rel_agents]
+    #
+    #     avg_locs = np.average(locs, axis=0)
+    #     avg_vels = np.average(vels, axis=0)
+    #     bins = np.asarray([avg_locs, avg_vels])
+    #     return bins
 
     def __rule_mass_center(self, relative_agents, rule_radius):
         self.observation_radius = rule_radius
@@ -328,7 +315,7 @@ class Poi(Agent):
         max_seen = 0
         for each_step in self.observation_history:
             # using value allows for different agents to contribute different weights to observing the poi
-            curr_seen = len([each_agent.value for each_agent in each_step])
+            curr_seen = sum(each_agent.value for each_agent in each_step)
             max_seen = max(max_seen, curr_seen)
         obs = max_seen >= self.coupling
         return obs
@@ -342,17 +329,16 @@ class Poi(Agent):
         self.coupling = coupling
         return
 
+    def __repr__(self):
+        return f'{self.name=}, {self.observed=}, {self.state=}'
+
     def observation_space(self):
         sensor_range = spaces.Box(low=0, high=self.coupling, shape=(1,))
         return sensor_range
 
     def action_space(self):
-        actions = spaces.Box(
-            low=np.array([self.velocity_range[0], self.velocity_range[0]], dtype=np.float64),
-            high=np.array([self.velocity_range[1], self.velocity_range[1]], dtype=np.float64),
-            dtype=np.float64
-        )
-        return actions
+        action_range = spaces.Box(low=0, high=0, shape=(2,), dtype=np.float64)
+        return action_range
 
     def sense(self, relative_agents):
         observation = self.observable_agents(relative_agents, self.observation_radius)

@@ -282,9 +282,9 @@ class LeaderFollowerEnv(ParallelEnv):
             # each_action[0] is dx
             # each_action[1] is dy
             new_loc = tuple(coord + vel * self.delta_time for coord, vel in zip(agent.location, each_action))
-            agent.velocity = each_action
             agent.location = new_loc
 
+        # todo track actions and observations in step function, not when functions called in agent implementation
         # Get all observations
         observations = self.get_observations()
 
