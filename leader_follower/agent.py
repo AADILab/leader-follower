@@ -202,9 +202,9 @@ class Leader(Agent):
             action = action.numpy()
         self._policy_history.append(action)
 
-        mag = action / np.linalg.norm(action)
-        if -1 < mag or mag > 1:
-            action = mag
+        mag = np.linalg.norm(action)
+        if mag > 1:
+            action = action / mag
         self.action_history.append(action)
         return action
 
@@ -304,18 +304,18 @@ class Follower(Agent):
         #   RuntimeWarning: invalid value encountered in divide
         #   unit_repulsion = repulsion_diff / (repulsion_diff**2).sum()**0.5
         repulsion_diff = np.subtract(observation[0], self.location)
-        unit_repulsion = repulsion_diff / np.linalg.norm(repulsion_diff)
         self.rule_history['repulsion'].append(repulsion_diff)
-        if -1 < unit_repulsion or unit_repulsion > 1:
-            repulsion_diff = unit_repulsion
+        mag = np.linalg.norm(repulsion_diff)
+        if mag > 1:
+            repulsion_diff = repulsion_diff / mag
         repulsion_diff = np.nan_to_num(repulsion_diff)
         weighted_repulsion = - repulsion_diff * self.repulsion_strength
 
         attraction_diff = np.subtract(observation[1], self.location)
-        unit_attraction = attraction_diff / np.linalg.norm(attraction_diff)
         self.rule_history['attraction'].append(attraction_diff)
-        if -1 < unit_attraction or unit_attraction > 1:
-            attraction_diff = unit_attraction
+        mag = np.linalg.norm(attraction_diff)
+        if mag > 1:
+            attraction_diff = attraction_diff / mag
         attraction_diff = np.nan_to_num(attraction_diff)
         weighted_attraction = - attraction_diff * self.attraction_strength
 
