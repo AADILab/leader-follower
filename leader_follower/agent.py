@@ -129,7 +129,6 @@ class Leader(Agent):
 
     def __init__(self, agent_id, location, velocity, sensor_resolution, value, observation_radius,
                  policy: NeuralNetwork | None):
-        # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
         super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'leader_{agent_id}'
         self.type = AgentType.Learner
@@ -172,22 +171,23 @@ class Leader(Agent):
             offset = 360 / (self.sensor_resolution * 2)
             bin_size = offset * 2
 
-        octant_bins = np.zeros((2, self.sensor_resolution))
+        observation = np.zeros((2, self.sensor_resolution))
         counts = np.ones((2, self.sensor_resolution))
         for idx, agent in enumerate(obs_agents):
             agent_type_idx = 0 if isinstance(agent, Poi) else 1
             angle, dist = self.relative(agent)
             bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
-            octant_bins[agent_type_idx, bin_idx] += agent.value / max(dist, 0.01)
+            observation[agent_type_idx, bin_idx] += agent.value / max(dist, 0.01)
             counts[agent_type_idx, bin_idx] += 1
 
         # todo fix when delta_time = 0.1
         #       RuntimeWarning: invalid value encountered in divide
         #       octant_bins = np.divide(octant_bins, counts)
-        octant_bins = np.divide(octant_bins, counts)
-        octant_bins = np.nan_to_num(octant_bins)
-        octant_bins = octant_bins.flatten()
-        return octant_bins
+        observation = np.divide(observation, counts)
+        observation = np.nan_to_num(observation)
+        observation = observation.flatten()
+        self.observation_history.append(observation)
+        return observation
 
     def get_action(self, observation):
         """
@@ -200,6 +200,7 @@ class Leader(Agent):
         with torch.no_grad():
             action = active_policy(observation)
             action = action.numpy()
+        self.action_history.append(action)
         return action
 
     # def get_action(net, observation, env):
@@ -215,7 +216,6 @@ class Follower(Agent):
 
     def __init__(self, agent_id, location, velocity, sensor_resolution, value,
                  repulsion_radius, repulsion_strength, attraction_radius, attraction_strength):
-        # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
         super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'follower_{agent_id}'
         self.type = AgentType.Actor
@@ -286,8 +286,9 @@ class Follower(Agent):
         self.influence_history['repulsion'].extend(repulsion_agents)
         self.influence_history['attraction'].extend(attraction_agents)
 
-        bins = np.vstack([repulsion_bins, attraction_bins])
-        return bins
+        observation = np.vstack([repulsion_bins, attraction_bins])
+        self.observation_history.append(observation)
+        return observation
 
     def influence_counts(self):
         repulsion_names = [agent.name for agent in self.influence_history['repulsion']]
@@ -317,20 +318,28 @@ class Follower(Agent):
         weighted_attraction = unit_attraction * self.attraction_strength
 
         action = weighted_attraction - weighted_repulsion
+        self.action_history.append(action)
         return action
 
 class Poi(Agent):
 
+    @property
+    def observed(self):
+        max_seen = 0
+        for each_step in self.observation_history:
+            # using value allows for different agents to contribute different weights to observing the poi
+            curr_seen = [each_agent.value for each_agent in each_step]
+            max_seen = max(max_seen, curr_seen)
+        obs = max_seen >= self.coupling
+        return obs
+
     def __init__(self, agent_id, location, velocity, sensor_resolution, value, observation_radius, coupling):
-        # agent_id: int, location: tuple, velocity: tuple, sensor_resolution, observation_radius: float, value: float
         super().__init__(agent_id, location, velocity, sensor_resolution, value)
         self.name = f'poi_{agent_id}'
         self.type = AgentType.Static
 
         self.observation_radius = observation_radius
         self.coupling = coupling
-        # flag instead of parsing history for reduce call overhead
-        self.observed = False
         return
 
     def observation_space(self):
@@ -346,12 +355,13 @@ class Poi(Agent):
         return actions
 
     def sense(self, relative_agents):
-        obs = self.observable_agents(relative_agents, self.observation_radius)
+        observation = self.observable_agents(relative_agents, self.observation_radius)
         # set observed flag if enough agents are observable to meet coupling requirement
-        self.observed = len(obs) >= self.coupling
-        return obs
+        # self.observed = len(obs) >= self.coupling
+        self.observation_history.append(observation)
+        return observation
 
     def get_action(self, observation):
-        self.observation_history.append(observation)
         action = np.array([0, 0])
+        self.action_history.append(action)
         return action
