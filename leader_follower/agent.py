@@ -41,7 +41,7 @@ class Agent(ABC):
 
         # lower/upper bounds agent is able to move
         # same for both x and y directions
-        self.velocity_range = np.array((0, 1))
+        self.velocity_range = np.array((-1, 1))
         self.sensor_resolution = sensor_resolution
         self.value = value
 
@@ -137,6 +137,7 @@ class Leader(Agent):
 
         self.observation_radius = observation_radius
         self.policy = policy
+        self._policy_history = []
 
         self.n_in = self.sensor_resolution * 2
         self.n_out = 2
@@ -152,6 +153,11 @@ class Leader(Agent):
     def action_space(self):
         action_range = spaces.Box(low=self.velocity_range[0], high=self.velocity_range[1], shape=(2,), dtype=np.float64)
         return action_range
+
+    def reset(self):
+        Agent.reset(self)
+        self._policy_history = []
+        return
 
     def sense(self, other_agents, sensor_resolution=None, offset=False):
         """
@@ -199,6 +205,11 @@ class Leader(Agent):
         with torch.no_grad():
             action = active_policy(observation)
             action = action.numpy()
+        self._policy_history.append(action)
+
+        mag = action / np.linalg.norm(action)
+        if -1 < mag or mag > 1:
+            action = mag
         self.action_history.append(action)
         return action
 
@@ -217,6 +228,8 @@ class Follower(Agent):
 
         self.attraction_radius = attraction_radius
         self.attraction_strength = attraction_strength
+
+        self.rule_history = {'repulsion': [], 'attraction': []}
 
         self.__obs_rule = self.__rule_mass_center
 
@@ -291,18 +304,24 @@ class Follower(Agent):
     def get_action(self, observation):
         # todo take into account current velocity
         # todo check repulsion is moving the agent in the correct direction
-        repulsion_diff = np.subtract(observation[0], self.location)
         # todo bug fix
         #   RuntimeWarning: invalid value encountered in divide
         #   unit_repulsion = repulsion_diff / (repulsion_diff**2).sum()**0.5
-        unit_repulsion = repulsion_diff / (repulsion_diff**2).sum()**0.5
-        unit_repulsion = np.nan_to_num(unit_repulsion)
-        weighted_repulsion = - unit_repulsion * self.repulsion_strength
+        repulsion_diff = np.subtract(observation[0], self.location)
+        unit_repulsion = repulsion_diff / np.linalg.norm(repulsion_diff)
+        self.rule_history['repulsion'].append(repulsion_diff)
+        if -1 < unit_repulsion or unit_repulsion > 1:
+            repulsion_diff = unit_repulsion
+        repulsion_diff = np.nan_to_num(repulsion_diff)
+        weighted_repulsion = - repulsion_diff * self.repulsion_strength
 
         attraction_diff = np.subtract(observation[1], self.location)
-        unit_attraction = attraction_diff / (attraction_diff ** 2).sum() ** 0.5
-        unit_attraction = np.nan_to_num(unit_attraction)
-        weighted_attraction = unit_attraction * self.attraction_strength
+        unit_attraction = attraction_diff / np.linalg.norm(attraction_diff)
+        self.rule_history['attraction'].append(attraction_diff)
+        if -1 < unit_attraction or unit_attraction > 1:
+            attraction_diff = unit_attraction
+        attraction_diff = np.nan_to_num(attraction_diff)
+        weighted_attraction = - attraction_diff * self.attraction_strength
 
         action = weighted_attraction - weighted_repulsion
         self.action_history.append(action)
@@ -342,8 +361,6 @@ class Poi(Agent):
 
     def sense(self, relative_agents):
         observation = self.observable_agents(relative_agents, self.observation_radius)
-        # set observed flag if enough agents are observable to meet coupling requirement
-        # self.observed = len(obs) >= self.coupling
         self.observation_history.append(observation)
         return observation
 
