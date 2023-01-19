@@ -51,10 +51,8 @@ class Agent(ABC):
         self.location = location
         # self.velocity = velocity
 
-        # location, velocity
-        # state = np.asarray([location, velocity])
-        state = np.asarray([location])
-        self.state_history: list[np.ndarray] = [state]
+        # state keeps track of the location history of the agent
+        self.state_history = [self.location]
 
         # observation history is the record of observations passed in to `get_action()`
         self.observation_history = []
@@ -67,11 +65,7 @@ class Agent(ABC):
 
     def reset(self):
         self.location = self._initial_location
-        # self.velocity = self._initial_velocity
-
-        # state = np.asarray([self.location, self.velocity])
-        state = np.asarray([self.location])
-        self.state_history: list[np.ndarray] = [state]
+        self.state_history = [self.location]
         self.observation_history = []
         self.action_history: list[np.ndarray] = []
         return
@@ -169,6 +163,7 @@ class Leader(Agent):
         :param offset:
         :return:
         """
+        self.state_history.append(self.location)
         obs_agents = Agent.observable_agents(self, other_agents, self.observation_radius)
 
         bin_size = 360 / self.sensor_resolution
@@ -280,6 +275,7 @@ class Follower(Agent):
         :param relative_agents:
         :return:
         """
+        self.state_history.append(self.location)
         repulsion_bins, repulsion_agents = self.__obs_rule(relative_agents, self.repulsion_radius)
         attraction_bins, attraction_agents = self.__obs_rule(relative_agents, self.attraction_radius)
 
@@ -360,6 +356,7 @@ class Poi(Agent):
         return action_range
 
     def sense(self, relative_agents):
+        self.state_history.append(self.location)
         observation = self.observable_agents(relative_agents, self.observation_radius)
         self.observation_history.append(observation)
         return observation
