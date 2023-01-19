@@ -1,12 +1,10 @@
 import pickle
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import myaml
 import numpy as np
 from numpy.typing import NDArray
-
-from leader_follower.bak.network_lib import NN
 
 
 def euclidean(positions_a: NDArray[np.float64], positions_b: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -67,7 +65,7 @@ def load_trial(base_dir, trial_name: str) -> Dict:
     return trial_data
 
 
-def load_population(base_dir, trial_name: str) -> List[NN]:
+def load_population(base_dir, trial_name: str):
     trial_data = load_trial(base_dir, trial_name)
     return trial_data['final_population']
 
@@ -92,20 +90,12 @@ def new_trial_name(base_dir) -> str:
     return f'trial_{int(latest_trial_num(base_dir)) + 1}'
 
 
-def save_trial(base_dir, save_data: Dict, config: Dict, trial_num: Optional[str] = None):
+def save_trial(base_dir, save_data: Dict, trial_num: Optional[str] = None):
     if trial_num is None:
         trial_name = new_trial_name(base_dir)
-        # trial_num = trial_name.split('_')[1]
     else:
         trial_name = f'trial_{trial_num}'
 
-    # configs should not change between trials
-    # config_name = f'config_{trial_num}.yaml'
-    # config_path = Path(base_dir, 'configs', config_name)
-    # if not config_path.parent.exists() or not config_path.parent.is_dir():
-    #     config_path.parent.mkdir(parents=True, exist_ok=True)
-    # with open(config_path, 'w') as file:
-    #     yaml.dump(config, file)
 
     # todo save as json for readability
     trial_name = f'{trial_name}.pkl'

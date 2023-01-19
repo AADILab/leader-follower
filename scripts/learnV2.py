@@ -34,18 +34,18 @@ def run_experiment(experiment_config, meta_config):
     poi_coupling = 1
 
     leaders = [
-        Leader(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=leader_value,
+        Leader(idx, location=each_pos, sensor_resolution=4, value=leader_value,
                observation_radius=leader_obs_rad, policy=None)
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     followers = [
-        Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=follower_value,
+        Follower(agent_id=idx, location=each_pos, sensor_resolution=4, value=follower_value,
                  repulsion_radius=repulsion_rad, repulsion_strength=2,
                  attraction_radius=attraction_rad, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     pois = [
-        Poi(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=poi_value,
+        Poi(idx, location=each_pos, sensor_resolution=4, value=poi_value,
             observation_radius=poi_obs_rad, coupling=poi_coupling)
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
     ]
@@ -71,6 +71,7 @@ def run_experiment(experiment_config, meta_config):
         env, n_hidden, subpop_size, n_gens, sim_subpop_size, reward_func=reward_func
     )
     end_time = time.time()
+    print(f'Time to train: {end_time - start_time}')
 
     rewards = rollout(env, best_solution, reward_func=reward_func)
     print(f'{rewards=}')

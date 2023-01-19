@@ -76,10 +76,7 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
         if render:
             env.render()
 
-#     episode_rewards = reward_func(env)
-#
 #     if type(episode_rewards) == float:
-#         # print(agent_rewards, len(env._leaders)+env._followers))
 #         # agent_rewards = [agent_rewards] * (len(env._leaders)+len(env._followers))
 #         episode_rewards = {
 #             agent_name: episode_rewards for agent_name, _ in individuals.items()

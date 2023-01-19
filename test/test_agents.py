@@ -15,8 +15,8 @@ from leader_follower.utils import load_config
 
 def test_leader(positions):
     leaders = [
-        Leader(idx, location=(1, 1), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1,
-               policy_population=[NeuralNetwork(8, 2, 2)])
+        Leader(idx, location=(1, 1), sensor_resolution=4, observation_radius=1, value=1,
+               policy=NeuralNetwork(8, 2, 2))
         for idx, each_pos in enumerate(positions)
     ]
     return
@@ -24,7 +24,7 @@ def test_leader(positions):
 
 def test_follower(positions):
     followers = [
-        Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1,
+        Follower(agent_id=idx, location=each_pos, sensor_resolution=4, value=1,
                  repulsion_radius=0.25, repulsion_strength=2, attraction_radius=2, attraction_strength=1)
         for idx, each_pos in enumerate(positions)
     ]
@@ -33,7 +33,7 @@ def test_follower(positions):
 
 def test_poi(positions):
     pois = [
-        Poi(idx, location=(1, 9), velocity=(0, 0), sensor_resolution=4, observation_radius=1, value=1, coupling=1)
+        Poi(idx, location=(1, 9), sensor_resolution=4, observation_radius=1, value=1, coupling=1)
         for idx, each_pos in enumerate(positions)
     ]
     return

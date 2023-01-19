@@ -36,17 +36,9 @@ class LeaderFollowerEnv(ParallelEnv):
         These attributes should not be changed after initialization.
         """
         self._current_step = 0
-        # self._agent_counters = {}
         self.max_steps = max_steps
         self.delta_time = delta_time
         self.render_mode = render_mode
-
-        # self.leaders = leaders
-        # self.followers = followers
-        # self.pois = pois
-
-        # def_obs_radius = np.sqrt(np.max(self.map_dimensions) ** 2 + np.max(self.map_dimensions) ** 2)
-        # self.observation_radius = observation_radius if observation_radius else def_obs_radius
 
         # todo make possible to determine active from possible agents
         self.leaders = {f'{each_agent.name}': each_agent for each_agent in leaders}
@@ -143,7 +135,7 @@ class LeaderFollowerEnv(ParallelEnv):
 
     def __render_video(self):
         # todo implement video render
-        return []
+        pass
 
     def render(self, mode: str | None = None):
         """
@@ -161,7 +153,8 @@ class LeaderFollowerEnv(ParallelEnv):
 
         match mode:
             case 'human':
-                frame = self.__render_video()
+                # frame = self.__render_video()
+                frame = None
             case 'rgb_array':
                 frame = self.__render_rgb()
             case _:

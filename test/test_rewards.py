@@ -36,20 +36,20 @@ def main(main_args):
 
     # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
     leaders = [
-        Leader(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+        Leader(idx, location=each_pos, sensor_resolution=4, value=1,
                observation_radius=leader_obs_rad, policy=NeuralNetwork(n_inputs=8, n_hidden=2, n_outputs=2))
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
     followers = [
-        Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+        Follower(agent_id=idx, location=each_pos, sensor_resolution=4, value=1,
                  repulsion_radius=repulsion_rad, repulsion_strength=2,
                  attraction_radius=attraction_rad, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     #  agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling
     pois = [
-        Poi(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+        Poi(idx, location=each_pos, sensor_resolution=4, value=1,
             observation_radius=leader_obs_rad, coupling=1)
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
     ]

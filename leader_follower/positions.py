@@ -14,11 +14,6 @@ from scipy.ndimage.interpolation import rotate
 # Positions
 ##################
 
-# def random_positions(num_agents, lower_bound, upper_bound):
-#     return np.hstack((
-#         np.random.uniform(0, lower_bound, size=(num_agents, 1)),
-#         np.random.uniform(0, upper_bound, size=(num_agents, 1))
-#     ))
 
 def random_positions(num_agents, lower_bound=0, upper_bound=1, seed=None):
     assert num_agents > 0
@@ -40,18 +35,6 @@ def concentric_positions(num_agents, map_dimensions, radii_fraction):
         positions_list.append(positions)
     return np.vstack(positions_list)
 
-
-# def circle_positions(num_agents, map_dimensions, inner_fraction, outer_fraction):
-#     # Generate a bunch of radii from 0 to bound (outer - inner)
-#     outer_bound = np.min(map_dimensions) / 2 * outer_fraction
-#     inner_bound = np.min(map_dimensions) / 2 * inner_fraction
-#     threshold = outer_bound - inner_bound
-#     radii = inner_bound + np.random.uniform(0, threshold, size=(num_agents, 1))
-#     thetas = np.random.uniform(0, 2 * np.pi, size=(num_agents, 1))
-#     return map_dimensions / 2 + np.hstack((
-#         radii * np.cos(thetas),
-#         radii * np.sin(thetas)
-#     ))
 
 def circle_positions(num_agents, lower_bound=0, upper_bound=1):
     """

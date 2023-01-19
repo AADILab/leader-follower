@@ -21,27 +21,23 @@ def generate_plot(config_path: Path):
     experiment_config = load_config(str(config_path))
     config_name = config_path.stem
 
-    # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
     leaders = [
-        Leader(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+        Leader(idx, location=each_pos,  sensor_resolution=4, value=1,
                observation_radius=0, policy=NeuralNetwork(n_inputs=8, n_hidden=2, n_outputs=2))
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
-    # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
     followers = [
-        Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+        Follower(agent_id=idx, location=each_pos, sensor_resolution=4, value=1,
                  repulsion_radius=0, repulsion_strength=2,
                  attraction_radius=0, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
-    #  agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling
     pois = [
-        Poi(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+        Poi(idx, location=each_pos, sensor_resolution=4, value=1,
             observation_radius=0, coupling=1)
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
     ]
 
-    # leaders: list[Leader], followers: list[Follower], pois: list[Poi], max_steps, delta_time=1, render_mode=None
     env = LeaderFollowerEnv(
         leaders=leaders, followers=followers, pois=pois, max_steps=100, render_mode=render_mode, delta_time=0
     )
@@ -57,11 +53,11 @@ def generate_plot(config_path: Path):
     img = axes.imshow(frame)
     # set visibility of x-axis as False
     xax = axes.get_xaxis()
-    xax = xax.set_visible(False)
+    xax.set_visible(False)
 
     # set visibility of y-axis as False
     yax = axes.get_yaxis()
-    yax = yax.set_visible(False)
+    yax.set_visible(False)
 
     axes.set_title(fig_name, color=fg_color)
     axes.patch.set_facecolor(bg_color)
@@ -81,15 +77,9 @@ def generate_plot(config_path: Path):
     plt.savefig(str(save_name))
     plt.close()
     return
+
+
 def main(main_args):
-    delta_time = 1
-
-    leader_obs_rad = 5
-    repulsion_rad = 2
-    attraction_rad = 5
-
-    render_delay = 5
-    ############################################################
     config_paths = Path(project_properties.config_dir).glob('*.yaml')
     for each_path in config_paths:
         if each_path.stem == 'meta_params':

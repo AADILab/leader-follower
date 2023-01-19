@@ -34,7 +34,7 @@ class Agent(ABC):
     def action(self):
         return self.action_history[-1]
 
-    def __init__(self, agent_id: int, location: tuple, velocity: tuple, sensor_resolution: int, value: float):
+    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float):
         self.name = f'agent_{agent_id}'
         self.id = agent_id
         self.type = AgentType.Static
@@ -46,13 +46,7 @@ class Agent(ABC):
         self.value = value
 
         self._initial_location = location
-        # self._initial_velocity = velocity
-
         self.location = location
-        # self.velocity = velocity
-
-        # location, velocity
-        # state = np.asarray([location, velocity])
         state = np.asarray([location])
         self.state_history: list[np.ndarray] = [state]
 
@@ -67,9 +61,6 @@ class Agent(ABC):
 
     def reset(self):
         self.location = self._initial_location
-        # self.velocity = self._initial_velocity
-
-        # state = np.asarray([self.location, self.velocity])
         state = np.asarray([self.location])
         self.state_history: list[np.ndarray] = [state]
         self.observation_history = []
@@ -129,9 +120,9 @@ class Agent(ABC):
 
 class Leader(Agent):
 
-    def __init__(self, agent_id, location, velocity, sensor_resolution, value, observation_radius,
+    def __init__(self, agent_id, location, sensor_resolution, value, observation_radius,
                  policy: NeuralNetwork | None):
-        super().__init__(agent_id, location, velocity, sensor_resolution, value)
+        super().__init__(agent_id, location, sensor_resolution, value)
         self.name = f'leader_{agent_id}'
         self.type = AgentType.Learner
 
@@ -204,9 +195,9 @@ class Leader(Agent):
 
 class Follower(Agent):
 
-    def __init__(self, agent_id, location, velocity, sensor_resolution, value,
+    def __init__(self, agent_id, location, sensor_resolution, value,
                  repulsion_radius, repulsion_strength, attraction_radius, attraction_strength):
-        super().__init__(agent_id, location, velocity, sensor_resolution, value)
+        super().__init__(agent_id, location, sensor_resolution, value)
         self.name = f'follower_{agent_id}'
         self.type = AgentType.Actor
 
@@ -233,20 +224,6 @@ class Follower(Agent):
     def action_space(self):
         action_range = spaces.Box(low=self.velocity_range[0], high=self.velocity_range[1], shape=(2,), dtype=np.float64)
         return action_range
-
-    # def __rule_loc_velocity(self, relative_agents, rule_radius):
-    #     # todo test for correctness
-    #     self.observation_radius = rule_radius
-    #     rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
-    #     rel_agents.append(self)
-    #
-    #     locs = [each_agent.location for each_agent in rel_agents]
-    #     vels = [each_agent.velocity for each_agent in rel_agents]
-    #
-    #     avg_locs = np.average(locs, axis=0)
-    #     avg_vels = np.average(vels, axis=0)
-    #     bins = np.asarray([avg_locs, avg_vels])
-    #     return bins
 
     def __rule_mass_center(self, relative_agents, rule_radius):
         self.observation_radius = rule_radius
@@ -320,8 +297,8 @@ class Poi(Agent):
         obs = max_seen >= self.coupling
         return obs
 
-    def __init__(self, agent_id, location, velocity, sensor_resolution, value, observation_radius, coupling):
-        super().__init__(agent_id, location, velocity, sensor_resolution, value)
+    def __init__(self, agent_id, location, sensor_resolution, value, observation_radius, coupling):
+        super().__init__(agent_id, location, sensor_resolution, value)
         self.name = f'poi_{agent_id}'
         self.type = AgentType.Static
 
