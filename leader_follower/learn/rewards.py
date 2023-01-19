@@ -64,19 +64,9 @@ def calc_diff_rewards(env: LeaderFollowerEnv):
                 ]
                 pruned_history.append(pruned_step)
             poi.observation_history = pruned_history
-            # if len(pruned_history) == 0:
-            #     largest_observation = []
-            # else:
-            #     largest_observation = max(pruned_history, key=len)
-            # poi.observed = len(largest_observation) >= poi.coupling
         difference_global = calc_global(env)
         difference_rewards[leader] = global_reward - difference_global
         env.pois = poi_copy
-# <<<<<<< HEAD
-#         env._pois = poi_copy
-#     # print(global_reward, difference_rewards)
-#     return difference_rewards
-# =======
     return difference_rewards, calc_global.n_calls
 
 def calc_dpp_n(env: LeaderFollowerEnv, agent_names, n):
@@ -128,7 +118,7 @@ def calc_dpp(env: LeaderFollowerEnv):
     :param env:
     :return dpp_rewards: Numpy array containing each rover's D++ reward
     """
-    # todo add tracking of calls to G
+    calc_global.n_calls = 0
     num_agents = len(env.leaders)
     dpp_rewards = {name: 0 for name, agent in env.leaders.items()}
     for leader_name, leader in env.leaders.items():
@@ -147,4 +137,4 @@ def calc_dpp(env: LeaderFollowerEnv):
                     dpp_rewards[leader_name] = dpp_n
                     break
                 prev_dpp_n = dpp_n
-    return dpp_rewards
+    return dpp_rewards, calc_global.n_calls

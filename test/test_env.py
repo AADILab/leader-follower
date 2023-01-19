@@ -237,7 +237,7 @@ def main(main_args):
     # n_inputs, n_outputs, n_hidden=2, network_func=linear_layer, name=None
     # neural_network = NeuralNetwork(n_inputs=8, n_outputs=2, n_hidden=2)
 
-    config_fn = Path(project_properties.config_dir, 'test.yaml')
+    config_fn = Path(project_properties.test_dir, 'configs', 'test.yaml')
     experiment_config = load_config(str(config_fn))
 
     # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
@@ -269,7 +269,7 @@ def main(main_args):
     # test_actions(env)
     # test_render(env)
     # #
-    # test_step(env, render=None)
+    test_step(env, render=None)
     # test_step(env, render='rgb_array')
     # #
     # test_random(env, render=None)

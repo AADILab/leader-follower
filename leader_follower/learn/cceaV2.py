@@ -89,12 +89,6 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
     episode_rewards, g_calls = reward_func(env)
     return episode_rewards, g_calls
 
-    # episode_reward = [global_reward for _ in env.agents]
-    # episode_reward = env.agent_episode_rewards()
-    # if reward_type == 'global':
-    #     episode_reward = [global_reward for _ in episode_reward]
-    # return episode_reward
-
 
 def downselect_top_n(population, max_size):
     sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
