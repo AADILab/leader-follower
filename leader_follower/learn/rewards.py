@@ -63,19 +63,20 @@ def calc_diff_rewards(env: LeaderFollowerEnv):
                     if agent.name not in removed_agents
                 ]
                 pruned_history.append(pruned_step)
-            if len(pruned_history) == 0:
-                largest_observation = []
-            else:
-                largest_observation = max(pruned_history, key=len)
-            poi.observed = len(largest_observation) >= poi.coupling
+            poi.observation_history = pruned_history
+            # if len(pruned_history) == 0:
+            #     largest_observation = []
+            # else:
+            #     largest_observation = max(pruned_history, key=len)
+            # poi.observed = len(largest_observation) >= poi.coupling
         difference_global = calc_global(env)
         difference_rewards[leader] = global_reward - difference_global
+        env.pois = poi_copy
 # <<<<<<< HEAD
 #         env._pois = poi_copy
 #     # print(global_reward, difference_rewards)
 #     return difference_rewards
 # =======
-        env.pois = poi_copy
     return difference_rewards, calc_global.n_calls
 
 def calc_dpp_n(env: LeaderFollowerEnv, agent_names, n):

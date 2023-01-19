@@ -328,7 +328,7 @@ class Poi(Agent):
         max_seen = 0
         for each_step in self.observation_history:
             # using value allows for different agents to contribute different weights to observing the poi
-            curr_seen = [each_agent.value for each_agent in each_step]
+            curr_seen = len([each_agent.value for each_agent in each_step])
             max_seen = max(max_seen, curr_seen)
         obs = max_seen >= self.coupling
         return obs
