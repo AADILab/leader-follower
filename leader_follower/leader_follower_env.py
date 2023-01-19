@@ -96,12 +96,13 @@ class LeaderFollowerEnv(ParallelEnv):
         return self.state_history[self._current_step]
 
     def __render_rgb(self):
-        render_resolution = (256, 256)
+        # todo set based on min/max agent locations
+        render_resolution = (512, 512)
         render_bounds = (-5, 55)
         scaling = np.divide(render_resolution, render_bounds[1] - render_bounds[0])
 
         agent_colors = {'learner': [255, 0, 0], 'actor': [0, 255, 0], 'poi': [0, 0, 255]}
-        agent_sizes = {'learner': 2, 'actor': 1, 'poi': 3}
+        agent_sizes = {'learner': 5, 'actor': 3, 'poi': 6}
 
         background_color = [255, 255, 255]
         line_color = [0, 0, 0]
@@ -112,6 +113,8 @@ class LeaderFollowerEnv(ParallelEnv):
         y_line_idxs = np.linspace(0, render_resolution[0], num=num_lines)
 
         frame = np.full((render_resolution[0] + 1, render_resolution[1] + 1, 3), background_color)
+
+        # draw a grid over the frame
         for each_line in x_line_idxs:
             each_line = int(each_line)
             frame[each_line] = line_color
@@ -120,6 +123,7 @@ class LeaderFollowerEnv(ParallelEnv):
             each_line = int(each_line)
             frame[:, each_line] = line_color
 
+        # place the agents in the frame based on the sizes and colors specified in agent_colors and agent_sizes
         for agent_name in self.agents:
             agent = self.agent_mapping[agent_name]
             acolor = agent_colors.get(agent.type, default_color)
@@ -141,7 +145,7 @@ class LeaderFollowerEnv(ParallelEnv):
         # todo implement video render
         return []
 
-    def render(self, mode: str | None = 'human'):
+    def render(self, mode: str | None = None):
         """
         Displays a rendered frame from the environment, if supported.
 
