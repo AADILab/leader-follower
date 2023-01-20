@@ -66,30 +66,50 @@ def fake_error(vector):
 def plot_trajectories(traj_df: DataFrame):
     sns.set_theme()
 
-    # sns.jointplot(
-    #     data=traj_df,
-    #     x="x", y="y", hue="Label", style="_name",
-    #     marker='o'
-    # )
-    
-    # exit()
+    custom_pallete = {"Follower": (0.5,0.7,0.7), "Unobserved POI": (1,0,0), "Observed POI":(0,1,0)}
+    label_set = set(traj_df["Label"])
+    leaders = [item for item in label_set if "Leader" in item]
+    for count, leader_name in enumerate(leaders):
+        custom_pallete[leader_name] = "C"+str(count%10)
 
-    print(traj_df)
 
-    p = so.Plot(traj_df, "x", "y", color="Label", marker="name" \
-        ).add(so.Path(marker="o", pointsize=2, linewidth=0.75, fillcolor="w") \
-            ).limit(y=(0,15),x=(0,15) \
-                ).layout(size=(10,10))
-    
-    # f, ax = plt.subplots()
-    # ax.set_xticks(list(range(16)))
-    # p.on(ax).show()
-    # p.add(so.Path())
-    p.show()
+    g=sns.lineplot(
+        data=traj_df, 
+        x="x", y="y", 
+        hue="Label", units="name", 
 
-    # sns.relplot(
-    #     data=traj_df,
-    #     x="x", y="y", hue="Label", style="_name",
-    #     kind="line", marker='o'
-    # )
-    # show()
+        palette= custom_pallete, #{"Leader 0": "C0", "Leader 1": "C0", "Follower": "C1", "Unobserved POI": "k", "Observed POI":"C2"},
+        marker="o", sort=False, estimator=None
+    )
+    g.set(ylim=(0,15), xlim=(0,15))
+    g.set_xticks(list(range(16)))
+    g.set_yticks(list(range(16)))
+
+    plt.show()
+
+
+
+
+
+        # p = so.Plot(traj_df, "x", "y", color="Label", marker="name" \
+        #     ).add(so.Path(marker="o", pointsize=2, linewidth=0.75, fillcolor="w") \
+        #         )
+
+        
+        # f, ax = plt.subplots()
+        # # ax = f.add_axes([0.1, 0.1, 0.6, 0.75])
+        # res = p.on(ax).plot()
+        # ax.axis('equal')
+        # ax.set_xlim([0,15])
+        # ax.set_ylim([0,15])
+        # ax.set_xticks(list(range(16)))
+        # ax.set_yticks(list(range(16)))
+
+        # box = ax.get_position()
+        # ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
+
+        # # plt.legend(loc="upper right")
+
+        # # sns.move_legend(ax, "upper_left", bbox_to_anchor=(1,1))
+
+        # res.show()
