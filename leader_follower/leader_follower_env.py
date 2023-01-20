@@ -87,6 +87,9 @@ class LeaderFollowerEnv(ParallelEnv):
         """
         return self.state_history[self._current_step]
 
+    def __numpy_state(self):
+        return
+
     def __render_rgb(self):
         # todo set based on min/max agent locations
         render_resolution = (512, 512)
@@ -234,18 +237,6 @@ class LeaderFollowerEnv(ParallelEnv):
 
     def num_poi_observed(self):
         return sum(poi.observed for poi in self.pois.values())
-
-    # def __update_poi_state(self):
-    #     for poi in self.pois:
-    #         position = self.positions[poi.id]
-    #         distances = calculateDistance(position, boids_colony_state.positions)
-    #         num_observations = np.sum(distances <= self.observation_radius)
-    #         if num_observations >= self.coupling:
-    #             poi.observed = True
-    #             # Get ids of swarm members that observed this poi
-    #             observer_ids = np.nonzero(distances <= self.observation_radius)[0]
-    #             poi.observation_list.append(observer_ids)
-    #     return
 
     def done(self):
         all_obs = self.num_poi_observed() == len(self.pois.values())

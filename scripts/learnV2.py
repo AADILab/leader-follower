@@ -5,6 +5,7 @@
 
 """
 import argparse
+import math
 import time
 from pathlib import Path
 
@@ -21,7 +22,7 @@ from leader_follower.utils import load_config
 
 def run_experiment(experiment_config, meta_config):
     # 15x15 map. Leaders should have infinite obs radius option
-    leader_obs_rad = 100
+    leader_obs_rad = math.inf
     leader_value = 1
 
     follower_value = 1
