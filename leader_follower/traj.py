@@ -78,7 +78,7 @@ def plot_trajectories(traj_df: DataFrame):
         x="x", y="y", 
         hue="Label", units="name", 
 
-        palette= custom_pallete, #{"Leader 0": "C0", "Leader 1": "C0", "Follower": "C1", "Unobserved POI": "k", "Observed POI":"C2"},
+        palette= custom_pallete,
         marker="o", sort=False, estimator=None
     )
     g.set(ylim=(0,15), xlim=(0,15))
@@ -86,30 +86,3 @@ def plot_trajectories(traj_df: DataFrame):
     g.set_yticks(list(range(16)))
 
     plt.show()
-
-
-
-
-
-        # p = so.Plot(traj_df, "x", "y", color="Label", marker="name" \
-        #     ).add(so.Path(marker="o", pointsize=2, linewidth=0.75, fillcolor="w") \
-        #         )
-
-        
-        # f, ax = plt.subplots()
-        # # ax = f.add_axes([0.1, 0.1, 0.6, 0.75])
-        # res = p.on(ax).plot()
-        # ax.axis('equal')
-        # ax.set_xlim([0,15])
-        # ax.set_ylim([0,15])
-        # ax.set_xticks(list(range(16)))
-        # ax.set_yticks(list(range(16)))
-
-        # box = ax.get_position()
-        # ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
-
-        # # plt.legend(loc="upper right")
-
-        # # sns.move_legend(ax, "upper_left", bbox_to_anchor=(1,1))
-
-        # res.show()
