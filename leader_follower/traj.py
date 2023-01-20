@@ -1,27 +1,41 @@
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 from pandas import DataFrame, read_csv
+from matplotlib.pyplot import show
+import seaborn as sns
+import seaborn.objects as so
+import matplotlib.pyplot as plt
 
 from leader_follower import project_properties
 from leader_follower.leader_follower_env import LeaderFollowerEnv
+from leader_follower.agent import Leader
 
 def save_trajectories(env: LeaderFollowerEnv):
     # print(env.leaders["leader_0"].state_history)
-    traj_dict = {
-        leader_name: {
-            "state_history": leader.state_history,
-            "action_history": leader.action_history,
-            "observation_history": leader.observation_history
-        } for leader_name, leader in env.leaders.items()
-    } | {
-        follower_name: {
-            "state_history": follower.state_history,
-            "action_history": follower.action_history,
-            "observation_history": follower.observation_history
-        } for follower_name, follower in env.followers.items()
-    }
-    traj_df = DataFrame.from_dict(traj_dict)
+
+    labels = ['t','x', 'y', 'name', 'leader', 'poi', 'observed', 'Label']
+    data = []
+
+    agents = list(env.leaders.items()) + list(env.followers.items())
+    for agent_name, agent in agents:
+        for t, state in enumerate(agent.state_history):
+            if type(agent) == Leader:
+                label = "Leader " + agent_name[-1]
+            else:
+                label = "Follower"
+            data.append([t, state[0], state[1], agent_name, type(agent)==Leader, False, False, label])
+
+    for poi_name, poi in env.pois.items():
+        for t in range(len(poi.observation_history)+1):
+            if poi.observed:
+                label = "Observed POI"
+            else:
+                label = "Unobserved POI"
+            data.append([t, poi.state[0], poi.state[1], poi_name, False, True, poi.observed, label])
+
+    traj_df = DataFrame(data=data, columns=labels)
 
     traj_dir = Path(project_properties.output_dir, 'trajs')
     if not traj_dir.exists():
@@ -30,7 +44,9 @@ def save_trajectories(env: LeaderFollowerEnv):
     num_trajs = len(list(traj_dir.iterdir()))
     trajname = Path(traj_dir,f'trajectories_{num_trajs}.csv')
 
-    traj_df.to_csv(trajname)
+    traj_df.to_csv(trajname, index=False)
+
+    # print(traj_df)
 
 def load_trajectories(traj_num: Optional[int] = None):
     traj_dir = Path(project_properties.output_dir, 'trajs')
@@ -43,3 +59,37 @@ def load_trajectories(traj_num: Optional[int] = None):
     trajname = Path(traj_dir,f'trajectories_{traj_num}.csv')
 
     return read_csv(trajname)
+
+def fake_error(vector):
+    return (min(vector), max(vector))
+
+def plot_trajectories(traj_df: DataFrame):
+    sns.set_theme()
+
+    # sns.jointplot(
+    #     data=traj_df,
+    #     x="x", y="y", hue="Label", style="_name",
+    #     marker='o'
+    # )
+    
+    # exit()
+
+    print(traj_df)
+
+    p = so.Plot(traj_df, "x", "y", color="Label", marker="name" \
+        ).add(so.Path(marker="o", pointsize=2, linewidth=0.75, fillcolor="w") \
+            ).limit(y=(0,15),x=(0,15) \
+                ).layout(size=(10,10))
+    
+    # f, ax = plt.subplots()
+    # ax.set_xticks(list(range(16)))
+    # p.on(ax).show()
+    # p.add(so.Path())
+    p.show()
+
+    # sns.relplot(
+    #     data=traj_df,
+    #     x="x", y="y", hue="Label", style="_name",
+    #     kind="line", marker='o'
+    # )
+    # show()

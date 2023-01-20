@@ -1,5 +1,5 @@
-from leader_follower.traj import load_trajectories
+from leader_follower.traj import load_trajectories, plot_trajectories
 
 traj_df = load_trajectories()
 
-print(traj_df)
+plot_trajectories(traj_df)

@@ -62,9 +62,9 @@ def run_experiment(experiment_config, meta_config):
 
     reward_func = reward_map['difference']
     n_hidden = 10
-    sim_subpop_size = 15
-    subpop_size = 30
-    n_gens = 5
+    sim_subpop_size = 1
+    subpop_size = 2
+    n_gens = 1
 
     start_time = time.time()
     # env, n_hidden, population_size, n_gens, sim_pop_size, reward_func
