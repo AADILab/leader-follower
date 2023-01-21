@@ -1,0 +1,6 @@
+leader_positions:
+  - [1, 1]
+follower_positions:
+  - [2,1]
+poi_positions:
+  - [5,1]

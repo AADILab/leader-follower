@@ -66,7 +66,7 @@ def fake_error(vector):
 def plot_trajectories(traj_df: DataFrame):
     sns.set_theme()
 
-    custom_pallete = {"Follower": (0.5,0.7,0.7), "Unobserved POI": (1,0,0), "Observed POI":(0,1,0)}
+    custom_pallete = {"Follower": (0.5,0.7,0.7), "Unobserved POI": (0.8,0,0), "Observed POI":(0,0.8,0)}
     label_set = set(traj_df["Label"])
     leaders = [item for item in label_set if "Leader" in item]
     for count, leader_name in enumerate(leaders):
@@ -77,7 +77,6 @@ def plot_trajectories(traj_df: DataFrame):
         data=traj_df, 
         x="x", y="y", 
         hue="Label", units="name", 
-
         palette= custom_pallete,
         marker="o", sort=False, estimator=None
     )
