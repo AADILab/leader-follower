@@ -15,6 +15,7 @@ from leader_follower.learn.cceaV2 import neuro_evolve, rollout, plot_fitnesses
 from leader_follower.learn.rewards import calc_global, calc_diff_rewards, calc_dpp
 from leader_follower.traj import save_trajectories
 from leader_follower.utils import load_config
+from leader_follower.env_utils import save_env
 
 # This may be necessary if matplotlib is not configured properly
 # import matplotlib
@@ -27,7 +28,7 @@ def run_experiment(experiment_config, meta_config):
 
     follower_value = 1
     # todo Followers should not have repulsion and attraction radii with xy update rules
-    repulsion_rad = 0
+    repulsion_rad = 0.5
     attraction_rad = 1
 
     poi_obs_rad = 1
@@ -41,7 +42,7 @@ def run_experiment(experiment_config, meta_config):
     ]
     followers = [
         Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=follower_value,
-                 repulsion_radius=repulsion_rad, repulsion_strength=0,
+                 repulsion_radius=repulsion_rad, repulsion_strength=5,
                  attraction_radius=attraction_rad, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
@@ -77,12 +78,13 @@ def run_experiment(experiment_config, meta_config):
     print(f'{rewards=}')
     plot_fitnesses(avg_fitnesses=[], max_fitnesses=max_fits)
     save_trajectories(env=env)
+    save_env(env=env)
     # gw.plot_agent_trajectories()
     return
 
 def main(main_args):
     config_names = [
-        'carbon'
+        'atrium'
     ]
     config_fns = [
         each_fn

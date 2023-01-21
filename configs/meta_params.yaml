@@ -20,6 +20,6 @@ num_evaluations: 5
 sub_population_size: 25
 reward_function: global
 load_population: null
-poi_coupling: 2
-num_generations: 100
+poi_coupling: 3
+num_generations: 1000
 episode_length: 30
