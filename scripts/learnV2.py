@@ -27,12 +27,12 @@ def run_experiment(experiment_config, meta_config):
 
     follower_value = 1
     # todo Followers should not have repulsion and attraction radii with xy update rules
-    repulsion_rad = 0.5
+    repulsion_rad = 0
     attraction_rad = 1
 
     poi_obs_rad = 1
     poi_value = 0
-    poi_coupling = 1
+    poi_coupling = meta_config['poi_coupling']
 
     leaders = [
         Leader(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=leader_value,
@@ -41,7 +41,7 @@ def run_experiment(experiment_config, meta_config):
     ]
     followers = [
         Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=follower_value,
-                 repulsion_radius=repulsion_rad, repulsion_strength=2,
+                 repulsion_radius=repulsion_rad, repulsion_strength=0,
                  attraction_radius=attraction_rad, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
@@ -64,7 +64,7 @@ def run_experiment(experiment_config, meta_config):
     n_hidden = 5
     sim_subpop_size = 15
     subpop_size = 30
-    n_gens = 100
+    n_gens = meta_config['num_generations']
 
     start_time = time.time()
     # env, n_hidden, population_size, n_gens, sim_pop_size, reward_func

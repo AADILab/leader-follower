@@ -6,7 +6,6 @@ attraction_multiplier: 5
 repulsion_multiplier: 1
 sensor_resolution: 4
 leader_observation_radius: 5
-poi_coupling: 3
 poi_observation_radius: 5
 min_velocity: 0
 max_velocity: 10
@@ -21,5 +20,6 @@ num_evaluations: 5
 sub_population_size: 25
 reward_function: global
 load_population: null
-num_generations: 20
-episode_length: 5
+poi_coupling: 2
+num_generations: 100
+episode_length: 30

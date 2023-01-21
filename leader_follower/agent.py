@@ -317,7 +317,7 @@ class Follower(Agent):
         if mag > 1:
             attraction_diff = attraction_diff / mag
         attraction_diff = np.nan_to_num(attraction_diff)
-        weighted_attraction = - attraction_diff * self.attraction_strength
+        weighted_attraction = attraction_diff * self.attraction_strength
 
         action = weighted_attraction - weighted_repulsion
         self.action_history.append(action)
