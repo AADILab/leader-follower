@@ -17,7 +17,7 @@ def main(main_args):
     n_outputs = 2
     n_hidden = 0
 
-    model = NeuralNetwork(n_inputs=n_inputs, n_outputs=n_outputs, n_hidden=n_hidden, name='test_pytorch')
+    model = NeuralNetwork(n_inputs=n_inputs, n_outputs=n_outputs, n_hidden=n_hidden)
     print(f'Using device: {model.device()}\n'
           f'{model}')
 

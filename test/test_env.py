@@ -15,11 +15,10 @@ from pettingzoo.test import parallel_api_test
 from leader_follower import project_properties
 from leader_follower.agent import Poi, Follower, Leader
 from leader_follower.leader_follower_env import LeaderFollowerEnv
-from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.utils import load_config
 
 
-def display_finale_agents(env):
+def display_final_agents(env):
     print(f'Remaining agents: {len(env.agents)}')
     for agent_name in env.agents:
         agent = env.agent_mapping[agent_name]
@@ -137,7 +136,7 @@ def test_step(env, render):
             plt.imshow(frame)
             plt.show()
             time.sleep(render_delay)
-    display_finale_agents(env)
+    display_final_agents(env)
     print(f'=' * 80)
     influence_counts = [
         follower.influence_counts()
@@ -188,7 +187,7 @@ def test_random(env, render):
             plt.show()
             time.sleep(render_delay)
 
-    display_finale_agents(env)
+    display_final_agents(env)
     print(f'=' * 80)
     return
 
@@ -217,50 +216,46 @@ def test_api(env):
     print(f'Running parallel api tests')
     result = parallel_api_test(env, num_cycles=50)
     print(f'{result=}')
-    display_finale_agents(env)
+    display_final_agents(env)
     print(f'=' * 80)
     return
 
 
 def main(main_args):
-    max_steps = 100
     render_mode = 'rgb_array'
     delta_time = 1
 
-    leader_obs_rad = 5
-    repulsion_rad = 2
-    attraction_rad = 5
+    leader_obs_rad = 100
+    leader_value = 1
 
-    velocity_range = (-1, 1)
-    state_res = 4
+    follower_value = 1
+    repulsion_rad = 0.5
+    attraction_rad = 1
 
-    # n_inputs, n_outputs, n_hidden=2, network_func=linear_layer, name=None
-    # neural_network = NeuralNetwork(n_inputs=8, n_outputs=2, n_hidden=2)
+    poi_obs_rad = 1
+    poi_value = 0
+    poi_coupling = 1
 
     config_fn = Path(project_properties.test_dir, 'configs', 'test.yaml')
     experiment_config = load_config(str(config_fn))
 
-    # agent_id, policy_population: list[NeuralNetwork], location, velocity, sensor_resolution, observation_radius, value
     leaders = [
-        Leader(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
-               observation_radius=leader_obs_rad, policy=NeuralNetwork(n_inputs=8, n_hidden=2, n_outputs=2))
+        Leader(idx, location=each_pos, sensor_resolution=4, value=leader_value,
+               observation_radius=leader_obs_rad, policy=None)
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
-    # agent_id, update_rule, location, velocity, sensor_resolution, observation_radius, value
     followers = [
-        Follower(agent_id=idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
+        Follower(agent_id=idx, location=each_pos, sensor_resolution=4, value=follower_value,
                  repulsion_radius=repulsion_rad, repulsion_strength=2,
                  attraction_radius=attraction_rad, attraction_strength=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
-    #  agent_id, location, velocity, sensor_resolution, observation_radius, value, coupling
     pois = [
-        Poi(idx, location=each_pos, velocity=(0, 0), sensor_resolution=4, value=1,
-            observation_radius=leader_obs_rad, coupling=1)
+        Poi(idx, location=each_pos, sensor_resolution=4, value=poi_value,
+            observation_radius=poi_obs_rad, coupling=poi_coupling)
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
     ]
 
-    # leaders: list[Leader], followers: list[Follower], pois: list[Poi], max_steps, delta_time=1, render_mode=None
     env = LeaderFollowerEnv(
         leaders=leaders, followers=followers, pois=pois, max_steps=100, render_mode=render_mode, delta_time=delta_time
     )
@@ -268,13 +263,13 @@ def main(main_args):
     # test_observations(env)
     # test_actions(env)
     # test_render(env)
-    # #
+
     test_step(env, render=None)
     # test_step(env, render='rgb_array')
-    # #
+
     # test_random(env, render=None)
     # test_random(env, render='rgb_array')
-    # #
+
     # test_rollout(env, render=None)
     test_rollout(env, render='rgb_array')
     #

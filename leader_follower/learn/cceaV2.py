@@ -60,7 +60,7 @@ def mutate_gaussian(individual, proportion=0.1, amount=0.05):
     return new_ind
 
 def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
-    env.reset()
+    observations = env.reset()
     agent_dones = env.done()
     done = all(agent_dones.values())
 
@@ -69,17 +69,13 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
         env.agent_mapping[agent_name].policy = policy_info['network']
 
     while not done:
-        observations = env.get_observations()
         next_actions = env.get_actions_from_observations(observations=observations)
         observations, rewards, agent_dones, truncs, infos = env.step(next_actions)
         done = all(agent_dones.values())
         if render:
             env.render()
 
-#     episode_rewards = reward_func(env)
-#
 #     if type(episode_rewards) == float:
-#         # print(agent_rewards, len(env._leaders)+env._followers))
 #         # agent_rewards = [agent_rewards] * (len(env._leaders)+len(env._followers))
 #         episode_rewards = {
 #             agent_name: episode_rewards for agent_name, _ in individuals.items()
@@ -103,6 +99,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
     downselect_func = downselect_top_n
 
     # only creat sub-pops for agents capable of learning
+    # todo allow for policy sharing
     agent_pops = {
         agent_name: [
             {

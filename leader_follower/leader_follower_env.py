@@ -36,17 +36,9 @@ class LeaderFollowerEnv(ParallelEnv):
         These attributes should not be changed after initialization.
         """
         self._current_step = 0
-        # self._agent_counters = {}
         self.max_steps = max_steps
         self.delta_time = delta_time
         self.render_mode = render_mode
-
-        # self.leaders = leaders
-        # self.followers = followers
-        # self.pois = pois
-
-        # def_obs_radius = np.sqrt(np.max(self.map_dimensions) ** 2 + np.max(self.map_dimensions) ** 2)
-        # self.observation_radius = observation_radius if observation_radius else def_obs_radius
 
         # todo make possible to determine active from possible agents
         self.leaders = {f'{each_agent.name}': each_agent for each_agent in leaders}
@@ -94,6 +86,17 @@ class LeaderFollowerEnv(ParallelEnv):
         :return:
         """
         return self.state_history[self._current_step]
+
+    def save_environment(self):
+        # todo save state to disk for easier reconstruction
+        return
+
+    def load_environment(self):
+        # todo load state from disk
+        return
+
+    def __numpy_state(self):
+        return
 
     def __render_rgb(self):
         # todo set based on min/max agent locations
@@ -143,7 +146,7 @@ class LeaderFollowerEnv(ParallelEnv):
 
     def __render_video(self):
         # todo implement video render
-        return []
+        pass
 
     def render(self, mode: str | None = None):
         """
@@ -161,7 +164,8 @@ class LeaderFollowerEnv(ParallelEnv):
 
         match mode:
             case 'human':
-                frame = self.__render_video()
+                # frame = self.__render_video()
+                frame = None
             case 'rgb_array':
                 frame = self.__render_rgb()
             case _:
@@ -241,18 +245,6 @@ class LeaderFollowerEnv(ParallelEnv):
 
     def num_poi_observed(self):
         return sum(poi.observed for poi in self.pois.values())
-
-    # def __update_poi_state(self):
-    #     for poi in self.pois:
-    #         position = self.positions[poi.id]
-    #         distances = calculateDistance(position, boids_colony_state.positions)
-    #         num_observations = np.sum(distances <= self.observation_radius)
-    #         if num_observations >= self.coupling:
-    #             poi.observed = True
-    #             # Get ids of swarm members that observed this poi
-    #             observer_ids = np.nonzero(distances <= self.observation_radius)[0]
-    #             poi.observation_list.append(observer_ids)
-    #     return
 
     def done(self):
         all_obs = self.num_poi_observed() == len(self.pois.values())
