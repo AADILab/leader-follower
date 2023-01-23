@@ -87,6 +87,14 @@ class LeaderFollowerEnv(ParallelEnv):
         """
         return self.state_history[self._current_step]
 
+    def save_environment(self):
+        # todo save state to disk for easier reconstruction
+        return
+
+    def load_environment(self):
+        # todo load state from disk
+        return
+
     def __numpy_state(self):
         return
 

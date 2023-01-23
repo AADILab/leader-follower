@@ -13,6 +13,8 @@ import numpy as np
 from leader_follower import project_properties
 from leader_follower.agent import Leader, Follower, Poi
 from leader_follower.leader_follower_env import LeaderFollowerEnv
+from leader_follower.learn.rewards import calc_diff_rewards
+
 
 def actions_from_states(states):
     prev_loc = (states[0]['x'], states[0]['y'])
@@ -27,26 +29,41 @@ def actions_from_states(states):
     return actions
 
 def reconstruct_leader(traj, a_id):
+    obs_rad = 100
+    value = 1
+
     prev_loc = (traj[0]['x'], traj[0]['y'])
     new_leader = Leader(
-        agent_id=a_id, location=prev_loc, sensor_resolution=4, value=1, observation_radius=1, policy=None
+        agent_id=a_id, location=prev_loc, sensor_resolution=4, value=value, observation_radius=obs_rad, policy=None
     )
     actions = actions_from_states(traj)
     return new_leader, actions
+
 def reconstruct_follower(traj, a_id):
+    value = 1
+    repulsion_rad = 0.5
+    attraction_rad = 1
+
     prev_loc = (traj[0]['x'], traj[0]['y'])
     new_follower = Follower(
-        agent_id=a_id, location=prev_loc, sensor_resolution=4, value=1,
-        repulsion_radius=5, repulsion_strength=1,
-        attraction_radius=5, attraction_strength=1
+        agent_id=a_id, location=prev_loc, sensor_resolution=4, value=value,
+        repulsion_radius=repulsion_rad, repulsion_strength=1,
+        attraction_radius=attraction_rad, attraction_strength=1
     )
     actions = actions_from_states(traj)
     return new_follower, actions
 
 def reconstruct_poi(traj, a_id):
+    obs_rad = 1
+    value = 0
+    coupling = 3
+
     prev_loc = (traj[0]['x'], traj[0]['y'])
     # todo determine coupling requirement
-    new_poi = Poi(agent_id=a_id, location=prev_loc, sensor_resolution=4, value=0, observation_radius=1, coupling=1)
+    new_poi = Poi(
+        agent_id=a_id, location=prev_loc, sensor_resolution=4, value=value,
+        observation_radius=obs_rad, coupling=coupling
+    )
     actions = actions_from_states(traj)
     return new_poi, actions
 
@@ -87,12 +104,46 @@ def reconstruct_env(agent_trajs):
     for agent_name, actions in agent_actions.items():
         agent = env.agent_mapping[agent_name]
         agent.action_history = actions
-    valid = validate_reconstruction(env, agent_trajs)
-    return env, valid
+    return env
+
+def validate_states(env, agent_name, true_traj):
+    valid = True
+    agent = env.agent_mapping[agent_name]
+    for truth_entry in true_traj:
+        time_step = truth_entry['t']
+        true_loc = (truth_entry['x'], truth_entry['y'])
+        agent_state = agent.state_history[time_step]
+        if agent_state != true_loc:
+            valid = False
+    return valid
+
+def validate_observed(env, agent_name, true_traj):
+    valid = True
+    agent = env.agent_mapping[agent_name]
+    for truth_entry in true_traj:
+        time_step = truth_entry['t']
+        true_observed = truth_entry['observed'] == 'True'
+
+        # todo look at observation history to determine if the agent was observed at this time step
+        # todo check csv file for if it saves it at each time step or only at end
+        # agent_observation = agent.observation_history[time_step]
+        # agent_observed = len(agent_observation) >= agent.coupling
+        agent_observed = agent.observed
+        if agent_observed != true_observed:
+            valid = False
+    return valid
 
 def validate_reconstruction(env, agent_trajs):
-    # todo validate against stored values to make sure observed is being correctly determined
-    return False
+    # validate against stored values to make sure observed is being correctly determined
+    agent_valids = {}
+    for agent_name, traj in agent_trajs.items():
+        agent_type = agent_name.split('_')[0]
+        valid = validate_states(env, agent_name, traj)
+        if agent_type == 'poi':
+            valid_poi = validate_observed(env, agent_name, traj)
+            valid = valid and valid_poi
+        agent_valids[agent_name] = valid
+    return agent_valids
 
 def parse_traj_csv(traj_fname):
     agent_trajs = {}
@@ -115,6 +166,14 @@ def main(main_args):
     traj_fname = Path(project_properties.project_path, 'bugs', 'trajectories_54.csv')
     agent_trajs = parse_traj_csv(traj_fname)
     env = reconstruct_env(agent_trajs)
+
+    print(f'validating environment reconstruction')
+    valid = validate_reconstruction(env, agent_trajs)
+    for name, isvalid in valid.items():
+        print(f'{name=} | {isvalid=}')
+
+    rewards = calc_diff_rewards(env)
+    print(f'{rewards}=')
     return
 
 
