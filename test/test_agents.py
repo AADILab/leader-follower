@@ -5,7 +5,7 @@
 
 """
 import argparse
-from pathlib import Path
+import inspect
 
 import numpy as np
 
@@ -13,7 +13,7 @@ from leader_follower import project_properties
 from leader_follower.agent import Follower, Leader, Poi
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.neural_network import NeuralNetwork
-from leader_follower.positions import load_positions
+
 
 def print_environment_step(env, obs, acts):
     print(f'{"=" * project_properties.TERMINAL_COLUMNS}')
@@ -36,21 +36,40 @@ def print_environment_step(env, obs, acts):
     print(f'{"=" * project_properties.TERMINAL_COLUMNS}')
     return
 
-def test_leader():
-    sensor_resolution = 4
+def print_test_separator():
+    caller_func = inspect.stack()[1][3]
+    print(f'{"=" * project_properties.TERMINAL_COLUMNS}')
+    print(f'{"=" * project_properties.TERMINAL_COLUMNS}')
+    print(f'{"=" * project_properties.TERMINAL_COLUMNS}')
+    print(f'Running {caller_func} tests')
+    return
 
-    base_network = NeuralNetwork(n_inputs=sensor_resolution * 2, n_outputs = 2)
+def test_leader_single():
+    print_test_separator()
+    sensor_resolution = 4
+    leader_obs_rad = 5
+    leader_value = 1
     test_network = NeuralNetwork(n_inputs=sensor_resolution * 2, n_outputs = 2)
 
-    base_loc = (5, 5)
-    base_leader = Leader(0, location=base_loc, sensor_resolution=sensor_resolution, observation_radius=5, value=1,
+    follower_value = 1
+    repulsion_radius = 1
+    repulsion_strength = 5
+    attraction_radius = 5
+    attraction_strength = 1
+
+    poi_value = 0
+    poi_obs_rad = 1
+    poi_coupling = 1
+
+    base_loc = (0, 0)
+    surround_locs = [(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (-1, 1), (-1, -1), (1, -1)]
+
+    base_network = NeuralNetwork(n_inputs=sensor_resolution * 2, n_outputs = 2)
+    base_leader = Leader(0, location=base_loc, sensor_resolution=sensor_resolution, observation_radius=leader_obs_rad, value=leader_value,
                          policy=base_network)
-    # todo look into why value in observation is slightly smaller when agent is at the boundary of a quadrant
-    # todo why is observation twice the size of the sensor resolution
-    surround_locs = [(5, 4), (5, 6), (4, 5), (6, 5), (4, 4), (4, 6), (6, 4), (6, 6)]
 
     for idx, each_loc in enumerate(surround_locs):
-        each_leader = Leader(idx + 1, location=each_loc, sensor_resolution=4, observation_radius=5, value=1,
+        each_leader = Leader(idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=leader_obs_rad, value=leader_value,
                              policy=test_network)
         leads = [base_leader, each_leader]
         env = LeaderFollowerEnv(leaders=leads, followers=[], pois=[], max_steps=100, render_mode=None, delta_time=1)
@@ -58,32 +77,71 @@ def test_leader():
         acts = env.get_actions()
         print_environment_step(env, obs, acts)
 
-    configs_dir = Path(project_properties.test_config_dir, 'leaders')
-    config_fns = configs_dir.glob('*.yaml')
-    for con_fn in config_fns:
-        load_positions(con_fn)
+    for idx, each_loc in enumerate(surround_locs):
+        each_follower = Follower(idx + 1, location=each_loc, sensor_resolution=sensor_resolution, value=follower_value,
+                                 repulsion_radius=repulsion_radius, repulsion_strength=repulsion_strength,
+                                 attraction_radius=attraction_radius, attraction_strength=attraction_strength
+                                 )
+        followers = [each_follower]
+        env = LeaderFollowerEnv(leaders=[base_leader], followers=followers, pois=[], max_steps=100, render_mode=None, delta_time=1)
+        obs = env.get_observations()
+        acts = env.get_actions()
+        print_environment_step(env, obs, acts)
+
+    for idx, each_loc in enumerate(surround_locs):
+        each_poi = Poi(idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad, value=poi_value, coupling=poi_coupling)
+        pois = [each_poi]
+        env = LeaderFollowerEnv(leaders=[base_leader], followers=[], pois=pois, max_steps=100, render_mode=None, delta_time=1)
+        obs = env.get_observations()
+        acts = env.get_actions()
+        print_environment_step(env, obs, acts)
+
+    # todo test rollout using the starting configurations in the configs/followers directory
+    return
+
+def test_leader_multiple(num_surround):
+    # todo implement multiple agent tests for leader
+    print_test_separator()
     return
 
 
-def test_follower():
+def test_follower_single():
+    print_test_separator()
     sensor_resolution = 4
+    leader_obs_rad = 5
+    leader_value = 1
+    test_network = NeuralNetwork(n_inputs=sensor_resolution * 2, n_outputs=2)
 
+    follower_value = 1
     repulsion_radius = 1
     repulsion_strength = 5
-
     attraction_radius = 5
     attraction_strength = 1
 
-    base_loc = (5, 5)
+    poi_value = 0
+    poi_obs_rad = 1
+    poi_coupling = 1
+
+    base_loc = (0, 0)
+    surround_locs = [(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (-1, 1), (-1, -1), (1, -1)]
+
     base_follower = Follower(
-        0, location=base_loc, sensor_resolution=sensor_resolution, value=1,
+        0, location=base_loc, sensor_resolution=sensor_resolution, value=follower_value,
         repulsion_radius=repulsion_radius, repulsion_strength=repulsion_strength,
         attraction_radius=attraction_radius, attraction_strength=attraction_strength
     )
-    surround_locs = [(5, 4), (5, 6), (4, 5), (6, 5), (4, 4), (4, 6), (6, 4), (6, 6)]
 
     for idx, each_loc in enumerate(surround_locs):
-        each_follower = Follower(idx + 1, location=each_loc,  sensor_resolution=sensor_resolution, value=1,
+        each_leader = Leader(idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=leader_obs_rad, value=leader_value,
+                             policy=test_network)
+        leads = [each_leader]
+        env = LeaderFollowerEnv(leaders=leads, followers=[base_follower], pois=[], max_steps=100, render_mode=None, delta_time=1)
+        obs = env.get_observations()
+        acts = env.get_actions()
+        print_environment_step(env, obs, acts)
+
+    for idx, each_loc in enumerate(surround_locs):
+        each_follower = Follower(idx + 1, location=each_loc, sensor_resolution=sensor_resolution, value=follower_value,
                                  repulsion_radius=repulsion_radius, repulsion_strength=repulsion_strength,
                                  attraction_radius=attraction_radius, attraction_strength=attraction_strength
                                  )
@@ -92,28 +150,91 @@ def test_follower():
         obs = env.get_observations()
         acts = env.get_actions()
         print_environment_step(env, obs, acts)
+
+    for idx, each_loc in enumerate(surround_locs):
+        each_poi = Poi(idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad, value=poi_value, coupling=poi_coupling)
+        pois = [each_poi]
+        env = LeaderFollowerEnv(leaders=[], followers=[base_follower], pois=pois, max_steps=100, render_mode=None, delta_time=1)
+        obs = env.get_observations()
+        acts = env.get_actions()
+        print_environment_step(env, obs, acts)
+
+    # todo test rollout using the starting configurations in the configs/followers directory
+    return
+
+def test_follower_multiple(num_surround):
+    # todo implement multiple agent tests for follower
+    print_test_separator()
     return
 
 
-def test_poi():
-    base_loc = (5, 5)
-    base_poi = Poi(0, location=base_loc, sensor_resolution=4, observation_radius=1, value=1,coupling=1)
-    surround_locs = [(5, 4), (5, 6), (4, 5), (6, 5), (4, 4), (4, 6), (6, 4), (6, 6)]
+def test_poi_single():
+    print_test_separator()
+    sensor_resolution = 4
+    leader_obs_rad = 5
+    leader_value = 1
+    test_network = NeuralNetwork(n_inputs=sensor_resolution * 2, n_outputs=2)
+
+    follower_value = 1
+    repulsion_radius = 1
+    repulsion_strength = 5
+    attraction_radius = 5
+    attraction_strength = 1
+
+    poi_value = 0
+    poi_obs_rad = 1
+    poi_coupling = 1
+
+    base_loc = (0, 0)
+    surround_locs = [(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (-1, 1), (-1, -1), (1, -1)]
+
+    base_poi = Poi(0, location=base_loc, sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad, value=poi_value, coupling=poi_coupling)
 
     for idx, each_loc in enumerate(surround_locs):
-        each_poi = Poi(idx + 1, location=each_loc,  sensor_resolution=4, observation_radius=1, value=1, coupling=1)
+        each_leader = Leader(idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=leader_obs_rad, value=leader_value,
+                             policy=test_network)
+        leads = [each_leader]
+        env = LeaderFollowerEnv(leaders=leads, followers=[], pois=[base_poi], max_steps=100, render_mode=None, delta_time=1)
+        obs = env.get_observations()
+        acts = env.get_actions()
+        print_environment_step(env, obs, acts)
+
+    for idx, each_loc in enumerate(surround_locs):
+        each_follower = Follower(idx + 1, location=each_loc, sensor_resolution=sensor_resolution, value=follower_value,
+                                 repulsion_radius=repulsion_radius, repulsion_strength=repulsion_strength,
+                                 attraction_radius=attraction_radius, attraction_strength=attraction_strength
+                                 )
+        followers = [each_follower]
+        env = LeaderFollowerEnv(leaders=[], followers=followers, pois=[base_poi], max_steps=100, render_mode=None, delta_time=1)
+        obs = env.get_observations()
+        acts = env.get_actions()
+        print_environment_step(env, obs, acts)
+
+    for idx, each_loc in enumerate(surround_locs):
+        each_poi = Poi(idx + 1, location=each_loc,  sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad, value=poi_value, coupling=poi_coupling)
         pois = [base_poi, each_poi]
         env = LeaderFollowerEnv(leaders=[], followers=[], pois=pois, max_steps=100, render_mode=None, delta_time=1)
         obs = env.get_observations()
         acts = env.get_actions()
         print_environment_step(env, obs, acts)
+
+    # todo test rollout using the starting configurations in the configs/pois directory
     return
 
+def test_poi_multiple(num_surround):
+    # todo implement multiple agent tests for leader
+    print_test_separator()
+    return
 
 def main(main_args):
-    test_leader()
-    test_follower()
-    test_poi()
+    test_leader_single()
+    test_follower_single()
+    test_poi_single()
+    ###########################
+    # todo loop up to 8 surrounding agents
+    test_leader_multiple(2)
+    test_follower_multiple(2)
+    test_poi_multiple(2)
     return
 
 
