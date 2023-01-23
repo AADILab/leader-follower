@@ -99,6 +99,7 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
     downselect_func = downselect_top_n
 
     # only creat sub-pops for agents capable of learning
+    # todo allow for policy sharing
     agent_pops = {
         agent_name: [
             {
