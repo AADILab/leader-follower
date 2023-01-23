@@ -75,6 +75,7 @@ def test_leader_multiple(num_surround):
     for idx, locs in enumerate(surround_permutations):
         leads = [base_leader]
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_leader = Leader(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=leader_obs_rad,
                 value=leader_value, policy=test_network
@@ -89,6 +90,7 @@ def test_leader_multiple(num_surround):
         leads = [base_leader]
         followers = []
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_follower = Follower(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution,value=follower_value,
                 repulsion_radius=repulsion_radius, repulsion_strength=repulsion_strength,
@@ -106,6 +108,7 @@ def test_leader_multiple(num_surround):
         leads = [base_leader]
         pois = []
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_poi = Poi(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad,
                 value=poi_value, coupling=poi_coupling
@@ -148,12 +151,15 @@ def test_follower_multiple(num_surround):
         followers = [base_follower]
         leads = []
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_leader = Leader(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=leader_obs_rad,
                 value=leader_value, policy=test_network
             )
             leads.append(each_leader)
-        env = LeaderFollowerEnv(leaders=leads, followers=followers, pois=[], max_steps=100, render_mode=None, delta_time=1)
+        env = LeaderFollowerEnv(
+            leaders=leads, followers=followers, pois=[], max_steps=100, render_mode=None, delta_time=1
+        )
         obs = env.get_observations()
         acts = env.get_actions()
         print_environment_step(env, obs, acts)
@@ -161,6 +167,7 @@ def test_follower_multiple(num_surround):
     for idx, locs in enumerate(surround_permutations):
         followers = []
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_follower = Follower(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution, value=follower_value,
                 repulsion_radius=repulsion_radius, repulsion_strength=repulsion_strength,
@@ -178,12 +185,15 @@ def test_follower_multiple(num_surround):
         followers = [base_follower]
         pois = []
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_poi = Poi(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad,
                 value=poi_value, coupling=poi_coupling
             )
             pois.append(each_poi)
-        env = LeaderFollowerEnv(leaders=[], followers=followers, pois=pois, max_steps=100, render_mode=None, delta_time=1)
+        env = LeaderFollowerEnv(
+            leaders=[], followers=followers, pois=pois, max_steps=100, render_mode=None, delta_time=1
+        )
         obs = env.get_observations()
         acts = env.get_actions()
         print_environment_step(env, obs, acts)
@@ -209,13 +219,17 @@ def test_poi_multiple(num_surround):
 
     base_loc = (0, 0)
     surround_locs = [(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (-1, 1), (-1, -1), (1, -1)]
-    base_poi = Poi(0, location=base_loc, sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad, value=poi_value, coupling=poi_coupling)
+    base_poi = Poi(
+        0, location=base_loc, sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad,
+        value=poi_value, coupling=poi_coupling
+    )
 
     surround_permutations = list(itertools.permutations(surround_locs, r=num_surround))
     for idx, locs in enumerate(surround_permutations):
         pois = [base_poi]
         leads = []
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_leader = Leader(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=leader_obs_rad,
                 value=leader_value, policy=test_network
@@ -231,6 +245,7 @@ def test_poi_multiple(num_surround):
         pois = [base_poi]
         followers = []
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_follower = Follower(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution, value=follower_value,
                 repulsion_radius=repulsion_radius, repulsion_strength=repulsion_strength,
@@ -247,6 +262,7 @@ def test_poi_multiple(num_surround):
     for idx, locs in enumerate(surround_permutations):
         pois = [base_poi]
         for loc_idx, each_loc in enumerate(locs):
+            # noinspection PyTypeChecker
             each_poi = Poi(
                 loc_idx + 1, location=each_loc, sensor_resolution=sensor_resolution, observation_radius=poi_obs_rad,
                 value=poi_value, coupling=poi_coupling
