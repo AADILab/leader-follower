@@ -34,6 +34,11 @@ def run_experiment(experiment_config, meta_config):
     poi_value = 0
     poi_coupling = 1
 
+    # todo  set nn policies of leaders here rather than in neuro_evolve and
+    #           use indexing to set active policy during evolution
+    #       this should make it easier to implement shared policies by using
+    #           the same policy during creation here without altering the
+    #           neuro_evolve implementation (select from set of policies)
     leaders = [
         Leader(idx, location=each_pos, sensor_resolution=4, value=leader_value,
                observation_radius=leader_obs_rad, policy=None)

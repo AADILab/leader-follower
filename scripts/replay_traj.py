@@ -56,10 +56,9 @@ def reconstruct_follower(traj, a_id):
 def reconstruct_poi(traj, a_id):
     obs_rad = 1
     value = 0
-    coupling = 3
+    coupling = 1
 
     prev_loc = (traj[0]['x'], traj[0]['y'])
-    # todo determine coupling requirement
     new_poi = Poi(
         agent_id=a_id, location=prev_loc, sensor_resolution=4, value=value,
         observation_radius=obs_rad, coupling=coupling

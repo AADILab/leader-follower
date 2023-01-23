@@ -119,6 +119,16 @@ class Agent(ABC):
 
 class Leader(Agent):
 
+    # todo split leaders/followers into separate rows?
+    # a row is the set of bins that correspond to a type of agent
+    # each set of (sensor_resolution) bins maps to a set of agent types
+    ROW_MAPPING = {
+        AgentType.Learner: 0,
+        AgentType.Actor: 0,
+        AgentType.Static: 1,
+    }
+    NUM_ROWS = 2
+
     def __init__(self, agent_id, location, sensor_resolution, value, observation_radius,
                  policy: NeuralNetwork | None):
         super().__init__(agent_id, location, sensor_resolution, value)
@@ -129,19 +139,22 @@ class Leader(Agent):
         self.policy = policy
         self._policy_history = []
 
-        self.n_in = self.sensor_resolution * 2
+        self.n_in = self.sensor_resolution * Leader.NUM_ROWS
         self.n_out = 2
         return
 
     def observation_space(self):
         sensor_range = spaces.Box(
             low=0, high=np.inf,
-            shape=(self.sensor_resolution, 2), dtype=np.float64
+            shape=(self.sensor_resolution, Leader.NUM_ROWS), dtype=np.float64
         )
         return sensor_range
 
     def action_space(self):
-        action_range = spaces.Box(low=self.velocity_range[0], high=self.velocity_range[1], shape=(2,), dtype=np.float64)
+        action_range = spaces.Box(
+            low=self.velocity_range[0], high=self.velocity_range[1],
+            shape=(self.n_out,), dtype=np.float64
+        )
         return action_range
 
     def reset(self):
@@ -153,6 +166,9 @@ class Leader(Agent):
         """
         Calculates which pois, leaders, and follower go into which d-hyperoctant, where d is the state
         resolution of the environment.
+
+        first set of (sensor_resolution) bins is for leaders/followers
+        second set of (sensor_resolution) bins is for pois
 
         :param other_agents:
         :param sensor_resolution:
@@ -170,7 +186,7 @@ class Leader(Agent):
         observation = np.zeros((2, self.sensor_resolution))
         counts = np.ones((2, self.sensor_resolution))
         for idx, agent in enumerate(obs_agents):
-            agent_type_idx = 0 if isinstance(agent, Poi) else 1
+            agent_type_idx = Leader.ROW_MAPPING[agent.type]
             angle, dist = self.relative(agent)
             bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
             observation[agent_type_idx, bin_idx] += agent.value / max(dist, 0.01)
@@ -204,6 +220,7 @@ class Leader(Agent):
         self.action_history.append(action)
         return action
 
+# todo call an AttractionFollower to allow for other type of follower implementations
 class Follower(Agent):
 
     def __init__(self, agent_id, location, sensor_resolution, value,
@@ -220,10 +237,8 @@ class Follower(Agent):
         self.attraction_radius = attraction_radius
         self.attraction_strength = attraction_strength
 
-        self.rule_history = {'repulsion': [], 'attraction': []}
-
         self.__obs_rule = self.__rule_mass_center
-
+        self.rule_history = {'repulsion': [], 'attraction': []}
         self.influence_history = {'repulsion': [], 'attraction': []}
         return
 
@@ -235,7 +250,10 @@ class Follower(Agent):
         return sensor_range
 
     def action_space(self):
-        action_range = spaces.Box(low=self.velocity_range[0], high=self.velocity_range[1], shape=(2,), dtype=np.float64)
+        action_range = spaces.Box(
+            low=self.velocity_range[0], high=self.velocity_range[1],
+            shape=(2,), dtype=np.float64
+        )
         return action_range
 
     def __rule_mass_center(self, relative_agents, rule_radius):
@@ -244,8 +262,12 @@ class Follower(Agent):
         # adding self partially guards against when no other agents are nearby
         rel_agents.append(self)
 
-        locs = [each_agent.location for each_agent in rel_agents]
-        avg_locs = np.average(locs, axis=0)
+        rel_locs = [
+            (each_agent.location[0] - self.location[0], each_agent.location[1] - self.location[1])
+            for each_agent in rel_agents
+        ]
+        avg_locs = np.average(rel_locs, axis=0)
+
         rel_agents.remove(self)
         return avg_locs, rel_agents
 
@@ -281,27 +303,21 @@ class Follower(Agent):
 
     def get_action(self, observation):
         # todo take into account current velocity
-        # todo check repulsion is moving the agent in the correct direction
-        # todo bug fix
-        #   RuntimeWarning: invalid value encountered in divide
-        #   unit_repulsion = repulsion_diff / (repulsion_diff**2).sum()**0.5
-        repulsion_diff = np.subtract(observation[0], self.location)
+        repulsion_diff = observation[0]
         self.rule_history['repulsion'].append(repulsion_diff)
-        mag = np.linalg.norm(repulsion_diff)
-        if mag > 1:
-            repulsion_diff = repulsion_diff / mag
         repulsion_diff = np.nan_to_num(repulsion_diff)
-        weighted_repulsion = - repulsion_diff * self.repulsion_strength
+        weighted_repulsion = repulsion_diff * self.repulsion_strength
+        weighted_repulsion *= -1
 
-        attraction_diff = np.subtract(observation[1], self.location)
+        attraction_diff = observation[1]
         self.rule_history['attraction'].append(attraction_diff)
-        mag = np.linalg.norm(attraction_diff)
-        if mag > 1:
-            attraction_diff = attraction_diff / mag
         attraction_diff = np.nan_to_num(attraction_diff)
-        weighted_attraction = - attraction_diff * self.attraction_strength
+        weighted_attraction = attraction_diff * self.attraction_strength
 
-        action = weighted_attraction - weighted_repulsion
+        action = weighted_attraction + weighted_repulsion
+        mag = np.linalg.norm(action)
+        if mag > 1:
+            action = action / mag
         self.action_history.append(action)
         return action
 
@@ -327,19 +343,21 @@ class Poi(Agent):
         return
 
     def __repr__(self):
-        return f'{self.name=}, {self.observed=}, {self.state=}'
+        return f'({self.name=}, {self.observed=}, {self.state=})'
 
     def observation_space(self):
         sensor_range = spaces.Box(low=0, high=self.coupling, shape=(1,))
         return sensor_range
 
     def action_space(self):
+        # static agents do not move during an episode
         action_range = spaces.Box(low=0, high=0, shape=(2,), dtype=np.float64)
         return action_range
 
     def sense(self, relative_agents):
         self.state_history.append(self.location)
         observation = self.observable_agents(relative_agents, self.observation_radius)
+        # todo only store agent_names rather than full agent object
         self.observation_history.append(observation)
         return observation
 

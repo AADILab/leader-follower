@@ -7,6 +7,7 @@
 from pathlib import Path
 
 import numpy as np
+from myaml import myaml
 from scipy.ndimage.interpolation import rotate
 
 
@@ -70,8 +71,9 @@ def parse_positions(config):
 def load_positions(positions_fname: Path):
     if not (positions_fname.exists() and positions_fname.is_file()):
         raise ValueError(f'Cannot find positions file:\n{positions_fname}')
-    # todo read positions from file
-    return
+    # read positions from file
+    positions = myaml.safe_load(str(positions_fname))
+    return positions
 
 
 def linear_positions(num_agents, lower_bound=0, upper_bound=1):
