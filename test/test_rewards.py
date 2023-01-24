@@ -14,16 +14,7 @@ from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.utils import load_config
 
 
-def test_global(env):
-    return
-
-def test_difference(env):
-    return
-
-def test_dpp(env):
-    return
-
-def main(main_args):
+def test_global():
     render_mode = 'rgb_array'
     delta_time = 1
 
@@ -58,10 +49,18 @@ def main(main_args):
     env = LeaderFollowerEnv(
         leaders=leaders, followers=followers, pois=pois, max_steps=100, render_mode=render_mode, delta_time=delta_time
     )
+    return
 
-    test_global(env)
-    test_difference(env)
-    test_dpp(env)
+def test_difference():
+    return
+
+def test_dpp():
+    return
+
+def main(main_args):
+    test_global()
+    test_difference()
+    test_dpp()
     return
 
 

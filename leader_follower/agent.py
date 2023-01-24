@@ -354,6 +354,12 @@ class Poi(Agent):
         action_range = spaces.Box(low=0, high=0, shape=(2,), dtype=np.float64)
         return action_range
 
+    def observed_idx(self, idx):
+        idx_obs = self.observation_history[idx]
+        idx_seen = len(idx_obs)
+        observed = idx_seen >= self.coupling
+        return observed
+
     def sense(self, relative_agents):
         self.state_history.append(self.location)
         observation = self.observable_agents(relative_agents, self.observation_radius)
