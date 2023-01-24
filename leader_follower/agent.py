@@ -237,7 +237,7 @@ class Follower(Agent):
         self.attraction_radius = attraction_radius
         self.attraction_strength = attraction_strength
 
-        self.__obs_rule = self.__rule_mass_center
+        self.__obs_rule = self.rule_mass_center
         self.rule_history = {'repulsion': [], 'attraction': []}
         self.influence_history = {'repulsion': [], 'attraction': []}
         return
@@ -256,7 +256,7 @@ class Follower(Agent):
         )
         return action_range
 
-    def __rule_mass_center(self, relative_agents, rule_radius):
+    def rule_mass_center(self, relative_agents, rule_radius):
         self.observation_radius = rule_radius
         rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
         # adding self partially guards against when no other agents are nearby

@@ -56,7 +56,7 @@ def reconstruct_follower(traj, a_id):
 def reconstruct_poi(traj, a_id):
     obs_rad = 1
     value = 0
-    coupling = 1
+    coupling = 3
 
     prev_loc = (traj[0]['x'], traj[0]['y'])
     new_poi = Poi(

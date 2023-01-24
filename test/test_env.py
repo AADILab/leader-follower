@@ -220,6 +220,11 @@ def test_api(env):
     print(f'=' * 80)
     return
 
+def test_persistence(env: LeaderFollowerEnv):
+    save_path = env.save_environment()
+    test_env = LeaderFollowerEnv.load_environment(save_path)
+    return
+
 
 def main(main_args):
     render_mode = 'rgb_array'
@@ -264,16 +269,18 @@ def main(main_args):
     # test_actions(env)
     # test_render(env)
 
-    test_step(env, render=None)
+    # test_step(env, render=None)
     # test_step(env, render='rgb_array')
 
     # test_random(env, render=None)
     # test_random(env, render='rgb_array')
 
     # test_rollout(env, render=None)
-    test_rollout(env, render='rgb_array')
-    #
-    test_api(env)
+    # test_rollout(env, render='rgb_array')
+
+    # test_api(env)
+
+    test_persistence(env)
     return
 
 

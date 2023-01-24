@@ -1,8 +1,11 @@
 import functools
+import pickle
+from pathlib import Path
 
 import numpy as np
 from pettingzoo import ParallelEnv
 
+from leader_follower import project_properties
 from leader_follower.agent import Poi, Leader, Follower, AgentType
 
 
@@ -85,18 +88,28 @@ class LeaderFollowerEnv(ParallelEnv):
         training decentralized execution methods like QMIX
         :return:
         """
+        # todo  store state as a matrix in environment rather than individually in agents
+        #       env is the state and agents are how the updates are calculated based on current state
+        #       note that this may imply non-changing set of agents
         return self.state_history[self._current_step]
 
     def save_environment(self):
-        # todo save state to disk for easier reconstruction
+        # todo  index or unique id
+        # todo use better methods of saving than pickling
+        # https://docs.python.org/3/library/pickle.html#pickling-class-instances
+        save_path = Path(project_properties.cached_dir, 'env', 'leader_follower_env.pkl')
+        if not save_path.parent.exists():
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(save_path, 'wb') as save_file:
+            pickle.dump(self, save_file, pickle.HIGHEST_PROTOCOL)
+        return save_path
+
+    @staticmethod
+    def load_environment(load_path):
+        with open(load_path, 'rb') as load_file:
+            pickle.load(load_file)
         return
 
-    def load_environment(self):
-        # todo load state from disk
-        return
-
-    def __numpy_state(self):
-        return
 
     def __render_rgb(self):
         # todo set based on min/max agent locations
