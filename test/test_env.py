@@ -223,6 +223,15 @@ def test_api(env):
 def test_persistence(env: LeaderFollowerEnv):
     save_path = env.save_environment()
     test_env = LeaderFollowerEnv.load_environment(save_path)
+    # todo  inspect object
+    #       agents
+    #           histories
+    #           leaders
+    #               policies
+    #           followers
+    #           pois
+    #       reward history
+    #       state history
     return
 
 

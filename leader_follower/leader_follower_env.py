@@ -95,8 +95,12 @@ class LeaderFollowerEnv(ParallelEnv):
 
     def save_environment(self):
         # todo  index or unique id
-        # todo use better methods of saving than pickling
+        # todo  use better methods of saving than pickling
         # https://docs.python.org/3/library/pickle.html#pickling-class-instances
+        # https://stackoverflow.com/questions/37928794/which-is-faster-for-load-pickle-or-hdf5-in-python
+        # https://marshmallow.readthedocs.io/en/stable/
+        # https://developers.google.com/protocol-buffers
+        # https://developers.google.com/protocol-buffers/docs/pythontutorial
         save_path = Path(project_properties.cached_dir, 'env', 'leader_follower_env.pkl')
         if not save_path.parent.exists():
             save_path.parent.mkdir(parents=True, exist_ok=True)
