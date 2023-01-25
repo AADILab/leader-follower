@@ -26,7 +26,6 @@ def run_experiment(experiment_config, meta_config):
     leader_value = 1
 
     follower_value = 1
-    # todo Followers should not have repulsion and attraction radii with xy update rules
     repulsion_rad = 0.5
     attraction_rad = 1
 

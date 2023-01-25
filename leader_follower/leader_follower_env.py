@@ -93,15 +93,17 @@ class LeaderFollowerEnv(ParallelEnv):
         #       note that this may imply non-changing set of agents
         return self.state_history[self._current_step]
 
-    def save_environment(self):
-        # todo  index or unique id
+    def save_environment(self, tag=''):
         # todo  use better methods of saving than pickling
         # https://docs.python.org/3/library/pickle.html#pickling-class-instances
         # https://stackoverflow.com/questions/37928794/which-is-faster-for-load-pickle-or-hdf5-in-python
         # https://marshmallow.readthedocs.io/en/stable/
         # https://developers.google.com/protocol-buffers
         # https://developers.google.com/protocol-buffers/docs/pythontutorial
-        save_path = Path(project_properties.cached_dir, 'env', 'leader_follower_env.pkl')
+        if tag:
+            tag = f'_{tag}'
+
+        save_path = Path(project_properties.cached_dir, 'env', f'leader_follower_env.pkl{tag}')
         if not save_path.parent.exists():
             save_path.parent.mkdir(parents=True, exist_ok=True)
         with open(save_path, 'wb') as save_file:
@@ -111,9 +113,8 @@ class LeaderFollowerEnv(ParallelEnv):
     @staticmethod
     def load_environment(load_path):
         with open(load_path, 'rb') as load_file:
-            pickle.load(load_file)
-        return
-
+            env = pickle.load(load_file)
+        return env
 
     def __render_rgb(self):
         # todo set based on min/max agent locations

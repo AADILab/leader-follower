@@ -302,6 +302,7 @@ class Follower(Agent):
         return total_counts, repulsion_counts, attraction_counts
 
     def get_action(self, observation):
+        # todo Followers should not have repulsion and attraction radii with xy update rules
         # todo take into account current velocity
         repulsion_diff = observation[0]
         self.rule_history['repulsion'].append(repulsion_diff)
