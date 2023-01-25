@@ -93,17 +93,17 @@ class LeaderFollowerEnv(ParallelEnv):
         #       note that this may imply non-changing set of agents
         return self.state_history[self._current_step]
 
-    def save_environment(self, tag=''):
+    def save_environment(self, base_dir, tag=''):
         # todo  use better methods of saving than pickling
         # https://docs.python.org/3/library/pickle.html#pickling-class-instances
         # https://stackoverflow.com/questions/37928794/which-is-faster-for-load-pickle-or-hdf5-in-python
         # https://marshmallow.readthedocs.io/en/stable/
         # https://developers.google.com/protocol-buffers
         # https://developers.google.com/protocol-buffers/docs/pythontutorial
-        if tag:
+        if tag != '':
             tag = f'_{tag}'
 
-        save_path = Path(project_properties.cached_dir, 'env', f'leader_follower_env.pkl{tag}')
+        save_path = Path(base_dir, f'leader_follower_env{tag}.pkl')
         if not save_path.parent.exists():
             save_path.parent.mkdir(parents=True, exist_ok=True)
         with open(save_path, 'wb') as save_file:
@@ -218,7 +218,7 @@ class LeaderFollowerEnv(ParallelEnv):
         _ = [each_agent.reset() for each_agent in self.followers.values()]
         _ = [each_agent.reset() for each_agent in self.pois.values()]
 
-        # add all possible agents to the environment - agents are removed from the actors as they finish the task
+        # add all possible agents to the environment - agents are removed from the self.agents as they finish the task
         self.agents = [each_agent for each_agent in self.possible_agents]
         self.completed_agents = {}
         self.team_reward = 0

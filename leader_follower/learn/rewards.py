@@ -18,7 +18,6 @@ def calc_global(env: LeaderFollowerEnv):
     return reward
 
 def assign_followers(env):
-    # todo add using this to dpp
     # todo change difference calculation to use this function
     assigned_followers = {
         leader_name: [leader_name]
@@ -118,7 +117,8 @@ def calc_dpp_n(env: LeaderFollowerEnv, agent_names, n):
         agent.value = orig_agent_val * n
         orig_vals[each_name] = orig_agent_val
 
-    reweighted_reward = calc_global(env)
+    # todo verify calculation of dpp_n
+    reweighted_reward = calc_global(env) / n
     for each_name, each_orig_val in orig_vals.items():
         agent = env.agent_mapping[each_name]
         agent.value = each_orig_val
@@ -151,10 +151,16 @@ def calc_dpp(env: LeaderFollowerEnv, remove_followers=False):
     calc_global.n_calls = 0
     num_agents = len(env.leaders)
     dpp_rewards = {name: 0 for name, agent in env.leaders.items()}
+    assigned = assign_followers(env)
     for leader_name, leader in env.leaders.items():
-        # todo add assigning followers to the leader before calculating the dpp reward for the given agent
-        dpp_min = calc_dpp_n(env, agent_names=[leader_name], n=0)
-        dpp_max = calc_dpp_n(env, agent_names=[leader_name], n=num_agents - 1)
+        # add assigning followers to the leader before calculating the dpp reward for the given agent
+        agent_names = [leader_name]
+        if remove_followers:
+            follower_names = assigned[leader_name]
+            agent_names.extend(follower_names)
+
+        dpp_min = calc_dpp_n(env, agent_names=agent_names, n=0)
+        dpp_max = calc_dpp_n(env, agent_names=agent_names, n=num_agents - 1)
 
         if dpp_max <= dpp_min:
             dpp_rewards[leader_name] = dpp_max

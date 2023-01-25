@@ -81,14 +81,18 @@ class NeuralNetwork(nn.Module):
         logits = self.network(x)
         return logits
 
-    def save_model(self, save_dir=None):
+    def save_model(self, save_dir=None, tag=''):
         if save_dir is None:
             save_dir = project_properties.output_dir
-        save_dir = Path(save_dir, 'models')
+            save_dir = Path(save_dir, 'models')
+
         if not save_dir.exists():
             save_dir.mkdir(parents=True, exist_ok=True)
 
-        save_name = Path(save_dir, f'{self.name}_model.pt')
+        if tag != '':
+            tag = f'_{tag}'
+
+        save_name = Path(save_dir, f'{self.name}_model{tag}.pt')
         torch.save(self.state_dict(), save_name)
         return save_name
 

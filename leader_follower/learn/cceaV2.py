@@ -6,11 +6,13 @@
 """
 
 import copy
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 from numpy.random import default_rng
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
@@ -95,7 +97,7 @@ def downselect_top_n(population, max_size):
     return sorted_pop[:max_size]
 
 
-def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_func):
+def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_pop_size, reward_func):
     debug = False
     # todo  implement hall of fame
     # todo  implement leniency
@@ -132,10 +134,14 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
             policy_fitness = agent_rewards[agent_name]
             policy_info[pop_idx]['fitness'] = policy_fitness
 
+    now = datetime.now()
+    experiment_id = f'{now.strftime("%Y_%m_%d_%H_%M")}'
+    gens_path = Path(project_properties.cached_dir, f'{experiment_id}_neuro_evolve', 'gens')
+    if not gens_path:
+        gens_path.mkdir(parents=True, exist_ok=True)
+
     max_fitnesses = []
     avg_fitnesses = []
-    # todo  save environments and policies when training ends
-    #       need to make sure it is possible to correlate policies and fitnesses to agents
     for gen_idx in trange(n_gens):
         fitnesses = [
             [
@@ -151,8 +157,12 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
             select_func(policy_population, sim_pop_size)
             for agent_name, policy_population in agent_pops.items()
         ]
+
+        env_save_path = Path(gens_path, 'envs')
+        if not env_save_path:
+            env_save_path.mkdir(parents=True, exist_ok=True)
+
         # todo  multiprocess simulating each simulation population
-        # todo  save states of each rollout
         for sim_pop_idx, each_ind in enumerate(sim_pops):
             new_inds = {
                 agent_name: mutate_func(policy_info[sim_pop_idx])
@@ -167,11 +177,34 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
                 # reinsert new individual into population of policies
                 agent_pops[agent_name].append(policy_info)
 
+            # save current state of env at each rollout (agent trajectories)
+            env.save_environment(env_save_path, sim_pop_idx)
+
         # downselect
         agent_pops = {
             agent_name: downselect_func(policy_info, population_size)
             for agent_name, policy_info in agent_pops.items()
         }
+
+        fitnesses = {
+            agent_name: []
+            for agent_name, policy_info in agent_pops.items()
+        }
+        for agent_name, policy_info in agent_pops.items():
+            network_save_path = Path(gens_path, f'{agent_name}_networks')
+            if not env_save_path:
+                network_save_path.mkdir(parents=True, exist_ok=True)
+
+            for idx, each_policy in enumerate(policy_info):
+                fitnesses[agent_name].append(each_policy['fitness'])
+                # save all policies of each agent
+                network = each_policy['network']
+                network.save_model(save_dir=network_save_path, tag=idx)
+
+        # save fitnesses mapping policies to fitnesses
+        fitnesses_path = Path(gens_path, 'fitnesses.csv')
+        fitnesses_df = pd.DataFrame.from_dict(fitnesses, orient='index')
+        fitnesses_df.to_csv(fitnesses_path, header=True, index_label='agent_name')
 
     best_policies = {}
     for agent_name, policy_info in agent_pops.items():
