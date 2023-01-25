@@ -95,6 +95,8 @@ def downselect_top_n(population, max_size):
 
 def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_func):
     debug = False
+    # todo  implement hall of fame
+    # todo  implement leniency
     select_func = select_roulette
     mutate_func = partial(mutate_gaussian, proportion=0.1, amount=0.05)
     downselect_func = downselect_top_n
@@ -141,11 +143,13 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
         ]
         max_fitnesses.append(np.max(fitnesses, axis=0))
         avg_fitnesses.append(np.average(fitnesses, axis=0))
+
         sim_pops = [
             select_func(policy_population, sim_pop_size)
             for agent_name, policy_population in agent_pops.items()
         ]
-        # todo multiprocess simulating each simulation population
+        # todo  multiprocess simulating each simulation population
+        # todo  save states of each rollout
         for sim_pop_idx, each_ind in enumerate(sim_pops):
             new_inds = {
                 agent_name: mutate_func(policy_info[sim_pop_idx])
