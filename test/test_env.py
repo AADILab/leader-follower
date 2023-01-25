@@ -88,7 +88,7 @@ def test_render(env):
 def test_step(env, render):
     render_delay = 0.1
 
-    # action is (vx, vy)
+    # action is (dx, dy)
     forward_action = np.array((0, 1.5))
     backwards_action = np.array((0, -1.5))
     left_action = np.array((-1.5, 0))

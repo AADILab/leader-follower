@@ -58,7 +58,6 @@ def test_leaders_followers(
     assert len(leader_info) == len(follower_info)
     assert len(leader_info) == len(poi_positions)
 
-    # todo  add followers and follower actions
     print(f'{tag}')
     sensor_resolution = 4
     leader_obs_rad = 5

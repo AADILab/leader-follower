@@ -18,6 +18,8 @@ def calc_global(env: LeaderFollowerEnv):
     return reward
 
 def assign_followers(env):
+    # todo add using this to dpp
+    # todo change difference calculation to use this function
     assigned_followers = {
         leader_name: [leader_name]
         for leader_name, leader in env.leaders.items()

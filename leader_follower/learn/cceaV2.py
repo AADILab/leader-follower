@@ -75,13 +75,14 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
         if render:
             env.render()
 
-#     if type(episode_rewards) == float:
-#         # agent_rewards = [agent_rewards] * (len(env._leaders)+len(env._followers))
-#         episode_rewards = {
-#             agent_name: episode_rewards for agent_name, _ in individuals.items()
-#         }
-#
-#     return episode_rewards
+    # todo ask Ever about what issue this solved
+    # if type(episode_rewards) == float:
+    #     # agent_rewards = [agent_rewards] * (len(env._leaders)+len(env._followers))
+    #     episode_rewards = {
+    #         agent_name: episode_rewards for agent_name, _ in individuals.items()
+    #     }
+    #
+    # return episode_rewards
 
     episode_rewards, g_calls = reward_func(env)
     return episode_rewards, g_calls
@@ -128,6 +129,8 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
 
     max_fitnesses = []
     avg_fitnesses = []
+    # todo  save environments and policies when training ends
+    #       need to make sure it is possible to correlate policies and fitnesses to agents
     for gen_idx in trange(n_gens):
         fitnesses = [
             [
