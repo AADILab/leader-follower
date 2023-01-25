@@ -232,11 +232,12 @@ class LeaderFollowerEnv(ParallelEnv):
         :return:
         """
         observations = {}
+        agent_refs = list(self.agent_mapping.values())
         for agent_name in self.agents:
             agent = self.agent_mapping[agent_name]
 
             # agent_obs = agent.sense(state)
-            agent_obs = agent.sense(self.agent_mapping.values())
+            agent_obs = agent.sense(agent_refs)
             observations[agent_name] = agent_obs
         return observations
 

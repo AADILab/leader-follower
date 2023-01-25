@@ -57,7 +57,7 @@ class Agent(ABC):
         return
 
     def __repr__(self):
-        return f'{self.name=}, {self.state=}'
+        return f'({self.name}:  {self.value}: {self.state})'
 
     def reset(self):
         self.location = self._initial_location
@@ -343,7 +343,8 @@ class Poi(Agent):
         return
 
     def __repr__(self):
-        return f'({self.name=}, {self.observed=}, {self.state=})'
+        parent_repr = Agent.__repr__(self)
+        return f'({parent_repr} -> {self.observed=})'
 
     def observation_space(self):
         sensor_range = spaces.Box(low=0, high=self.coupling, shape=(1,))
@@ -362,8 +363,13 @@ class Poi(Agent):
 
     def sense(self, relative_agents):
         self.state_history.append(self.location)
-        observation = self.observable_agents(relative_agents, self.observation_radius)
+        # filter out other POIs from the poi observation
         # todo only store agent_names rather than full agent object
+        observation = [
+            each_obs
+            for each_obs in self.observable_agents(relative_agents, self.observation_radius)
+            if each_obs.type != AgentType.Static
+        ]
         self.observation_history.append(observation)
         return observation
 

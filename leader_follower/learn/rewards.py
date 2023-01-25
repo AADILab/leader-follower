@@ -17,19 +17,11 @@ def calc_global(env: LeaderFollowerEnv):
     reward = env.num_poi_observed() / len(env.pois)
     return reward
 
-
-def calc_diff_rewards(env: LeaderFollowerEnv):
-    """
-
-    :param env:
-    :return:
-    """
-    calc_global.n_calls = 0
+def assign_followers(env):
     assigned_followers = {
-        leader_name: []
+        leader_name: [leader_name]
         for leader_name, leader in env.leaders.items()
     }
-
     assigned_followers["leader_null"] = []
 
     follower_influences = {
@@ -47,7 +39,41 @@ def calc_diff_rewards(env: LeaderFollowerEnv):
             max_idx = np.argmax(counts[1])
             max_influencer = counts[0][max_idx]
         assigned_followers[max_influencer].append(follower_name)
+    return assigned_followers
 
+
+def calc_diff_rewards(env: LeaderFollowerEnv, remove_followers=False):
+    """
+
+    :param env:
+    :param remove_followers:
+    :return:
+    """
+    calc_global.n_calls = 0
+    assigned_followers = {
+        leader_name: []
+        for leader_name, leader in env.leaders.items()
+    }
+    assigned_followers["leader_null"] = []
+
+    if remove_followers:
+        follower_influences = {
+            follower_name: follower.influence_counts()[0]
+            for follower_name, follower in env.followers.items()
+        }
+
+        for follower_name, counts in follower_influences.items():
+            for idx, name in enumerate(counts[0]):
+                if not name.startswith('leader'):
+                    counts[1][idx] = -1
+            if len(counts[1]) == 0:
+                max_influencer = "leader_null"
+            else:
+                max_idx = np.argmax(counts[1])
+                max_influencer = counts[0][max_idx]
+            assigned_followers[max_influencer].append(follower_name)
+
+    # todo  explore: if multiple agents are individually capable of observing a poi, neither receives a reward
     global_reward = calc_global(env)
     difference_rewards = {"G": global_reward}
     for leader, removed_agents in assigned_followers.items():
@@ -89,13 +115,14 @@ def calc_dpp_n(env: LeaderFollowerEnv, agent_names, n):
         orig_agent_val = agent.value
         agent.value = orig_agent_val * n
         orig_vals[each_name] = orig_agent_val
+
     reweighted_reward = calc_global(env)
     for each_name, each_orig_val in orig_vals.items():
         agent = env.agent_mapping[each_name]
         agent.value = each_orig_val
     return reweighted_reward
 
-def calc_dpp(env: LeaderFollowerEnv):
+def calc_dpp(env: LeaderFollowerEnv, remove_followers=False):
     """
     Calculate D++ rewards for each rover
 
@@ -116,6 +143,7 @@ def calc_dpp(env: LeaderFollowerEnv):
     13. return D++^{-1}
 
     :param env:
+    :param remove_followers:
     :return dpp_rewards: Numpy array containing each rover's D++ reward
     """
     calc_global.n_calls = 0

@@ -172,7 +172,7 @@ def main(main_args):
         print(f'{name=} | {isvalid=}')
 
     rewards = calc_diff_rewards(env)
-    print(f'{rewards}=')
+    print(f'{rewards=}')
     return
 
 
