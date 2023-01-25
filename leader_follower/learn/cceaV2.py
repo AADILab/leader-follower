@@ -12,7 +12,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from torch.distributions import Normal
+from numpy.random import default_rng
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from tqdm import trange
 
@@ -39,18 +39,20 @@ def select_roulette(population, select_size):
     return sim_pop
 
 
-def mutate_gaussian(individual, proportion=0.1, amount=0.05):
+def mutate_gaussian(individual, proportion=0.1, probability=0.05):
     model = individual['network']
     model_copy = copy.deepcopy(model)
 
-    # todo  add small amount of noise to each value
-    #       add more noise to fewer values
+    rng = default_rng()
     with torch.no_grad():
         param_vector = parameters_to_vector(model_copy.parameters())
 
-        n_params = len(param_vector)
-        noise = Normal(0, 1).sample(torch.Size((n_params,)))
-        param_vector.add_(noise)
+        for each_val in param_vector:
+            rand_val = rng.random()
+            if rand_val <= probability:
+                # todo  base proportion on current weight rather than scaled random sample
+                noise = torch.randn(each_val.size()) * proportion
+                each_val.add_(noise)
 
         vector_to_parameters(param_vector, model_copy.parameters())
     new_ind = {
@@ -98,11 +100,12 @@ def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_fu
     # todo  implement hall of fame
     # todo  implement leniency
     select_func = select_roulette
-    mutate_func = partial(mutate_gaussian, proportion=0.1, amount=0.05)
+    mutate_func = partial(mutate_gaussian, proportion=0.1, probability=0.05)
     downselect_func = downselect_top_n
 
     # only creat sub-pops for agents capable of learning
-    # todo allow for policy sharing
+    # todo  allow for policy sharing
+    #       move set of policies into agent definition add select policy based on idx
     agent_pops = {
         agent_name: [
             {
