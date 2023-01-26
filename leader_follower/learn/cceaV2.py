@@ -136,29 +136,21 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
 
     now = datetime.now()
     experiment_id = f'{now.strftime("%Y_%m_%d_%H_%M")}'
-    gens_path = Path(project_properties.cached_dir, f'{experiment_id}_neuro_evolve', 'gens')
-    if not gens_path:
-        gens_path.mkdir(parents=True, exist_ok=True)
+    exp_path = Path(project_properties.cached_dir, f'{experiment_id}_neuro_evolve')
+    if not exp_path:
+        exp_path.mkdir(parents=True, exist_ok=True)
 
-    max_fitnesses = []
-    avg_fitnesses = []
     for gen_idx in trange(n_gens):
-        fitnesses = [
-            [
-                policy_info[pop_idx]['fitness']
-                for agent_name, policy_info in agent_pops.items()
-            ]
-            for pop_idx in range(population_size)
-        ]
-        max_fitnesses.append(np.max(fitnesses, axis=0))
-        avg_fitnesses.append(np.average(fitnesses, axis=0))
+        gen_path = Path(exp_path, f'gen_{gen_idx}')
+        if not gen_path:
+            gen_path.mkdir(parents=True, exist_ok=True)
 
         sim_pops = [
             select_func(policy_population, sim_pop_size)
             for agent_name, policy_population in agent_pops.items()
         ]
 
-        env_save_path = Path(gens_path, 'envs')
+        env_save_path = Path(gen_path, 'envs')
         if not env_save_path:
             env_save_path.mkdir(parents=True, exist_ok=True)
 
@@ -192,7 +184,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
             for agent_name, policy_info in agent_pops.items()
         }
         for agent_name, policy_info in agent_pops.items():
-            network_save_path = Path(gens_path, f'{agent_name}_networks')
+            network_save_path = Path(gen_path, f'{agent_name}_networks')
             if not env_save_path:
                 network_save_path.mkdir(parents=True, exist_ok=True)
 
@@ -203,7 +195,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
                 network.save_model(save_dir=network_save_path, tag=idx)
 
         # save fitnesses mapping policies to fitnesses
-        fitnesses_path = Path(gens_path, 'fitnesses.csv')
+        fitnesses_path = Path(gen_path, 'fitnesses.csv')
         fitnesses_df = pd.DataFrame.from_dict(fitnesses, orient='index')
         fitnesses_df.to_csv(fitnesses_path, header=True, index_label='agent_name')
 
@@ -214,7 +206,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
         best_ind = policy_info[arg_best]
         print(best_ind['fitness'])
         best_policies[agent_name] = best_ind
-    return best_policies, max_fitnesses, avg_fitnesses
+    return best_policies
 
 
 def plot_fitnesses(avg_fitnesses, max_fitnesses, xtag=None, ytag=None):

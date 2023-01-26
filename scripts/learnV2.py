@@ -72,7 +72,7 @@ def run_experiment(experiment_config, meta_config):
 
     start_time = time.time()
     # env, n_hidden, population_size, n_gens, sim_pop_size, reward_func
-    best_solution, max_fits, avg_fits = neuro_evolve(
+    best_solution = neuro_evolve(
         env, n_hidden, subpop_size, n_gens, sim_subpop_size, reward_func=reward_func
     )
     end_time = time.time()
@@ -80,7 +80,8 @@ def run_experiment(experiment_config, meta_config):
 
     rewards = rollout(env, best_solution, reward_func=reward_func)
     print(f'{rewards=}')
-    plot_fitnesses(avg_fitnesses=[], max_fitnesses=max_fits)
+    # todo move plotting to separate script that decouples running and plotting data
+    # plot_fitnesses(avg_fitnesses=[], max_fitnesses=[])
     return
 
 def main(main_args):

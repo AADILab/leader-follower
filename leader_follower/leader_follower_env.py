@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 from pettingzoo import ParallelEnv
 
-from leader_follower import project_properties
 from leader_follower.agent import Poi, Leader, Follower, AgentType
 
 

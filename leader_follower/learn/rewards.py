@@ -118,7 +118,7 @@ def calc_dpp_n(env: LeaderFollowerEnv, agent_names, n):
         orig_vals[each_name] = orig_agent_val
 
     # todo verify calculation of dpp_n
-    reweighted_reward = calc_global(env) / n
+    reweighted_reward = calc_global(env)
     for each_name, each_orig_val in orig_vals.items():
         agent = env.agent_mapping[each_name]
         agent.value = each_orig_val
