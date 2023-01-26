@@ -207,7 +207,6 @@ def test_rollout(env, render):
             plt.imshow(frame)
             plt.show()
             time.sleep(render_delay)
-
     return
 
 
@@ -276,7 +275,7 @@ def main(main_args):
 
     # test_observations(env)
     # test_actions(env)
-    # test_render(env)
+    # test_render(env)uhu
 
     # test_step(env, render=None)
     # test_step(env, render='rgb_array')

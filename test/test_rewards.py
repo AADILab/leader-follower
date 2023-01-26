@@ -160,8 +160,23 @@ def main(main_args):
 
         [[(-3, 0)], right_action],
         [[(-3, 0), (-3.5, 0)], right_action],
-        [[(-3, 0), (-3.5, 0), (-4, 0)],  right_action]
+        [[(-3, 0), (-3.5, 0), (-4, 0)],  right_action],
+
+        # start tests with including followers
+        [[(0, -2)], up_action],
+        [[(0, -2), (0, -2.5)], up_action],
+        [[(0, -2), (0, -2.5), (0, -3)], up_action],
+
+        [[(3, 0)], left_action],
+        [[(3, 0), (3.5, 0)], left_action],
+        [[(3, 0), (3.5, 0), (4, 0)], left_action],
+
+        [[(-3, 0)], right_action],
+        [[(-3, 0), (-3.5, 0)], right_action],
+        [[(-3, 0), (-3.5, 0), (-4, 0)], right_action],
     ]
+
+    # todo add follower positions for designed tests
     follower_infos = [
         [[], up_action],
         [[], up_action],
@@ -174,8 +189,35 @@ def main(main_args):
         [[], right_action],
         [[], right_action],
         [[], right_action],
+
+        # start tests with including followers
+        [[], up_action],
+        [[], up_action],
+        [[], up_action],
+
+        [[], left_action],
+        [[], left_action],
+        [[], left_action],
+
+        [[], right_action],
+        [[], right_action],
+        [[], right_action],
     ]
+
     poi_positions = [
+        [(0, 1), (1, 0), (-1, 0)],
+        [(0, 1), (1, 0), (-1, 0)],
+        [(0, 1), (1, 0), (-1, 0)],
+
+        [(0, 1), (1, 0), (-1, 0)],
+        [(0, 1), (1, 0), (-1, 0)],
+        [(0, 1), (1, 0), (-1, 0)],
+
+        [(0, 1), (1, 0), (-1, 0)],
+        [(0, 1), (1, 0), (-1, 0)],
+        [(0, 1), (1, 0), (-1, 0)],
+
+        # start tests with including followers
         [(0, 1), (1, 0), (-1, 0)],
         [(0, 1), (1, 0), (-1, 0)],
         [(0, 1), (1, 0), (-1, 0)],

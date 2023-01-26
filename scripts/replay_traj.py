@@ -163,7 +163,6 @@ def parse_traj_csv(traj_fname):
 
 def main(main_args):
     # todo rewrite to read from experiments in cached directory
-
     traj_fname = Path(project_properties.project_path, 'bugs', 'trajectories_54.csv')
     agent_trajs = parse_traj_csv(traj_fname)
     env = reconstruct_env(agent_trajs)

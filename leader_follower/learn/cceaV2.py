@@ -163,6 +163,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
             env_save_path.mkdir(parents=True, exist_ok=True)
 
         # todo  multiprocess simulating each simulation population
+        # todo  use gen_idx to nest deeper when storing generations
         for sim_pop_idx, each_ind in enumerate(sim_pops):
             new_inds = {
                 agent_name: mutate_func(policy_info[sim_pop_idx])
