@@ -6,6 +6,7 @@
 """
 
 import copy
+import csv
 from datetime import datetime
 from functools import partial
 from pathlib import Path
@@ -22,6 +23,7 @@ from leader_follower import project_properties
 from leader_follower.agent import AgentType
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.neural_network import NeuralNetwork
+from leader_follower.learn.rewards import calc_global
 
 
 def select_roulette(population, select_size):
@@ -136,7 +138,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
 
     now = datetime.now()
     experiment_id = f'{now.strftime("%Y_%m_%d_%H_%M")}'
-    exp_path = Path(project_properties.cached_dir, f'{experiment_id}_neuro_evolve')
+    exp_path = Path(project_properties.cached_dir, 'experiments', f'{experiment_id}_neuro_evolve')
     if not exp_path:
         exp_path.mkdir(parents=True, exist_ok=True)
 
@@ -155,7 +157,6 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
             env_save_path.mkdir(parents=True, exist_ok=True)
 
         # todo  multiprocess simulating each simulation population
-        # todo  use gen_idx to nest deeper when storing generations
         for sim_pop_idx, each_ind in enumerate(sim_pops):
             new_inds = {
                 agent_name: mutate_func(policy_info[sim_pop_idx])
@@ -193,6 +194,9 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
                 # save all policies of each agent
                 network = each_policy['network']
                 network.save_model(save_dir=network_save_path, tag=idx)
+
+        g_reward = calc_global(env)
+        fitnesses['G'] = [g_reward for _ in range(0, population_size)]
 
         # save fitnesses mapping policies to fitnesses
         fitnesses_path = Path(gen_path, 'fitnesses.csv')
