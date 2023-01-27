@@ -6,7 +6,6 @@
 """
 
 import copy
-import csv
 from datetime import datetime
 from functools import partial
 from pathlib import Path
@@ -81,15 +80,6 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
         if render:
             env.render()
 
-    # todo ask Ever about what issue this solved
-    # if type(episode_rewards) == float:
-    #     # agent_rewards = [agent_rewards] * (len(env._leaders)+len(env._followers))
-    #     episode_rewards = {
-    #         agent_name: episode_rewards for agent_name, _ in individuals.items()
-    #     }
-    #
-    # return episode_rewards
-
     episode_rewards, g_calls = reward_func(env)
     return episode_rewards, g_calls
 
@@ -99,10 +89,11 @@ def downselect_top_n(population, max_size):
     return sorted_pop[:max_size]
 
 
-def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_pop_size, reward_func):
-    debug = False
+def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, reward_func):
+    # todo  fix always simulate every agent at every generation
     # todo  implement hall of fame
     # todo  implement leniency
+    debug = False
     select_func = select_roulette
     mutate_func = partial(mutate_gaussian, proportion=0.1, probability=0.05)
     downselect_func = downselect_top_n
@@ -128,7 +119,6 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
     print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
 
     # initial fitness evaluation of all networks in population
-    # todo check reward structure/assignment to make sure reward is being properly assigned
     for pop_idx in range(population_size):
         new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
         agent_rewards, g_calls = rollout(env, new_inds, reward_func=reward_func, render=debug)
@@ -148,7 +138,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
             gen_path.mkdir(parents=True, exist_ok=True)
 
         sim_pops = [
-            select_func(policy_population, sim_pop_size)
+            select_func(policy_population, population_size)
             for agent_name, policy_population in agent_pops.items()
         ]
 
@@ -156,7 +146,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
         if not env_save_path:
             env_save_path.mkdir(parents=True, exist_ok=True)
 
-        # todo  multiprocess simulating each simulation population
+        # todo  multiprocess simulating each population
         for sim_pop_idx, each_ind in enumerate(sim_pops):
             new_inds = {
                 agent_name: mutate_func(policy_info[sim_pop_idx])
@@ -180,10 +170,15 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
             for agent_name, policy_info in agent_pops.items()
         }
 
+        # todo  fix only saves G for the last iteration of sim_pop agents
+        g_reward = calc_global(env)
         fitnesses = {
             agent_name: []
             for agent_name, policy_info in agent_pops.items()
         }
+        fitnesses['G'] = [g_reward for _ in range(0, population_size)]
+
+        # save all policies of each agent
         for agent_name, policy_info in agent_pops.items():
             network_save_path = Path(gen_path, f'{agent_name}_networks')
             if not env_save_path:
@@ -191,12 +186,9 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
 
             for idx, each_policy in enumerate(policy_info):
                 fitnesses[agent_name].append(each_policy['fitness'])
-                # save all policies of each agent
+
                 network = each_policy['network']
                 network.save_model(save_dir=network_save_path, tag=idx)
-
-        g_reward = calc_global(env)
-        fitnesses['G'] = [g_reward for _ in range(0, population_size)]
 
         # save fitnesses mapping policies to fitnesses
         fitnesses_path = Path(gen_path, 'fitnesses.csv')
