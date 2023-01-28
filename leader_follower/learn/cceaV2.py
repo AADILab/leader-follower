@@ -26,11 +26,21 @@ from leader_follower.learn.rewards import calc_global
 
 
 def select_roulette(population, select_size):
-    fitness_vals = [pop['fitness'] for pop in population]
+    fitness_vals = np.asarray([pop['fitness'] for pop in population])
+    min_fitness = np.min(fitness_vals)
 
     # add small amount of noise to each fitness value (help deal with all same value)
     noise = np.random.uniform(0, 1, len(fitness_vals))
     fitness_vals += noise
+
+    # adding an extra bogey population and fitness value fixes an issue arising when trying to select from the
+    # population when select_size == len(population), which causes the min value of the normalized fitnesses
+    # to be 0, which is not a valid probability. The extra fitness makes it so the 0 probability fitness is not
+    # an actual fitness, and we have to add an extra (fake) population to make the lengths of the population
+    # and fitness arrays to be equal. They are both added at the end of the array, so the fake population
+    # is correlated with the fake fitness.
+    fitness_vals = np.append(fitness_vals, min_fitness - 2)
+    population.append(None)
 
     # if there is one positive fitness, then the others all being negative causes issues when calculating the probs
     fitness_norms = (fitness_vals - np.min(fitness_vals)) / (np.max(fitness_vals) - np.min(fitness_vals))
@@ -89,8 +99,7 @@ def downselect_top_n(population, max_size):
     return sorted_pop[:max_size]
 
 
-def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, reward_func):
-    # todo  fix always simulate every agent at every generation
+def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_pop_size, reward_func):
     # todo  implement hall of fame
     # todo  implement leniency
     debug = False
@@ -119,6 +128,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, rewa
     print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
 
     # initial fitness evaluation of all networks in population
+    # todo check reward structure/assignment to make sure reward is being properly assigned
     for pop_idx in range(population_size):
         new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
         agent_rewards, g_calls = rollout(env, new_inds, reward_func=reward_func, render=debug)
@@ -138,7 +148,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, rewa
             gen_path.mkdir(parents=True, exist_ok=True)
 
         sim_pops = [
-            select_func(policy_population, population_size)
+            select_func(policy_population, sim_pop_size)
             for agent_name, policy_population in agent_pops.items()
         ]
 
@@ -146,7 +156,7 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, rewa
         if not env_save_path:
             env_save_path.mkdir(parents=True, exist_ok=True)
 
-        # todo  multiprocess simulating each population
+        # todo  multiprocess simulating each simulation population
         for sim_pop_idx, each_ind in enumerate(sim_pops):
             new_inds = {
                 agent_name: mutate_func(policy_info[sim_pop_idx])
