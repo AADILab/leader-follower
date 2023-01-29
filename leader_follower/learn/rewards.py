@@ -50,6 +50,7 @@ def calc_diff_rewards(env: LeaderFollowerEnv, remove_followers=False):
     :param remove_followers:
     :return:
     """
+    # todo add tracking of calls to g
     calc_global.n_calls = 0
     assigned_followers = {
         leader_name: []
@@ -94,7 +95,7 @@ def calc_diff_rewards(env: LeaderFollowerEnv, remove_followers=False):
         difference_global = calc_global(env)
         difference_rewards[leader] = global_reward - difference_global
         env.pois = poi_copy
-    return difference_rewards, calc_global.n_calls
+    return difference_rewards
 
 def calc_dpp_n(env: LeaderFollowerEnv, agent_names, n):
     """
@@ -173,4 +174,4 @@ def calc_dpp(env: LeaderFollowerEnv, remove_followers=False):
                     dpp_rewards[leader_name] = dpp_n
                     break
                 prev_dpp_n = dpp_n
-    return dpp_rewards, calc_global.n_calls
+    return dpp_rewards

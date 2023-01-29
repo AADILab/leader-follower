@@ -23,13 +23,13 @@ def generate_plot(config_path: Path):
 
     leaders = [
         Leader(idx, location=each_pos,  sensor_resolution=4, value=1,
-               observation_radius=0, policy=NeuralNetwork(n_inputs=8, n_hidden=2, n_outputs=2))
+               observation_radius=0, policy=NeuralNetwork(n_inputs=8, n_hidden=2, n_outputs=2), max_velocity=5)
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     followers = [
         Follower(agent_id=idx, location=each_pos, sensor_resolution=4, value=1,
                  repulsion_radius=0, repulsion_strength=2,
-                 attraction_radius=0, attraction_strength=1)
+                 attraction_radius=0, attraction_strength=1, max_velocity=1)
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     pois = [

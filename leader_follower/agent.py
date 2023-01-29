@@ -34,14 +34,14 @@ class Agent(ABC):
     def action(self):
         return self.action_history[-1]
 
-    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float):
+    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float):
         self.name = f'agent_{agent_id}'
         self.id = agent_id
         self.type = AgentType.Static
 
         # lower/upper bounds agent is able to move
         # same for both x and y directions
-        self.velocity_range = np.array((-1, 1))
+        self.max_velocity = max_velocity
         self.sensor_resolution = sensor_resolution
         self.value = value
 
@@ -129,9 +129,9 @@ class Leader(Agent):
     }
     NUM_ROWS = 2
 
-    def __init__(self, agent_id, location, sensor_resolution, value, observation_radius,
+    def __init__(self, agent_id, location, sensor_resolution, value, observation_radius, max_velocity,
                  policy: NeuralNetwork | None):
-        super().__init__(agent_id, location, sensor_resolution, value)
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity)
         self.name = f'leader_{agent_id}'
         self.type = AgentType.Learner
 
@@ -152,7 +152,7 @@ class Leader(Agent):
 
     def action_space(self):
         action_range = spaces.Box(
-            low=self.velocity_range[0], high=self.velocity_range[1],
+            low=-1 * self.max_velocity, high=self.max_velocity,
             shape=(self.n_out,), dtype=np.float64
         )
         return action_range
@@ -215,7 +215,7 @@ class Leader(Agent):
         self._policy_history.append(action)
 
         mag = np.linalg.norm(action)
-        if mag > 1:
+        if mag > self.max_velocity:
             action = action / mag
         self.action_history.append(action)
         return action
@@ -223,13 +223,11 @@ class Leader(Agent):
 # todo call an AttractionFollower to allow for other type of follower implementations
 class Follower(Agent):
 
-    def __init__(self, agent_id, location, sensor_resolution, value,
+    def __init__(self, agent_id, location, sensor_resolution, value, max_velocity,
                  repulsion_radius, repulsion_strength, attraction_radius, attraction_strength):
-        super().__init__(agent_id, location, sensor_resolution, value)
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity)
         self.name = f'follower_{agent_id}'
         self.type = AgentType.Actor
-
-        self.velocity = 0
 
         self.repulsion_radius = repulsion_radius
         self.repulsion_strength = repulsion_strength
@@ -251,13 +249,12 @@ class Follower(Agent):
 
     def action_space(self):
         action_range = spaces.Box(
-            low=self.velocity_range[0], high=self.velocity_range[1],
+            low=-1 * self.max_velocity, high=self.max_velocity,
             shape=(2,), dtype=np.float64
         )
         return action_range
 
     def rule_mass_center(self, relative_agents, rule_radius):
-        self.observation_radius = rule_radius
         rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
         # adding self partially guards against when no other agents are nearby
         rel_agents.append(self)
@@ -317,7 +314,7 @@ class Follower(Agent):
 
         action = weighted_attraction + weighted_repulsion
         mag = np.linalg.norm(action)
-        if mag > 1:
+        if mag > self.max_velocity:
             action = action / mag
         self.action_history.append(action)
         return action
@@ -335,7 +332,7 @@ class Poi(Agent):
         return obs
 
     def __init__(self, agent_id, location, sensor_resolution, value, observation_radius, coupling):
-        super().__init__(agent_id, location, sensor_resolution, value)
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity=0)
         self.name = f'poi_{agent_id}'
         self.type = AgentType.Static
 

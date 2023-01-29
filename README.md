@@ -37,9 +37,17 @@ See the [LICENSE file](LICENSE) for license rights and limitations (MIT).
 
 -[ ] Documentation. (Explaining what the parts are and how they work)
 -[ ] Create trajectory graph visualization tool (Figure 4 from D++). Include circles around POIs to indicate observation radius. 
--[ ] Re-run ROB538 experiments with xy update rules
 
 # Quick Start
+
+## Approach
+
+general overview of approach
+	what it is meant to accomplish
+	why we should expect this to work for the problem
+
+Inject some piece of information related to the task, not the solution.
+Shaping the reward to match the idea of removing the impact of the agent from the system.
 
 ## Configurations
 ## Experiments

@@ -5,6 +5,8 @@
 
 """
 import argparse
+import copy
+import time
 from pathlib import Path
 
 import numpy as np
@@ -49,11 +51,14 @@ def linear_relu_stack(n_inputs, n_hidden, n_outputs):
 
 class NeuralNetwork(nn.Module):
 
+    INSTANCES = []
+
     def __init__(self, n_inputs, n_outputs, n_hidden=2, network_func=linear_layer):
         super(NeuralNetwork, self).__init__()
+        self.name = f'{len(self.INSTANCES)}'
+        self.INSTANCES.append(time.time())
 
         self.network_func = network_func
-        self.name = 'pytorch_lrs'
 
         self.n_inputs = n_inputs
         self.n_outputs = n_outputs
@@ -61,6 +66,15 @@ class NeuralNetwork(nn.Module):
         self.flatten = nn.Flatten()
         self.network = self.network_func(n_inputs=n_inputs, n_hidden=n_hidden, n_outputs=n_outputs)
         return
+
+    def __repr__(self):
+        return f'{self.name}'
+
+    def copy(self):
+        new_copy = copy.copy(self)
+        self.INSTANCES.append(time.time())
+        new_copy.name = f'{len(self.INSTANCES)}'
+        return new_copy
 
     def device(self):
         dev = next(self.parameters()).device

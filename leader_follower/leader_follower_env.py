@@ -50,9 +50,6 @@ class LeaderFollowerEnv(ParallelEnv):
         self.agents = [each_agent for each_agent in self.possible_agents]
         self.completed_agents = {}
         self.team_reward = 0
-
-        self.reward_history = np.full(self.max_steps, -1)
-        self.state_history = np.full(self.max_steps, -1)
         return
 
     @property
@@ -90,7 +87,7 @@ class LeaderFollowerEnv(ParallelEnv):
         # todo  store state as a matrix in environment rather than individually in agents
         #       env is the state and agents are how the updates are calculated based on current state
         #       note that this may imply non-changing set of agents
-        return self.state_history[self._current_step]
+        pass
 
     def save_environment(self, base_dir, tag=''):
         # todo  use better methods of saving than pickling
@@ -105,6 +102,7 @@ class LeaderFollowerEnv(ParallelEnv):
         save_path = Path(base_dir, f'leader_follower_env{tag}.pkl')
         if not save_path.parent.exists():
             save_path.parent.mkdir(parents=True, exist_ok=True)
+
         with open(save_path, 'wb') as save_file:
             pickle.dump(self, save_file, pickle.HIGHEST_PROTOCOL)
         return save_path
