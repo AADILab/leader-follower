@@ -13,10 +13,9 @@ from matplotlib import pyplot as plt
 
 from leader_follower import project_properties
 
-
-def parse_experiment_fitnesses(experiment_dir: Path):
-    gen_dirs = list(experiment_dir.glob('gen_*'))
-    gen_dirs = sorted(gen_dirs, key=lambda x: int(x.stem.split('_')[1]))
+def parse_stat_run(stat_run_dir):
+    gen_dirs = list(stat_run_dir.glob('gen_*'))
+    gen_dirs = sorted(gen_dirs, key=lambda x: int(x.stem.split('_')[-1]))
     generations = []
     for each_dir in gen_dirs:
 
@@ -43,9 +42,20 @@ def parse_experiment_fitnesses(experiment_dir: Path):
         for name, data in condensed_gens.items()
     }
     return np_gens
+
+def parse_experiment_fitnesses(experiment_dir: Path):
+    stat_dirs = list(experiment_dir.glob('stat_run_*'))
+    stat_dirs = sorted(stat_dirs, key=lambda x: int(x.stem.split('_')[-1]))
+    stat_runs = []
+    for each_dir in stat_dirs:
+        fitness_data = parse_stat_run(each_dir)
+        stat_runs.append(fitness_data)
+    return stat_runs
+
 def plot_fitnesses(fitness_data, save_dir, config, reward):
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(12, 12))
 
+    fitness_data = fitness_data[0]
     for reward_label, fitnesses in fitness_data.items():
         max_vals = fitnesses.max(axis=1)
         avg_vals = fitnesses.mean(axis=1)
@@ -82,7 +92,7 @@ def main(main_args):
         save_dir.mkdir(parents=True, exist_ok=True)
 
     base_dir = Path(project_properties.cached_dir, 'experiments')
-    experiment_dirs = base_dir.glob('*_neuro_evolve_*')
+    experiment_dirs = base_dir.glob('*_diff_*')
 
     # experiment_dirs = list(base_dir.glob('*_neuro_evolve_diff_alpha'))
     # experiment_dirs = experiment_dirs[:1]
@@ -91,12 +101,10 @@ def main(main_args):
         print(f'Processing experiment: {each_dir}')
         exp_name = each_dir.stem
         exp_name = exp_name.split('_')
-        exp_name = exp_name[7:]
+        exp_name = exp_name[5:]
 
-        config = exp_name[0]
-        reward = '_'.join(exp_name[1:])
-
-
+        reward = exp_name[0]
+        config = '_'.join(exp_name[1:])
 
         fitness_data = parse_experiment_fitnesses(each_dir)
         plot_fitnesses(fitness_data, save_dir=save_dir, config=config, reward=reward)
