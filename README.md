@@ -38,6 +38,15 @@ See the [LICENSE file](LICENSE) for license rights and limitations (MIT).
 -[ ] Documentation. (Explaining what the parts are and how they work)
 -[ ] Create trajectory graph visualization tool (Figure 4 from D++). Include circles around POIs to indicate observation radius. 
 
+## Todo
+
+-[ ] Write draft of approach section
+-[x] Figure out why environment is growing at each generation
+  - Follower agents were not correctly being reset (not resetting influence and rule histories)
+-[ ] Multiprocessing subpop simulations in each generation
+-[ ] Script to restart a stat run
+-[ ] Combine multiple stat runs into the same plot
+
 # Quick Start
 
 ## Approach

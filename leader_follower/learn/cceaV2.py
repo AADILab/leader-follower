@@ -177,24 +177,26 @@ def simulate_subpop(env, agent_policies, mutate_func, reward_func):
         # simulated_policies[agent_name] = policy_info
     return agent_policies
 
-def save_agent_policies(experiment_dir, gen_idx, agent_pops, fitnesses):
+def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     gen_path = Path(experiment_dir, f'gen_{gen_idx}')
     if not gen_path:
         gen_path.mkdir(parents=True, exist_ok=True)
 
-    env_save_path = Path(gen_path, 'envs')
-    if not env_save_path:
-        env_save_path.mkdir(parents=True, exist_ok=True)
+    # env_save_path = Path(gen_path, 'envs')
+    # if not env_save_path:
+    #     env_save_path.mkdir(parents=True, exist_ok=True)
 
     for agent_name, policy_info in agent_pops.items():
         network_save_path = Path(gen_path, f'{agent_name}_networks')
-        if not env_save_path:
+        if not network_save_path:
             network_save_path.mkdir(parents=True, exist_ok=True)
 
         for idx, each_policy in enumerate(policy_info):
             fitnesses[agent_name].append(each_policy['fitness'])
             network = each_policy['network']
             network.save_model(save_dir=network_save_path, tag=idx)
+
+    env.save_environment(gen_path, tag=f'gen_{gen_idx}')
 
     fitnesses_path = Path(gen_path, 'fitnesses.csv')
     fitnesses_df = pd.DataFrame.from_dict(fitnesses, orient='index')
@@ -272,10 +274,12 @@ def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_
 
         # save all policies of each agent
         # save fitnesses mapping policies to fitnesses
-        # experiment_dir, gen_idx, agent_pops, fitnesses
-        save_thread = Thread(target=save_agent_policies, args=(experiment_dir, gen_idx, agent_pops, fitnesses))
-        save_thread.start()
-        saving_threads.append(save_thread)
+        save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses)
+
+        # experiment_dir, gen_idx, env, agent_pops, fitnesses
+        # save_thread = Thread(target=save_agent_policies, args=(experiment_dir, gen_idx, env, agent_pops, fitnesses))
+        # save_thread.start()
+        # saving_threads.append(save_thread)
 
     for each_thread in saving_threads:
         each_thread.join()

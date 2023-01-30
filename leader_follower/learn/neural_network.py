@@ -51,12 +51,12 @@ def linear_relu_stack(n_inputs, n_hidden, n_outputs):
 
 class NeuralNetwork(nn.Module):
 
-    INSTANCES = []
+    LAST_CREATED = 0
 
     def __init__(self, n_inputs, n_outputs, n_hidden=2, network_func=linear_layer):
         super(NeuralNetwork, self).__init__()
-        self.name = f'{len(self.INSTANCES)}'
-        self.INSTANCES.append(time.time())
+        self.name = f'{self.LAST_CREATED}'
+        self.LAST_CREATED += 1
 
         self.network_func = network_func
 
@@ -72,8 +72,8 @@ class NeuralNetwork(nn.Module):
 
     def copy(self):
         new_copy = copy.copy(self)
-        self.INSTANCES.append(time.time())
-        new_copy.name = f'{len(self.INSTANCES)}'
+        self.LAST_CREATED += 1
+        new_copy.name = f'{self.LAST_CREATED}'
         return new_copy
 
     def device(self):

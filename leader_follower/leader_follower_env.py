@@ -3,12 +3,12 @@ import pickle
 from pathlib import Path
 
 import numpy as np
-from pettingzoo import ParallelEnv
 
 from leader_follower.agent import Poi, Leader, Follower, AgentType
 
 
-class LeaderFollowerEnv(ParallelEnv):
+class LeaderFollowerEnv:
+
     metadata = {'render_modes': ['human', 'rgb_array', 'none'], 'name': 'leader_follower_environment'}
 
     @property
@@ -103,6 +103,7 @@ class LeaderFollowerEnv(ParallelEnv):
         if not save_path.parent.exists():
             save_path.parent.mkdir(parents=True, exist_ok=True)
 
+        self.reset()
         with open(save_path, 'wb') as save_file:
             pickle.dump(self, save_file, pickle.HIGHEST_PROTOCOL)
         return save_path
@@ -208,6 +209,8 @@ class LeaderFollowerEnv(ParallelEnv):
         """
         if seed is not None:
             np.random.seed(seed)
+
+        # add all possible agents to the environment - agents are removed from the self.agents as they finish the task
         self.agents = self.possible_agents[:]
         self._current_step = 0
 
@@ -215,8 +218,6 @@ class LeaderFollowerEnv(ParallelEnv):
         _ = [each_agent.reset() for each_agent in self.followers.values()]
         _ = [each_agent.reset() for each_agent in self.pois.values()]
 
-        # add all possible agents to the environment - agents are removed from the self.agents as they finish the task
-        self.agents = [each_agent for each_agent in self.possible_agents]
         self.completed_agents = {}
         self.team_reward = 0
 

@@ -240,6 +240,13 @@ class Follower(Agent):
         self.influence_history = {'repulsion': [], 'attraction': []}
         return
 
+    def reset(self):
+        Agent.reset(self)
+
+        self.rule_history = {'repulsion': [], 'attraction': []}
+        self.influence_history = {'repulsion': [], 'attraction': []}
+        return
+
     def observation_space(self):
         # sum of vectors of agents in each radius
         #   repulsion
