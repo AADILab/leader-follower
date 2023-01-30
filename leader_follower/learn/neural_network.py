@@ -49,6 +49,12 @@ def linear_relu_stack(n_inputs, n_hidden, n_outputs):
     return network
 
 
+def load_pytorch_model(model_path):
+    model = torch.load(model_path)
+    model.eval()
+    return model
+
+
 class NeuralNetwork(nn.Module):
 
     LAST_CREATED = 0
@@ -96,6 +102,8 @@ class NeuralNetwork(nn.Module):
         return logits
 
     def save_model(self, save_dir=None, tag=''):
+        # todo optimize saving pytorch model
+        # https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
         if save_dir is None:
             save_dir = project_properties.output_dir
             save_dir = Path(save_dir, 'models')
@@ -107,16 +115,8 @@ class NeuralNetwork(nn.Module):
             tag = f'_{tag}'
 
         save_name = Path(save_dir, f'{self.name}_model{tag}.pt')
-        torch.save(self.state_dict(), save_name)
+        torch.save(self, save_name)
         return save_name
-
-    def load_model(self, load_dir=None):
-        if load_dir is None:
-            load_dir = Path(project_properties.output_dir, 'models')
-
-        load_name = Path(load_dir, f'{self.name}_model.pt')
-        self.load_state_dict(torch.load(load_name))
-        return
 
 
 def main(main_args):

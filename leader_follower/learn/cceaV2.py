@@ -16,9 +16,7 @@ from numpy.random import default_rng
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from tqdm import trange
 
-from leader_follower.agent import AgentType
 from leader_follower.leader_follower_env import LeaderFollowerEnv
-from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.learn.rewards import calc_global
 
 
@@ -203,45 +201,45 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     fitnesses_df.to_csv(fitnesses_path, header=True, index_label='agent_name')
     return
 
-def neuro_evolve(env: LeaderFollowerEnv, n_hidden, population_size, n_gens, sim_pop_size, reward_func, experiment_dir):
+def neuro_evolve(
+        env: LeaderFollowerEnv, agent_pops, population_size, n_gens, sim_pop_size,
+        reward_func, experiment_dir, starting_gen=0
+):
     # todo  implement leniency
     debug = False
     select_func = partial(select_roulette, **{'select_size': sim_pop_size, 'noise': 0.01})
     mutate_func = partial(mutate_gaussian, proportion=0.1, probability=0.05)
     downselect_func = partial(downselect_top_n, **{'select_size': population_size})
 
-    # todo  allow for policy sharing
-    #       move set of policies into agent definition add select policy based on idx
     # only creat sub-pops for agents capable of learning
-    agent_pops = {
-        agent_name: [
-            {
-                'network': NeuralNetwork(
-                    n_inputs=env.agent_mapping[agent_name].n_in,
-                    n_hidden=n_hidden,
-                    n_outputs=env.agent_mapping[agent_name].n_out,
-                ),
-                'fitness': None
-            }
-            for _ in range(population_size)
-        ]
-        for agent_name in env.agents
-        if env.agent_mapping[agent_name].type == AgentType.Learner
-    }
-    print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
-
-    # initial fitness evaluation of all networks in population
-    # todo check reward structure/assignment to make sure reward is being properly assigned
-    for pop_idx in range(population_size):
-        new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
-        agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=debug)
-        for agent_name, policy_info in agent_pops.items():
-            policy_fitness = agent_rewards[agent_name]
-            policy_info[pop_idx]['fitness'] = policy_fitness
+    # agent_pops = {
+    #     agent_name: [
+    #         {
+    #             'network': NeuralNetwork(
+    #                 n_inputs=env.agent_mapping[agent_name].n_in,
+    #                 n_hidden=n_hidden,
+    #                 n_outputs=env.agent_mapping[agent_name].n_out,
+    #             ),
+    #             'fitness': None
+    #         }
+    #         for _ in range(population_size)
+    #     ]
+    #     for agent_name in env.agents
+    #     if env.agent_mapping[agent_name].type == AgentType.Learner
+    # }
+    # print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
+    #
+    # # initial fitness evaluation of all networks in population
+    # for pop_idx in range(population_size):
+    #     new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
+    #     agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=debug)
+    #     for agent_name, policy_info in agent_pops.items():
+    #         policy_fitness = agent_rewards[agent_name]
+    #         policy_info[pop_idx]['fitness'] = policy_fitness
 
     saving_threads: list[Thread] = []
     env.save_environment(experiment_dir, tag='initial')
-    for gen_idx in trange(n_gens):
+    for gen_idx in trange(starting_gen, n_gens):
         sim_pops = select_func(agent_pops)
         # todo  multiprocess simulating each simulation population
         for agent_policies in sim_pops:

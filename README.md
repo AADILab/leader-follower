@@ -44,11 +44,10 @@ See the [LICENSE file](LICENSE) for license rights and limitations (MIT).
 -[x] Figure out why environment is growing at each generation
   - Follower agents were not correctly being reset (not resetting influence and rule histories)
 -[ ] Multiprocessing subpop simulations in each generation
--[ ] Script to restart a stat run
+-[x] Script to restart a stat run
 -[ ] Combine multiple stat runs into the same plot
 
 # Quick Start
-
 ## Approach
 
 general overview of approach

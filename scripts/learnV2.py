@@ -12,9 +12,10 @@ from functools import partial
 from pathlib import Path
 
 from leader_follower import project_properties
-from leader_follower.agent import Leader, Follower, Poi
+from leader_follower.agent import Leader, Follower, Poi, AgentType
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.cceaV2 import neuro_evolve, rollout
+from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.learn.rewards import calc_diff_rewards
 from leader_follower.utils import load_config
 
@@ -28,12 +29,17 @@ reward_map = {
     # 'dpplf': partial(calc_dpp, **{'remove_followers': True})
 }
 
-def run_experiment(experiment_config, reward_key, experiment_dir):
-    meta_vars = {
-        'n_hidden': 2,
+def run_experiment(experiment_config, experiment_dir):
+    config_parts = experiment_dir.parent.stem.split('_')
+    reward_key = config_parts[5]
+    config_name = config_parts[6:]
+    config_name = '_'.join(config_name)
 
-        'subpop_size': 35,
-        'sim_subpop_size': 35,
+    meta_vars = {
+        'n_hidden_layers': 2,
+
+        'population_size': 35,
+        'sim_pop_size': 35,
         'n_gens': 150,
         'episode_length': 50,
         'sensor_resolution': 4,
@@ -53,22 +59,17 @@ def run_experiment(experiment_config, reward_key, experiment_dir):
         'poi_value': 0,
         'poi_coupling': 1,
 
-        'config_name': '',
+        'config_name': config_name,
         'reward_key': reward_key,
         'experiment_dir': str(experiment_dir),
         'experiment_config': experiment_config
     }
 
-    meta_fname = Path(experiment_dir, f'{meta_vars["config_name"]}_meta.json')
+    meta_fname = Path(experiment_dir, f'meta_vars.json')
 
     with open(meta_fname, 'w') as jfile:
         json.dump(meta_vars, jfile, indent=2)
     #####################################################################
-    # todo  set nn policies of leaders here rather than in neuro_evolve and
-    #           use indexing to set active policy during evolution
-    #       this should make it easier to implement shared policies by using
-    #           the same policy during creation here without altering the
-    #           neuro_evolve implementation (select from set of policies)
     reward_func = reward_map[reward_key]
     # todo  add noise to location of agents
     leaders = [
@@ -92,9 +93,37 @@ def run_experiment(experiment_config, reward_key, experiment_dir):
     ]
     env = LeaderFollowerEnv(leaders=leaders, followers=followers, pois=pois, max_steps=meta_vars['episode_length'])
 
+    ######################################################
+    # todo  allow for policy sharing
+    agent_pops = {
+        agent_name: [
+            {
+                'network': NeuralNetwork(
+                    n_inputs=env.agent_mapping[agent_name].n_in,
+                    n_hidden=meta_vars['n_hidden_layers'],
+                    n_outputs=env.agent_mapping[agent_name].n_out,
+                ),
+                'fitness': None
+            }
+            for _ in range(meta_vars['population_size'],)
+        ]
+        for agent_name in env.agents
+        if env.agent_mapping[agent_name].type == AgentType.Learner
+    }
+    print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
+
+    # initial fitness evaluation of all networks in population
+    for pop_idx in range(meta_vars['population_size']):
+        new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
+        agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=False)
+        for agent_name, policy_info in agent_pops.items():
+            policy_fitness = agent_rewards[agent_name]
+            policy_info[pop_idx]['fitness'] = policy_fitness
+    ########################################################
+
     start_time = time.time()
     best_solution = neuro_evolve(
-        env, meta_vars['n_hidden'], meta_vars['subpop_size'], meta_vars['n_gens'], meta_vars['sim_subpop_size'],
+        env, agent_pops, meta_vars['population_size'], meta_vars['n_gens'], meta_vars['sim_pop_size'],
         reward_func=reward_func, experiment_dir=experiment_dir
     )
     end_time = time.time()
@@ -118,7 +147,7 @@ def main(main_args):
         if each_fn.stem in config_names
     ]
     print(f'{project_properties.config_dir=}')
-    stat_runs = 4
+    stat_runs = 2
 
     for each_fn in config_fns:
         print(f'{"=" * 80}')
@@ -140,7 +169,7 @@ def main(main_args):
                 if not exp_path.exists():
                     exp_path.mkdir(parents=True, exist_ok=True)
 
-                run_experiment(experiment_config=exp_config, reward_key=reward_key, experiment_dir=exp_path)
+                run_experiment(experiment_config=exp_config, experiment_dir=exp_path)
     return
 
 
