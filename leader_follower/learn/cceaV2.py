@@ -172,8 +172,6 @@ def simulate_subpop(agent_policies, env, mutate_func, reward_func):
     for agent_name, policy_info in agent_policies.items():
         policy_fitness = agent_rewards[agent_name]
         policy_info['fitness'] = policy_fitness
-        # reinsert new individual into population of policies
-        # simulated_policies[agent_name] = policy_info
     return agent_policies
 
 def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
@@ -181,9 +179,6 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     if not gen_path:
         gen_path.mkdir(parents=True, exist_ok=True)
 
-    # env_save_path = Path(gen_path, 'envs')
-    # if not env_save_path:
-    #     env_save_path.mkdir(parents=True, exist_ok=True)
 
     for agent_name, policy_info in agent_pops.items():
         network_save_path = Path(gen_path, f'{agent_name}_networks')
@@ -212,32 +207,6 @@ def neuro_evolve(
     mutate_func = partial(mutate_gaussian, proportion=0.1, probability=0.05)
     downselect_func = partial(downselect_top_n, **{'select_size': population_size})
 
-    # only creat sub-pops for agents capable of learning
-    # agent_pops = {
-    #     agent_name: [
-    #         {
-    #             'network': NeuralNetwork(
-    #                 n_inputs=env.agent_mapping[agent_name].n_in,
-    #                 n_hidden=n_hidden,
-    #                 n_outputs=env.agent_mapping[agent_name].n_out,
-    #             ),
-    #             'fitness': None
-    #         }
-    #         for _ in range(population_size)
-    #     ]
-    #     for agent_name in env.agents
-    #     if env.agent_mapping[agent_name].type == AgentType.Learner
-    # }
-    # print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
-    #
-    # # initial fitness evaluation of all networks in population
-    # for pop_idx in range(population_size):
-    #     new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
-    #     agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=debug)
-    #     for agent_name, policy_info in agent_pops.items():
-    #         policy_fitness = agent_rewards[agent_name]
-    #         policy_info[pop_idx]['fitness'] = policy_fitness
-
     saving_threads: list[Thread] = []
     env.save_environment(experiment_dir, tag='initial')
     sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
@@ -246,29 +215,11 @@ def neuro_evolve(
     for gen_idx in trange(starting_gen, n_gens):
         sim_pops = select_func(agent_pops)
 
-        # for agent_policies in sim_pops:
-        #     # todo check to make sure previous policy isn't being overwritten
-        #     # agent_policies, env, mutate_func, reward_func
-        #     agent_policies = sim_func(agent_policies)
-        #     # agent_policies = simulate_subpop(agent_policies, env, mutate_func, reward_func)
-        #     for name, policy in agent_policies.items():
-        #         agent_pops[name].append(policy)
-
-        # todo  multiprocess simulating each simulation population
         future_results = mp_pool.map(sim_func, sim_pops)
         for agent_policies in future_results:
-            # agent_policies = each_result.result()
+            # reinsert new individual into population of policies
             for name, policy in agent_policies.items():
                 agent_pops[name].append(policy)
-
-        #     agent_policies = mutate_func(agent_policies)
-        #     # rollout and evaluate
-        #     agent_rewards = rollout(env, agent_policies, reward_func=reward_func, render=debug)
-        #     for agent_name, policy_info in agent_policies.items():
-        #         policy_fitness = agent_rewards[agent_name]
-        #         policy_info['fitness'] = policy_fitness
-        #         # reinsert new individual into population of policies
-        #         agent_pops[agent_name].append(policy_info)
 
         # downselect
         agent_pops = downselect_func(agent_pops)
@@ -282,14 +233,10 @@ def neuro_evolve(
         }
         fitnesses['G'] = [g_reward for _ in range(0, population_size)]
 
-        # save all policies of each agent
-        # save fitnesses mapping policies to fitnesses
-        save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses)
-
-        # experiment_dir, gen_idx, env, agent_pops, fitnesses
-        # save_thread = Thread(target=save_agent_policies, args=(experiment_dir, gen_idx, env, agent_pops, fitnesses))
-        # save_thread.start()
-        # saving_threads.append(save_thread)
+        # save all policies of each agent and save fitnesses mapping policies to fitnesses
+        save_thread = Thread(target=save_agent_policies, args=(experiment_dir, gen_idx, env, agent_pops, fitnesses))
+        save_thread.start()
+        saving_threads.append(save_thread)
 
     mp_pool.shutdown()
     for each_thread in saving_threads:
