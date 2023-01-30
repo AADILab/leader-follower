@@ -86,6 +86,7 @@ def restart_stat_run(stat_run_dir):
     reward_func = reward_map[meta_vars['reward_key']]
 
     # start neuro_evolve from specified generation
+    print(f'Restarting experiment: {meta_vars["reward_key"]} | {meta_vars["config_name"]}')
     last_gen_idx = len(gen_dirs)
     start_time = time.time()
     best_solution = neuro_evolve(

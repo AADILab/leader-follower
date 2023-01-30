@@ -38,8 +38,8 @@ def run_experiment(experiment_config, experiment_dir):
     meta_vars = {
         'n_hidden_layers': 2,
 
-        'population_size': 35,
-        'sim_pop_size': 35,
+        'population_size': 50,
+        'sim_pop_size': 50,
         'n_gens': 150,
         'episode_length': 50,
         'sensor_resolution': 4,
@@ -120,7 +120,7 @@ def run_experiment(experiment_config, experiment_dir):
             policy_fitness = agent_rewards[agent_name]
             policy_info[pop_idx]['fitness'] = policy_fitness
     ########################################################
-
+    print(f'Starting experiment: {meta_vars["reward_key"]} | {config_name}')
     start_time = time.time()
     best_solution = neuro_evolve(
         env, agent_pops, meta_vars['population_size'], meta_vars['n_gens'], meta_vars['sim_pop_size'],
@@ -146,7 +146,6 @@ def main(main_args):
         for each_fn in Path(project_properties.config_dir).rglob('*.yaml')
         if each_fn.stem in config_names
     ]
-    print(f'{project_properties.config_dir=}')
     stat_runs = 2
 
     for each_fn in config_fns:
@@ -168,7 +167,6 @@ def main(main_args):
                 exp_path = Path(reward_path, f'stat_run_{idx}')
                 if not exp_path.exists():
                     exp_path.mkdir(parents=True, exist_ok=True)
-
                 run_experiment(experiment_config=exp_config, experiment_dir=exp_path)
     return
 

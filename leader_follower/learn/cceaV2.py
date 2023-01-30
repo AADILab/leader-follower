@@ -5,6 +5,7 @@
 
 """
 import copy
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 from threading import Thread
@@ -163,7 +164,7 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
         episode_rewards = {name: episode_rewards for name in env.leaders.keys()}
     return episode_rewards
 
-def simulate_subpop(env, agent_policies, mutate_func, reward_func):
+def simulate_subpop(agent_policies, env, mutate_func, reward_func):
     agent_policies = mutate_func(agent_policies)
 
     # rollout and evaluate
@@ -239,13 +240,24 @@ def neuro_evolve(
 
     saving_threads: list[Thread] = []
     env.save_environment(experiment_dir, tag='initial')
+    sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
+
+    mp_pool = ProcessPoolExecutor(max_workers=8)
     for gen_idx in trange(starting_gen, n_gens):
         sim_pops = select_func(agent_pops)
+
+        # for agent_policies in sim_pops:
+        #     # todo check to make sure previous policy isn't being overwritten
+        #     # agent_policies, env, mutate_func, reward_func
+        #     agent_policies = sim_func(agent_policies)
+        #     # agent_policies = simulate_subpop(agent_policies, env, mutate_func, reward_func)
+        #     for name, policy in agent_policies.items():
+        #         agent_pops[name].append(policy)
+
         # todo  multiprocess simulating each simulation population
-        for agent_policies in sim_pops:
-            # todo check to make sure previous policy isn't being overwritten
-            # env, agent_policies, mutate_func, reward_func
-            agent_policies = simulate_subpop(env, agent_policies, mutate_func, reward_func)
+        future_results = mp_pool.map(sim_func, sim_pops)
+        for agent_policies in future_results:
+            # agent_policies = each_result.result()
             for name, policy in agent_policies.items():
                 agent_pops[name].append(policy)
 
@@ -279,6 +291,7 @@ def neuro_evolve(
         # save_thread.start()
         # saving_threads.append(save_thread)
 
+    mp_pool.shutdown()
     for each_thread in saving_threads:
         each_thread.join()
 

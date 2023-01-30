@@ -35,17 +35,16 @@ See the [LICENSE file](LICENSE) for license rights and limitations (MIT).
 
 <img src="docs/ever_post_gecco.jpg" alt="Ever Post GECCO" width="250" height="250">
 
--[ ] Documentation. (Explaining what the parts are and how they work)
--[ ] Create trajectory graph visualization tool (Figure 4 from D++). Include circles around POIs to indicate observation radius. 
-
 ## Todo
 
 -[ ] Write draft of approach section
 -[x] Figure out why environment is growing at each generation
   - Follower agents were not correctly being reset (not resetting influence and rule histories)
--[ ] Multiprocessing subpop simulations in each generation
 -[x] Script to restart a stat run
+-[x] Multiprocessing subpop simulations in each generation
 -[ ] Combine multiple stat runs into the same plot
+-[ ] Documentation. (Explaining what the parts are and how they work)
+-[ ] Create trajectory graph visualization tool (Figure 4 from D++). Include circles around POIs to indicate observation radius.
 
 # Quick Start
 ## Approach
