@@ -40,8 +40,8 @@ def run_experiment(experiment_config, experiment_dir):
 
         'population_size': 50,
         'sim_pop_size': 50,
-        'n_gens': 150,
-        'episode_length': 50,
+        'n_gens': 1000,
+        'episode_length': 75,
         'sensor_resolution': 4,
 
         'leader_obs_rad': 100,

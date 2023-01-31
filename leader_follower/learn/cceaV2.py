@@ -5,6 +5,7 @@
 
 """
 import copy
+import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
@@ -23,7 +24,8 @@ from leader_follower.learn.rewards import calc_global
 
 def select_roulette(agent_pops, select_size, noise=0.01):
     """
-    output a list of dicts, where each idx contains the policy for each agent
+    output a list of dicts, where each dict in the list contains a policy for each agent in agent_pops
+
     :param agent_pops:
     :param select_size:
     :param noise:
@@ -211,7 +213,8 @@ def neuro_evolve(
     env.save_environment(experiment_dir, tag='initial')
     sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
 
-    mp_pool = ProcessPoolExecutor(max_workers=8)
+    num_cores = multiprocessing.cpu_count()
+    mp_pool = ProcessPoolExecutor(max_workers=num_cores)
     for gen_idx in trange(starting_gen, n_gens):
         sim_pops = select_func(agent_pops)
 
