@@ -38,13 +38,19 @@ See the [LICENSE file](LICENSE) for license rights and limitations (MIT).
 ## Todo
 
 -[ ] Write draft of approach section
+-[ ] Write draft of results section
 -[x] Figure out why environment is growing at each generation
   - Follower agents were not correctly being reset (not resetting influence and rule histories)
 -[x] Script to restart a stat run
 -[x] Multiprocessing subpop simulations in each generation
 -[ ] Combine multiple stat runs into the same plot
--[ ] Documentation. (Explaining what the parts are and how they work)
 -[ ] Create trajectory graph visualization tool (Figure 4 from D++). Include circles around POIs to indicate observation radius.
+-[ ] Create whiteboard configuration
+-[ ] Run experiment of all leaders using G
+-[ ] Run experiment using leader-follower using G
+-[ ] Run experiment using leader-follower using D
+-[ ] Run experiment using leader-follower using DLF
+-[ ] Documentation. (Explaining what the parts are and how they work)
 
 # Quick Start
 

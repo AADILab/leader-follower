@@ -135,8 +135,9 @@ def run_experiment(experiment_config, experiment_dir):
 
 def main(main_args):
     config_names = [
+        'whiteboard',
         # 'alpha',
-        'atrium',
+        # 'atrium',
         # 'battery',
         # 'charlie',
         # 'echo'

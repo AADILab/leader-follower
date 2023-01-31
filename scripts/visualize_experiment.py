@@ -38,7 +38,7 @@ def parse_stat_run(stat_run_dir):
             condensed_gens[each_name].append(vals)
 
     np_gens = {
-        name: np.array(data, dtype=float)
+        name: np.array(data[:880], dtype=float)
         for name, data in condensed_gens.items()
     }
     return np_gens
@@ -60,8 +60,8 @@ def plot_fitnesses(fitness_data, save_dir, config, reward):
         max_vals = fitnesses.max(axis=1)
         avg_vals = fitnesses.mean(axis=1)
 
-        axes.plot(max_vals, label=f'max {reward_label}')
-        # axes.plot(avg_vals, label=f'avg {reward_label}')
+        # axes.plot(max_vals, label=f'max {reward_label}')
+        axes.plot(avg_vals, label=f'avg {reward_label}')
 
         axes.set_xlabel(f'generation')
         axes.set_ylabel('fitness')
