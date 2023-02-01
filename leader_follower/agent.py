@@ -34,7 +34,7 @@ class Agent(ABC):
     def action(self):
         return self.action_history[-1]
 
-    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float):
+    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float):
         self.name = f'agent_{agent_id}'
         self.id = agent_id
         self.type = AgentType.Static
@@ -44,6 +44,7 @@ class Agent(ABC):
         self.max_velocity = max_velocity
         self.sensor_resolution = sensor_resolution
         self.value = value
+        self.weight = weight
 
         self._initial_location = location
         self.location = location
@@ -57,7 +58,7 @@ class Agent(ABC):
         return
 
     def __repr__(self):
-        return f'({self.name}:  {self.value}: {self.state})'
+        return f'({self.name}:  {self.weight}: {self.value}: {self.state})'
 
     def reset(self):
         self.location = self._initial_location
@@ -98,7 +99,7 @@ class Agent(ABC):
 
             angle, dist = self.relative(agent)
             if dist <= observation_radius:
-                bins.append(agent)
+                bins.append((agent, angle, dist))
         return bins
 
     @abc.abstractmethod
@@ -129,9 +130,11 @@ class Leader(Agent):
     }
     NUM_ROWS = 2
 
-    def __init__(self, agent_id, location, sensor_resolution, value, observation_radius, max_velocity,
-                 policy: NeuralNetwork | None):
-        super().__init__(agent_id, location, sensor_resolution, value, max_velocity)
+    def __init__(self, agent_id, location, sensor_resolution, value, max_velocity, weight,
+                 observation_radius, policy: NeuralNetwork | None):
+
+        # agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity, weight)
         self.name = f'leader_{agent_id}'
         self.type = AgentType.Learner
 
@@ -164,6 +167,9 @@ class Leader(Agent):
 
     def sense(self, other_agents, sensor_resolution=None, offset=False):
         """
+        Takes in the state of the worlds and counts how many agents are in each d-hyperoctant around the agent,
+        with the agent being at the center of the observation.
+
         Calculates which pois, leaders, and follower go into which d-hyperoctant, where d is the state
         resolution of the environment.
 
@@ -185,7 +191,9 @@ class Leader(Agent):
 
         observation = np.zeros((2, self.sensor_resolution))
         counts = np.ones((2, self.sensor_resolution))
-        for idx, agent in enumerate(obs_agents):
+        for idx, entry in enumerate(obs_agents):
+            # todo optimize since observable_agents returns angle and distance as well
+            agent = entry[0]
             agent_type_idx = Leader.ROW_MAPPING[agent.type]
             angle, dist = self.relative(agent)
             bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
@@ -223,9 +231,11 @@ class Leader(Agent):
 # todo call an AttractionFollower to allow for other type of follower implementations
 class Follower(Agent):
 
-    def __init__(self, agent_id, location, sensor_resolution, value, max_velocity,
+    def __init__(self, agent_id, location, sensor_resolution, value, max_velocity, weight,
                  repulsion_radius, repulsion_strength, attraction_radius, attraction_strength):
-        super().__init__(agent_id, location, sensor_resolution, value, max_velocity)
+
+        # agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity, weight)
         self.name = f'follower_{agent_id}'
         self.type = AgentType.Actor
 
@@ -262,17 +272,18 @@ class Follower(Agent):
         return action_range
 
     def rule_mass_center(self, relative_agents, rule_radius):
+        # todo validate correctly calculating center of mass of nearby agents
         rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
         # adding self partially guards against when no other agents are nearby
-        rel_agents.append(self)
+        rel_agents.append((self, 0, 0))
 
         rel_locs = [
-            (each_agent.location[0] - self.location[0], each_agent.location[1] - self.location[1])
+            (each_agent[0].location[0] - self.location[0], each_agent[0].location[1] - self.location[1])
             for each_agent in rel_agents
         ]
         avg_locs = np.average(rel_locs, axis=0)
 
-        rel_agents.remove(self)
+        rel_agents.remove((self, 0, 0))
         return avg_locs, rel_agents
 
     def sense(self, relative_agents):
@@ -295,10 +306,10 @@ class Follower(Agent):
         return observation
 
     def influence_counts(self):
-        repulsion_names = [agent.name for agent in self.influence_history['repulsion']]
+        repulsion_names = [agent[0].name for agent in self.influence_history['repulsion']]
         repulsion_counts = np.unique(repulsion_names, return_counts=True)
 
-        attraction_names = [agent.name for agent in self.influence_history['attraction']]
+        attraction_names = [agent[0].name for agent in self.influence_history['attraction']]
         attraction_counts = np.unique(attraction_names, return_counts=True)
 
         repulsion_names.extend(attraction_names)
@@ -333,13 +344,15 @@ class Poi(Agent):
         max_seen = 0
         for each_step in self.observation_history:
             # using value allows for different agents to contribute different weights to observing the poi
-            curr_seen = sum(each_agent.value for each_agent in each_step)
+            curr_seen = sum(each_agent[0].value for each_agent in each_step)
             max_seen = max(max_seen, curr_seen)
         obs = max_seen >= self.coupling
         return obs
 
-    def __init__(self, agent_id, location, sensor_resolution, value, observation_radius, coupling):
-        super().__init__(agent_id, location, sensor_resolution, value, max_velocity=0)
+    def __init__(self, agent_id, location, sensor_resolution, value, weight,
+                 observation_radius, coupling):
+        # agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity=0, weight=weight)
         self.name = f'poi_{agent_id}'
         self.type = AgentType.Static
 
@@ -370,10 +383,11 @@ class Poi(Agent):
         self.state_history.append(self.location)
         # filter out other POIs from the poi observation
         # todo only store agent_names rather than full agent object
+        observable = self.observable_agents(relative_agents, self.observation_radius)
         observation = [
             each_obs
-            for each_obs in self.observable_agents(relative_agents, self.observation_radius)
-            if each_obs.type != AgentType.Static
+            for each_obs in observable
+            if not isinstance(each_obs[0], Poi)
         ]
         self.observation_history.append(observation)
         return observation

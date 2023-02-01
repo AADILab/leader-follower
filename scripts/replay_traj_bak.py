@@ -13,7 +13,6 @@ import numpy as np
 from leader_follower import project_properties
 from leader_follower.agent import Leader, Follower, Poi
 from leader_follower.leader_follower_env import LeaderFollowerEnv
-from leader_follower.learn.rewards import calc_diff_rewards
 
 
 def actions_from_states(states):
@@ -172,7 +171,7 @@ def main(main_args):
     for name, isvalid in valid.items():
         print(f'{name=} | {isvalid=}')
 
-    rewards = calc_diff_rewards(env)
+    rewards = env.calc_diff_rewards()
     print(f'{rewards=}')
     return
 

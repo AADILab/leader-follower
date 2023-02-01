@@ -11,22 +11,23 @@ from datetime import datetime
 from functools import partial
 from pathlib import Path
 
+from tqdm import trange
+
 from leader_follower import project_properties
 from leader_follower.agent import Leader, Follower, Poi, AgentType
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.cceaV2 import neuro_evolve, rollout
 from leader_follower.learn.neural_network import NeuralNetwork
-from leader_follower.learn.rewards import calc_diff_rewards
 from leader_follower.utils import load_config
 
 reward_map = {
-    # 'global': calc_global,
+    # 'global': LeaderFollowerEnv.calc_global,
 
-    'diff': partial(calc_diff_rewards, **{'remove_followers': False}),
-    'difflf': partial(calc_diff_rewards, **{'remove_followers': True}),
+    'diff': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': False}),
+    'difflf': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': True}),
 
-    # 'dpp': partial(calc_dpp, **{'remove_followers': False}),
-    # 'dpplf': partial(calc_dpp, **{'remove_followers': True})
+    # 'dpp': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': False}),
+    # 'dpplf': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': True})
 }
 
 def run_experiment(experiment_config, experiment_dir):
@@ -38,25 +39,30 @@ def run_experiment(experiment_config, experiment_dir):
     meta_vars = {
         'n_hidden_layers': 2,
 
-        'population_size': 50,
-        'sim_pop_size': 50,
-        'n_gens': 1000,
-        'episode_length': 75,
+        'population_size': 25,
+        'num_simulations': 25,
+        'n_gens': 50,
+        'episode_length': 25,
+        # try increasing sensor resolution
         'sensor_resolution': 4,
 
         'leader_obs_rad': 100,
         'leader_value': 1,
+        # add weight to allow for followers to be attracted to leaders more than followers
         'leader_max_velocity': 3,
+        'leader_weight': 1,
 
         'follower_value': 1,
         'follower_max_velocity': 1,
+        'follower_weight': 1,
         'repulsion_rad': 0.5,
         'repulsion_strength': 5,
         'attraction_rad': 3,
         'attraction_strength': 1,
 
         'poi_obs_rad': 1,
-        'poi_value': 0,
+        'poi_value': 1,
+        'poi_weight': 1,
         'poi_coupling': 1,
 
         'config_name': config_name,
@@ -74,20 +80,22 @@ def run_experiment(experiment_config, experiment_dir):
     # todo  add noise to location of agents
     leaders = [
         Leader(
-            idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['leader_value'],
-            observation_radius=meta_vars['leader_obs_rad'], max_velocity=meta_vars['leader_max_velocity'], policy=None)
+            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['leader_value'],
+            max_velocity=meta_vars['leader_max_velocity'], weight=meta_vars['leader_weight'],
+            observation_radius=meta_vars['leader_obs_rad'], policy=None)
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     followers = [
         Follower(
-            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
-            value=meta_vars['follower_value'], max_velocity=meta_vars['follower_max_velocity'],
+            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['follower_value'],
+            max_velocity=meta_vars['follower_max_velocity'], weight=meta_vars['follower_weight'],
             repulsion_radius=meta_vars['repulsion_rad'], repulsion_strength=meta_vars['repulsion_strength'],
             attraction_radius=meta_vars['attraction_rad'], attraction_strength=meta_vars['attraction_strength'])
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     pois = [
-        Poi(idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['poi_value'],
+        Poi(agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['poi_value'],
+            weight=meta_vars['poi_weight'],
             observation_radius=meta_vars['poi_obs_rad'], coupling=meta_vars['poi_coupling'])
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
     ]
@@ -113,7 +121,8 @@ def run_experiment(experiment_config, experiment_dir):
     print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
 
     # initial fitness evaluation of all networks in population
-    for pop_idx in range(meta_vars['population_size']):
+    print(f'Initializing fitness values for networks')
+    for pop_idx in trange(meta_vars['population_size']):
         new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
         agent_rewards = rollout(env, new_inds, reward_func=reward_func, render=False)
         for agent_name, policy_info in agent_pops.items():
@@ -123,7 +132,7 @@ def run_experiment(experiment_config, experiment_dir):
     print(f'Starting experiment: {meta_vars["reward_key"]} | {config_name}')
     start_time = time.time()
     best_solution = neuro_evolve(
-        env, agent_pops, meta_vars['population_size'], meta_vars['n_gens'], meta_vars['sim_pop_size'],
+        env, agent_pops, meta_vars['population_size'], meta_vars['n_gens'], meta_vars['num_simulations'],
         reward_func=reward_func, experiment_dir=experiment_dir
     )
     end_time = time.time()
@@ -135,9 +144,10 @@ def run_experiment(experiment_config, experiment_dir):
 
 def main(main_args):
     config_names = [
-        'whiteboard',
+        # 'whiteboardV1',
+        # 'whiteboardV2',
         # 'alpha',
-        # 'atrium',
+        'atrium',
         # 'battery',
         # 'charlie',
         # 'echo'
@@ -147,7 +157,7 @@ def main(main_args):
         for each_fn in Path(project_properties.config_dir).rglob('*.yaml')
         if each_fn.stem in config_names
     ]
-    stat_runs = 2
+    stat_runs = 1
 
     for each_fn in config_fns:
         print(f'{"=" * 80}')

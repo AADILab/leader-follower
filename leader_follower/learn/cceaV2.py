@@ -9,7 +9,6 @@ import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
-from threading import Thread
 
 import numpy as np
 import pandas as pd
@@ -19,7 +18,6 @@ from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from tqdm import trange
 
 from leader_follower.leader_follower_env import LeaderFollowerEnv
-from leader_follower.learn.rewards import calc_global
 
 
 def select_roulette(agent_pops, select_size, noise=0.01):
@@ -66,11 +64,12 @@ def select_roulette(agent_pops, select_size, noise=0.01):
         assert arg_minfitness == fitness_probs.size - 1
         assert pop_copy[arg_minfitness] == bogey_entry
 
-        rand_pop = np.random.choice(pop_copy, select_size, replace=False, p=fitness_probs)
+        rand_pop = np.random.choice(pop_copy, select_size, replace=True, p=fitness_probs)
         chosen_agent_pops[agent_name] = rand_pop
 
+    agent_names = list(chosen_agent_pops.keys())
     chosen_pops = [
-        {agent_name: pops[idx] for agent_name, pops in chosen_agent_pops.items()}
+        [{agent_name: pops[idx] for agent_name, pops in chosen_agent_pops.items()}, agent_names]
         for idx in range(0, select_size)
     ]
     return chosen_pops
@@ -87,15 +86,44 @@ def select_egreedy(agent_pops, select_size, epsilon):
             pass
         # chosen_agent_pops[agent_name] = rand_pop
 
+    agent_names = list(chosen_agent_pops.keys())
     chosen_pops = [
-        {agent_name: pops[idx] for agent_name, pops in chosen_agent_pops.items()}
+        [{agent_name: pops[idx] for agent_name, pops in chosen_agent_pops.items()}, agent_names]
         for idx in range(0, select_size)
     ]
     return chosen_pops
 
-def select_hall_of_fame(agent_pops):
-    # todo implement hall of fame selection
-    return
+
+def select_leniency(agent_pops, select_size):
+    # todo  implement leniency
+    rng = default_rng()
+    best_policies = select_top_n(agent_pops, select_size=1)[0]
+    chosen_pops = []
+    for agent_name, policies in agent_pops.items():
+        # todo  weight select based on fitness
+        policies = rng.choice(policies, size=select_size)
+        for each_policy in policies:
+            entry = {
+                name: policy if name != agent_name else each_policy
+                for name, policy in best_policies.items()
+            }
+            chosen_pops.append([entry, [agent_name]])
+    return chosen_pops
+
+def select_hall_of_fame(agent_pops, select_size):
+    rng = default_rng()
+    best_policies = select_top_n(agent_pops, select_size=1)[0]
+    chosen_pops = []
+    for agent_name, policies in agent_pops.items():
+        # todo  weight select based on fitness
+        policies = rng.choice(policies, size=select_size)
+        for each_policy in policies:
+            entry = {
+                name: policy if name != agent_name else each_policy
+                for name, policy in best_policies.items()
+            }
+            chosen_pops.append([entry, [agent_name]])
+    return chosen_pops
 
 def select_top_n(agent_pops, select_size):
     chosen_agent_pops = {}
@@ -167,14 +195,14 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
     return episode_rewards
 
 def simulate_subpop(agent_policies, env, mutate_func, reward_func):
-    agent_policies = mutate_func(agent_policies)
+    mutated_policies = mutate_func(agent_policies[0])
 
     # rollout and evaluate
-    agent_rewards = rollout(env, agent_policies, reward_func=reward_func, render=False)
-    for agent_name, policy_info in agent_policies.items():
+    agent_rewards = rollout(env, mutated_policies, reward_func=reward_func, render=False)
+    for agent_name, policy_info in mutated_policies.items():
         policy_fitness = agent_rewards[agent_name]
         policy_info['fitness'] = policy_fitness
-    return agent_policies
+    return mutated_policies, agent_policies[1]
 
 def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     gen_path = Path(experiment_dir, f'gen_{gen_idx}')
@@ -190,7 +218,7 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
         for idx, each_policy in enumerate(policy_info):
             fitnesses[agent_name].append(each_policy['fitness'])
             network = each_policy['network']
-            network.save_model(save_dir=network_save_path, tag=idx)
+            network.save_model(save_dir=network_save_path)
 
     env.save_environment(gen_path, tag=f'gen_{gen_idx}')
 
@@ -200,36 +228,43 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     return
 
 def neuro_evolve(
-        env: LeaderFollowerEnv, agent_pops, population_size, n_gens, sim_pop_size,
+        env: LeaderFollowerEnv, agent_pops, population_size, n_gens, num_simulations,
         reward_func, experiment_dir, starting_gen=0
 ):
     # todo  implement leniency
-    debug = False
-    select_func = partial(select_roulette, **{'select_size': sim_pop_size, 'noise': 0.01})
+    # selection_func = partial(select_roulette, **{'select_size': num_simulations, 'noise': 0.01})
+    selection_func = partial(select_hall_of_fame, **{'select_size': num_simulations})
+
     mutate_func = partial(mutate_gaussian, proportion=0.1, probability=0.05)
+    sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
     downselect_func = partial(downselect_top_n, **{'select_size': population_size})
 
-    saving_threads: list[Thread] = []
     env.save_environment(experiment_dir, tag='initial')
-    sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
 
     num_cores = multiprocessing.cpu_count()
-    mp_pool = ProcessPoolExecutor(max_workers=num_cores)
+    mp_pool = ProcessPoolExecutor(max_workers=num_cores-1)
     for gen_idx in trange(starting_gen, n_gens):
-        sim_pops = select_func(agent_pops)
+        selected_policies = selection_func(agent_pops)
 
-        future_results = mp_pool.map(sim_func, sim_pops)
-        for agent_policies in future_results:
-            # reinsert new individual into population of policies
-            for name, policy in agent_policies.items():
-                agent_pops[name].append(policy)
+        results = map(sim_func, selected_policies)
+        # results = mp_pool.map(sim_func, selected_policies)
+        for each_result in results:
+            eval_agents = each_result[1]
+            # reinsert new individual into population of policies if this result was meant to be
+            # evaluating a particular agent
+            # e.g. for hall of fame or leniency, each entry in selected_policies should only be
+            # evaluating a single policy
+            for name, policy in each_result[0].items():
+                if name in eval_agents:
+                    agent_pops[name].append(policy)
 
         # downselect
         agent_pops = downselect_func(agent_pops)
 
         top_inds = select_top_n(agent_pops, select_size=1)[0]
-        _ = rollout(env, top_inds, reward_func=reward_func, render=debug)
-        g_reward = calc_global(env)
+        _ = rollout(env, top_inds, reward_func=reward_func, render=False)
+        g_reward = env.calc_global()
+        # todo  bug fix sometimes there is more than population_size policies in the population
         fitnesses = {
             agent_name: []
             for agent_name, policy_info in agent_pops.items()
@@ -237,13 +272,8 @@ def neuro_evolve(
         fitnesses['G'] = [g_reward for _ in range(0, population_size)]
 
         # save all policies of each agent and save fitnesses mapping policies to fitnesses
-        save_thread = Thread(target=save_agent_policies, args=(experiment_dir, gen_idx, env, agent_pops, fitnesses))
-        save_thread.start()
-        saving_threads.append(save_thread)
-
+        save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses)
     mp_pool.shutdown()
-    for each_thread in saving_threads:
-        each_thread.join()
 
     # todo better way of combining best policies from each population for a final solution
     top_inds = select_top_n(agent_pops, select_size=1)[0]

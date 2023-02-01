@@ -12,7 +12,6 @@ import numpy as np
 from leader_follower.agent import Poi, Leader, Follower
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.neural_network import NeuralNetwork
-from leader_follower.learn.rewards import calc_diff_rewards, calc_global, calc_dpp
 
 def leader_follower_test(leaders, leader_actions, followers, follower_actions, pois, poi_actions, reward_func):
     """
@@ -138,13 +137,13 @@ def main(main_args):
     right_action = np.array((1, 0))
 
     rewards = {
-        'global': calc_global,
+        'global': LeaderFollowerEnv.calc_global,
 
-        'diff': partial(calc_diff_rewards, **{'remove_followers': False}),
-        'diff_lf': partial(calc_diff_rewards, **{'remove_followers': True}),
+        'diff': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': False}),
+        'diff_lf': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': True}),
 
-        'dpp': partial(calc_dpp, **{'remove_followers': False}),
-        'dpp_lf': partial(calc_dpp, **{'remove_followers': True})
+        'dpp': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': False}),
+        'dpp_lf': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': True})
     }
 
     #########################################################################
