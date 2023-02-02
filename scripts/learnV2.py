@@ -21,6 +21,7 @@ from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.utils import load_config
 
 reward_map = {
+    # todo  fix structure of global reward to make consistent with other reward functions
     # 'global': LeaderFollowerEnv.calc_global,
 
     'diff': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': False}),
@@ -47,23 +48,24 @@ def run_experiment(experiment_config, experiment_dir):
         'sensor_resolution': 4,
 
         'leader_obs_rad': 100,
+        # leader and follower value determine have much "observational power" an agent has
         'leader_value': 1,
-        # add weight to allow for followers to be attracted to leaders more than followers
         'leader_max_velocity': 3,
-        'leader_weight': 1,
+        # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
+        'leader_weight': 2,
 
         'follower_value': 1,
         'follower_max_velocity': 1,
         'follower_weight': 1,
-        'repulsion_rad': 0.5,
+        'repulsion_rad': 1,
         'repulsion_strength': 5,
         'attraction_rad': 3,
         'attraction_strength': 1,
 
         'poi_obs_rad': 1,
         'poi_value': 1,
-        'poi_weight': 1,
-        'poi_coupling': 1,
+        'poi_weight': 0,
+        'poi_coupling': 3,
 
         'config_name': config_name,
         'reward_key': reward_key,
@@ -157,7 +159,7 @@ def main(main_args):
         for each_fn in Path(project_properties.config_dir).rglob('*.yaml')
         if each_fn.stem in config_names
     ]
-    stat_runs = 1
+    stat_runs = 3
 
     for each_fn in config_fns:
         print(f'{"=" * 80}')

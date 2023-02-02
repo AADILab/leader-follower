@@ -11,6 +11,7 @@ from enum import Enum, auto
 import numpy as np
 import torch
 from gym.vector.utils import spaces
+from numpy.random import default_rng
 
 from leader_follower.learn.neural_network import NeuralNetwork
 
@@ -58,7 +59,7 @@ class Agent(ABC):
         return
 
     def __repr__(self):
-        return f'({self.name}:  {self.weight}: {self.value}: {self.state})'
+        return f'({self.name}:  {self.weight=}: {self.value=}: {self.state})'
 
     def reset(self):
         self.location = self._initial_location
@@ -273,18 +274,20 @@ class Follower(Agent):
 
     def rule_mass_center(self, relative_agents, rule_radius):
         # todo validate correctly calculating center of mass of nearby agents
-        rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
+        obs_agents = Agent.observable_agents(self, relative_agents, rule_radius)
         # adding self partially guards against when no other agents are nearby
-        rel_agents.append((self, 0, 0))
+        obs_agents.append((self, 0, 0))
 
+        # weight center of mass by agent weight
         rel_locs = [
-            (each_agent[0].location[0] - self.location[0], each_agent[0].location[1] - self.location[1])
-            for each_agent in rel_agents
+            ((each_agent[0].location[0] - self.location[0]) * each_agent[0].weight,
+             (each_agent[0].location[1] - self.location[1]) * each_agent[0].weight)
+            for each_agent in obs_agents
         ]
         avg_locs = np.average(rel_locs, axis=0)
 
-        rel_agents.remove((self, 0, 0))
-        return avg_locs, rel_agents
+        obs_agents.remove((self, 0, 0))
+        return avg_locs, obs_agents
 
     def sense(self, relative_agents):
         """
@@ -314,14 +317,16 @@ class Follower(Agent):
 
         repulsion_names.extend(attraction_names)
         total_counts = np.unique(repulsion_names, return_counts=True)
+
         return total_counts, repulsion_counts, attraction_counts
 
     def get_action(self, observation):
-        # todo Followers should not have repulsion and attraction radii with xy update rules
-        # todo take into account current velocity
+        # todo  Followers should not have repulsion and attraction radii with xy update rules
         repulsion_diff = observation[0]
         self.rule_history['repulsion'].append(repulsion_diff)
         repulsion_diff = np.nan_to_num(repulsion_diff)
+        # todo  weight repulsion and attraction by max radii for each. center of mass further
+        #       away will affect a follower less than if it is nearby
         weighted_repulsion = repulsion_diff * self.repulsion_strength
         weighted_repulsion *= -1
 
@@ -334,6 +339,11 @@ class Follower(Agent):
         mag = np.linalg.norm(action)
         if mag > self.max_velocity:
             action = action / mag
+
+        # add noise to updates because if two followers end up in the same location, they will not separate
+        rng = default_rng()
+        noise = rng.random(size=2) * self.max_velocity / 100
+        action += noise
         self.action_history.append(action)
         return action
 

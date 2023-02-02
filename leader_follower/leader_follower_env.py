@@ -4,13 +4,14 @@ import pickle
 from pathlib import Path
 
 import numpy as np
+import pygame
 
 from leader_follower.agent import Poi, Leader, Follower, AgentType
 
 
 class LeaderFollowerEnv:
 
-    metadata = {'render_modes': ['human', 'rgb_array', 'none'], 'name': 'leader_follower_environment'}
+    metadata = {'render_modes': ['human', 'rgb_array', 'none'], 'render_fps': 4, 'name': 'leader_follower_environment'}
 
     @property
     def agent_mapping(self):
@@ -41,7 +42,6 @@ class LeaderFollowerEnv:
         self._current_step = 0
         self.max_steps = max_steps
         self.delta_time = delta_time
-        self.render_mode = render_mode
 
         # todo make possible to determine active from possible agents
         self.leaders = {f'{each_agent.name}': each_agent for each_agent in leaders}
@@ -51,6 +51,21 @@ class LeaderFollowerEnv:
         self.agents = [each_agent for each_agent in self.possible_agents]
         self.completed_agents = {}
         self.team_reward = 0
+
+        """
+        If human-rendering is used, `self.window` will be a reference
+        to the window that we draw to. `self.clock` will be a clock that is used
+        to ensure that the environment is rendered at the correct framerate in
+        human-mode. They will remain `None` until human-mode is used for the
+        first time.
+        """
+        assert render_mode is None or render_mode in self.metadata['render_modes']
+        self.render_mode = render_mode
+        # The size of the PyGame window
+        self.render_bound = 100
+        self.window_size = 512
+        self.window = None
+        self.clock = None
         return
 
     @property
@@ -115,6 +130,71 @@ class LeaderFollowerEnv:
             env = pickle.load(load_file)
         return env
 
+    def __render_frame(self):
+        self.render_bound = 50
+        self.window_size = 512
+        self.window = None
+        self.clock = None
+
+        if self.window is None and self.render_mode == 'human':
+            pygame.init()
+            pygame.display.init()
+            self.window = pygame.display.set_mode((self.window_size, self.window_size))
+
+        if self.clock is None and self.render_mode == 'human':
+            self.clock = pygame.time.Clock()
+
+        canvas = pygame.Surface((self.window_size, self.window_size))
+        canvas.fill((255, 255, 255))
+
+        # The size of a single grid square in pixels
+        pix_square_size = (self.window_size / self.render_bound)
+
+        leader_color = (255, 0, 0)
+        follower_color = (0, 0, 255)
+        obs_poi_color = (0, 255, 0)
+        non_obs_poi_color = (0, 0, 0)
+        line_color = (192, 192, 192)
+
+        # draw some gridlines
+        for x in range(self.render_bound + 1):
+            pygame.draw.line(
+                canvas, line_color, (0, pix_square_size * x), (self.window_size, pix_square_size * x), width=1,
+            )
+            pygame.draw.line(
+                canvas, line_color, (pix_square_size * x, 0), (pix_square_size * x, self.window_size), width=1,
+            )
+
+        for name, agent in self.leaders.items():
+            location = np.array(agent.location)
+            pygame.draw.rect(
+                canvas, leader_color, pygame.Rect(pix_square_size * location, (pix_square_size, pix_square_size))
+            )
+
+        for name, agent in self.followers.items():
+            location = np.array(agent.location)
+            pygame.draw.circle(canvas, follower_color, (location + 0.5) * pix_square_size, pix_square_size / 1.5)
+
+        for name, agent in self.pois.items():
+            # different colors to distinguish if the poi is captured
+            location = np.array(agent.location)
+            agent_color = obs_poi_color if agent.observed else non_obs_poi_color
+            pygame.draw.circle(canvas, agent_color, (location + 0.5) * pix_square_size, pix_square_size / 1.5)
+
+        if self.render_mode == 'human':
+            # The following line copies our drawings from `canvas` to the visible window
+            self.window.blit(canvas, canvas.get_rect())
+            pygame.event.pump()
+            pygame.display.update()
+
+            # We need to ensure that human-rendering occurs at the predefined framerate.
+            # The following line will automatically add a delay to keep the framerate stable.
+            self.clock.tick(self.metadata['render_fps'])
+        else:  # rgb_array
+            np_frame = np.transpose(np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2))
+            return np_frame
+        return
+
     def __render_rgb(self):
         # todo set based on min/max agent locations
         render_resolution = (512, 512)
@@ -161,10 +241,6 @@ class LeaderFollowerEnv:
         frame = frame.astype(np.uint8)
         return frame
 
-    def __render_video(self):
-        # todo implement video render
-        pass
-
     def render(self, mode: str | None = None):
         """
         Displays a rendered frame from the environment, if supported.
@@ -181,10 +257,10 @@ class LeaderFollowerEnv:
 
         match mode:
             case 'human':
-                # frame = self.__render_video()
-                frame = None
+                frame = self.__render_frame()
             case 'rgb_array':
-                frame = self.__render_rgb()
+                frame = self.__render_frame()
+                # frame = self.__render_rgb()
             case _:
                 frame = None
         return frame
@@ -195,7 +271,10 @@ class LeaderFollowerEnv:
         Close should release any graphical displays, subprocesses, network connections or any other
         environment data which should not be kept around after the user is no longer using the environment.
         """
-        pass
+        if self.window is not None:
+            pygame.display.quit()
+            pygame.quit()
+        return
 
     def reset(self, seed: int | None = None, options: dict | None = None, **kwargs):
         """

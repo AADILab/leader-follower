@@ -218,7 +218,7 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
         for idx, each_policy in enumerate(policy_info):
             fitnesses[agent_name].append(each_policy['fitness'])
             network = each_policy['network']
-            network.save_model(save_dir=network_save_path)
+            network.save_model(save_dir=network_save_path, tag=f'{idx}')
 
     env.save_environment(gen_path, tag=f'gen_{gen_idx}')
 
