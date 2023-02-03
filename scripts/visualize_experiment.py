@@ -7,6 +7,7 @@
 import argparse
 import csv
 from pathlib import Path
+import os
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -110,6 +111,7 @@ def replay_episode(episode_dir: Path):
     # rollout environment
     stat_dirs = list(episode_dir.glob('stat_run_*'))
     stat_dirs = sorted(stat_dirs, key=lambda x: int(x.stem.split('_')[-1]))
+    stat_dirs = [episode_dir]
     for idx, each_dir in enumerate(stat_dirs):
         fitness_data = parse_stat_run(each_dir)
         gen_dirs = list(each_dir.glob('gen_*'))
@@ -138,7 +140,7 @@ def replay_episode(episode_dir: Path):
         env_path = Path(each_dir, f'leader_follower_env_initial.pkl')
         env = LeaderFollowerEnv.load_environment(env_path)
         env.render_mode = 'human'
-        episode_rewards = rollout(env, agent_policies, LeaderFollowerEnv.calc_diff_rewards, render={'window_size': 212, 'render_bound': 50})
+        episode_rewards = rollout(env, agent_policies, LeaderFollowerEnv.calc_diff_rewards, render={'window_size': 500, 'render_bound': 50})
         g_reward = env.calc_global()
         print(f'stat_run: {idx} | {g_reward=} | {episode_rewards=}')
     return
@@ -149,7 +151,25 @@ def main(main_args):
         base_save_dir.mkdir(parents=True, exist_ok=True)
 
     base_dir = Path(project_properties.cached_dir, 'experiments')
-    experiment_dirs = list(base_dir.glob('experiment_2023_02_02_13_05_53'))
+
+    folders = os.listdir(base_dir)
+    folders.sort(reverse=True)
+    experiment_dir = list(base_dir.glob(folders[0]))[0]
+    print(experiment_dir)
+
+    config_dir = list(experiment_dir.glob(f'gecco'))[0]
+    config_name = config_dir.stem
+
+    fitnesses = {}
+    fitness_data = parse_stat_run(experiment_dir)
+    fitnesses["global"] = [fitness_data]
+    replay_episode(experiment_dir)
+
+    plot_fitnesses(fitnesses, config=config_dir, save_dir=base_save_dir, tag="gecco_test")
+
+    return
+
+    experiment_dirs = list(base_dir.glob('experiment_2023_02_03_13_07_42'))
     experiment_dirs = experiment_dirs
 
     for each_dir in experiment_dirs:
