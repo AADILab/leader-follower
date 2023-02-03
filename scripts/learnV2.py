@@ -145,8 +145,8 @@ def main(main_args):
         # 'whiteboardV1_all_leaders',
         # 'whiteboardV2',
         # 'whiteboardV2_all_leaders',
-        'alpha',
-        # 'atrium',
+        # 'alpha',
+        'atrium',
         # 'battery',
         # 'charlie',
         # 'echo'
@@ -172,16 +172,16 @@ def main(main_args):
 
         #########################################
         # the below are things that likely have to be fine-tuned for good results on any given configuration
-        # 'population_size': 55,
-        # 'num_simulations': 25,
-        # 'n_gens': 50,
-        # 'episode_length': 75,
-        # 'sensor_resolution': 8,
-        'population_size': 5,
-        'num_simulations': 5,
-        'n_gens': 5,
-        'episode_length': 5,
-        'sensor_resolution': 4,
+        'population_size': 25,
+        'num_simulations': 25,
+        'n_gens': 50,
+        'episode_length': 75,
+        'sensor_resolution': 8,
+        # 'population_size': 5,
+        # 'num_simulations': 5,
+        # 'n_gens': 5,
+        # 'episode_length': 5,
+        # 'sensor_resolution': 4,
 
         # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
         'follower_weight': 0.5,
