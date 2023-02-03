@@ -444,7 +444,7 @@ class LeaderFollowerEnv:
         # todo  add tracking of calls to calc_global
         assigned_followers = {
             name: []
-            for name in self.__leaders
+            for name in self.possible_agents
         }
         assigned_followers['leader_null'] = []
 
@@ -458,6 +458,7 @@ class LeaderFollowerEnv:
                 for idx, leader_name in enumerate(counts[0]):
                     if not leader_name.startswith('leader'):
                         counts[1][idx] = -1
+
                 if len(counts[1]) == 0:
                     max_influencer = 'leader_null'
                 else:
