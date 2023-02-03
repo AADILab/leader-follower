@@ -19,18 +19,18 @@ from leader_follower.learn.neural_network import NeuralNetwork
 def print_environment_step(env, obs, acts):
     print(f'{"=" * project_properties.TERMINAL_COLUMNS}')
     with np.printoptions(precision=3, suppress=True):
-        for a_name in env.agents:
-            agent = env.agent_mapping[a_name]
+        for agent_name in env.agents:
+            agent = env.agent_mapping[agent_name]
             a_loc = agent.location
-            a_act = acts[a_name]
-            a_obs = obs[a_name]
+            a_act = acts[agent_name]
+            a_obs = obs[agent_name]
 
             if isinstance(a_obs, np.ndarray):
                 a_obs = np.array_str(a_obs)
             if isinstance(a_act, np.ndarray):
                 a_act = np.array_str(a_act)
 
-            print(f'{a_name=}')
+            print(f'{agent_name=}')
             print(f'\t{a_loc=}')
             print(f'\t{a_obs=}')
             print(f'\t{a_act=}')

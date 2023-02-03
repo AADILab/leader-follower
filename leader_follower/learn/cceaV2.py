@@ -139,7 +139,7 @@ def select_top_n(agent_pops, select_size):
     return chosen_pops
 
 
-def mutate_gaussian(agent_policies, proportion=0.1, probability=0.05):
+def mutate_gaussian(agent_policies, mutation_scalar=0.1, probability_to_mutate=0.05):
     mutated_agents = {}
     for agent_name, individual in agent_policies.items():
         model = individual['network']
@@ -151,9 +151,9 @@ def mutate_gaussian(agent_policies, proportion=0.1, probability=0.05):
 
             for each_val in param_vector:
                 rand_val = rng.random()
-                if rand_val <= probability:
+                if rand_val <= probability_to_mutate:
                     # todo  base proportion on current weight rather than scaled random sample
-                    noise = torch.randn(each_val.size()) * proportion
+                    noise = torch.randn(each_val.size()) * mutation_scalar
                     each_val.add_(noise)
 
             vector_to_parameters(param_vector, model_copy.parameters())
@@ -173,7 +173,9 @@ def downselect_top_n(agent_pops, select_size):
         chosen_agent_pops[agent_name] = top_pop
     return chosen_agent_pops
 
-def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
+def rollout(env: LeaderFollowerEnv, individuals, reward_func, render: bool | dict = False):
+    render_func = partial(env.render, **render) if isinstance(render, dict) else env.render
+
     observations = env.reset()
     agent_dones = env.done()
     done = all(agent_dones.values())
@@ -187,11 +189,9 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
         observations, rewards, agent_dones, truncs, infos = env.step(next_actions)
         done = all(agent_dones.values())
         if render:
-            env.render()
+            render_func()
 
     episode_rewards = reward_func(env)
-    if isinstance(episode_rewards, float) or isinstance(episode_rewards, int):
-        episode_rewards = {name: episode_rewards for name in env.leaders.keys()}
     return episode_rewards
 
 def simulate_subpop(agent_policies, env, mutate_func, reward_func):
@@ -209,18 +209,16 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     if not gen_path:
         gen_path.mkdir(parents=True, exist_ok=True)
 
-
+    env.save_environment(gen_path, tag=f'gen_{gen_idx}')
     for agent_name, policy_info in agent_pops.items():
         network_save_path = Path(gen_path, f'{agent_name}_networks')
         if not network_save_path:
             network_save_path.mkdir(parents=True, exist_ok=True)
 
         for idx, each_policy in enumerate(policy_info):
-            fitnesses[agent_name].append(each_policy['fitness'])
+            # fitnesses[agent_name].append(each_policy['fitness'])
             network = each_policy['network']
             network.save_model(save_dir=network_save_path, tag=f'{idx}')
-
-    env.save_environment(gen_path, tag=f'gen_{gen_idx}')
 
     fitnesses_path = Path(gen_path, 'fitnesses.csv')
     fitnesses_df = pd.DataFrame.from_dict(fitnesses, orient='index')
@@ -235,7 +233,7 @@ def neuro_evolve(
     # selection_func = partial(select_roulette, **{'select_size': num_simulations, 'noise': 0.01})
     selection_func = partial(select_hall_of_fame, **{'select_size': num_simulations})
 
-    mutate_func = partial(mutate_gaussian, proportion=0.1, probability=0.05)
+    mutate_func = partial(mutate_gaussian, mutation_scalar=0.1, probability_to_mutate=0.05)
     sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
     downselect_func = partial(downselect_top_n, **{'select_size': population_size})
 
@@ -246,8 +244,8 @@ def neuro_evolve(
     for gen_idx in trange(starting_gen, n_gens):
         selected_policies = selection_func(agent_pops)
 
-        results = map(sim_func, selected_policies)
-        # results = mp_pool.map(sim_func, selected_policies)
+        # results = map(sim_func, selected_policies)
+        results = mp_pool.map(sim_func, selected_policies)
         for each_result in results:
             eval_agents = each_result[1]
             # reinsert new individual into population of policies if this result was meant to be
@@ -264,17 +262,17 @@ def neuro_evolve(
         top_inds = select_top_n(agent_pops, select_size=1)[0]
         _ = rollout(env, top_inds, reward_func=reward_func, render=False)
         g_reward = env.calc_global()
+        g_reward = list(g_reward.values())[0]
         # todo  bug fix sometimes there is more than population_size policies in the population
         fitnesses = {
-            agent_name: []
+            agent_name: [each_individual['fitness'] for each_individual in policy_info]
             for agent_name, policy_info in agent_pops.items()
         }
-        fitnesses['G'] = [g_reward for _ in range(0, population_size)]
+        fitnesses['G'] = [g_reward for _ in range(population_size)]
 
         # save all policies of each agent and save fitnesses mapping policies to fitnesses
         save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses)
     mp_pool.shutdown()
 
-    # todo better way of combining best policies from each population for a final solution
     top_inds = select_top_n(agent_pops, select_size=1)[0]
     return top_inds

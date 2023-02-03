@@ -39,19 +39,19 @@ See the [LICENSE file](LICENSE) for license rights and limitations (MIT).
   - Follower agents were not correctly being reset (not resetting influence and rule histories)
 - [x] Script to restart a stat run
 - [x] Multiprocessing subpop simulations in each generation
-- [ ] Combine multiple stat runs into the same plot
+- [x] Combine multiple stat runs into the same plot
 - [ ] Create trajectory graph visualization tool (Figure 4 from D++). Include circles around POIs to indicate observation radius.
-- [ ] Matplotlib animation to watch rollout of episode
+- [x] Matplotlib animation to watch rollout of episode
 - [x] Create whiteboard configuration
-- [ ] Run experiment of all leaders using G
-- [ ] Run experiment using leader-follower using G
+- [x] Run experiment of all leaders using G
+- [x] Run experiment using leader-follower using G
 - [x] Run experiment using leader-follower using D
 - [x] Run experiment using leader-follower using DLF
 - [ ] Documentation. (Explaining what the parts are and how they work)
 - [ ] Fix followers to have same observation space as leaders
 - [ ] Change reward to be based on average distance of n closest observing agents
 - [ ] Change observation history to only store agent name and distance, not entire agent object
-- [ ] Add agent weight parameter that affects how much an agent attracts another agent
+- [x] Add agent weight parameter that affects how much an agent attracts another agent
 
 # Quick Start
 

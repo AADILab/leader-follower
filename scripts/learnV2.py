@@ -21,8 +21,7 @@ from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.utils import load_config
 
 reward_map = {
-    # todo  fix structure of global reward to make consistent with other reward functions
-    # 'global': LeaderFollowerEnv.calc_global,
+    'global': LeaderFollowerEnv.calc_global,
 
     'diff': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': False}),
     'difflf': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': True}),
@@ -31,54 +30,8 @@ reward_map = {
     # 'dpplf': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': True})
 }
 
-def run_experiment(experiment_config, experiment_dir):
-    config_parts = experiment_dir.parent.stem.split('_')
-    reward_key = config_parts[5]
-    config_name = config_parts[6:]
-    config_name = '_'.join(config_name)
-
-    meta_vars = {
-        'n_hidden_layers': 2,
-
-        'population_size': 25,
-        'num_simulations': 25,
-        'n_gens': 50,
-        'episode_length': 25,
-        # try increasing sensor resolution
-        'sensor_resolution': 4,
-
-        'leader_obs_rad': 100,
-        # leader and follower value determine have much "observational power" an agent has
-        'leader_value': 1,
-        'leader_max_velocity': 3,
-        # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
-        'leader_weight': 2,
-
-        'follower_value': 1,
-        'follower_max_velocity': 1,
-        'follower_weight': 1,
-        'repulsion_rad': 1,
-        'repulsion_strength': 5,
-        'attraction_rad': 3,
-        'attraction_strength': 1,
-
-        'poi_obs_rad': 1,
-        'poi_value': 1,
-        'poi_weight': 0,
-        'poi_coupling': 3,
-
-        'config_name': config_name,
-        'reward_key': reward_key,
-        'experiment_dir': str(experiment_dir),
-        'experiment_config': experiment_config
-    }
-
-    meta_fname = Path(experiment_dir, f'meta_vars.json')
-
-    with open(meta_fname, 'w') as jfile:
-        json.dump(meta_vars, jfile, indent=2)
-    #####################################################################
-    reward_func = reward_map[reward_key]
+def run_experiment(experiment_config, meta_vars):
+    reward_func = reward_map[meta_vars['reward_key']]
     # todo  add noise to location of agents
     leaders = [
         Leader(
@@ -120,7 +73,6 @@ def run_experiment(experiment_config, experiment_dir):
         for agent_name in env.agents
         if env.agent_mapping[agent_name].type == AgentType.Learner
     }
-    print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
 
     # initial fitness evaluation of all networks in population
     print(f'Initializing fitness values for networks')
@@ -131,11 +83,11 @@ def run_experiment(experiment_config, experiment_dir):
             policy_fitness = agent_rewards[agent_name]
             policy_info[pop_idx]['fitness'] = policy_fitness
     ########################################################
-    print(f'Starting experiment: {meta_vars["reward_key"]} | {config_name}')
+    print(f'Starting experiment: {meta_vars["config_name"]} | {meta_vars["reward_key"]}')
     start_time = time.time()
     best_solution = neuro_evolve(
         env, agent_pops, meta_vars['population_size'], meta_vars['n_gens'], meta_vars['num_simulations'],
-        reward_func=reward_func, experiment_dir=experiment_dir
+        reward_func=reward_func, experiment_dir=meta_vars['experiment_dir']
     )
     end_time = time.time()
     print(f'Time to train: {end_time - start_time}')
@@ -147,13 +99,51 @@ def run_experiment(experiment_config, experiment_dir):
 def main(main_args):
     config_names = [
         # 'whiteboardV1',
+        'whiteboardV1_all_leaders',
         # 'whiteboardV2',
+        # 'whiteboardV2_all_leaders',
         # 'alpha',
-        'atrium',
+        # 'atrium',
         # 'battery',
         # 'charlie',
         # 'echo'
     ]
+    meta_vars = {
+        'n_hidden_layers': 2,
+
+        'population_size': 25,
+        'num_simulations': 25,
+        'n_gens': 50,
+        'episode_length': 50,
+        # try increasing sensor resolution
+        'sensor_resolution': 4,
+
+        'leader_obs_rad': 100,
+        # leader and follower value determine have much "observational power" an agent has
+        'leader_value': 1,
+        'leader_max_velocity': 3,
+        # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
+        'leader_weight': 2,
+
+        'follower_value': 1,
+        'follower_max_velocity': 0.75,
+        'follower_weight': 1,
+        'repulsion_rad': 1,
+        'repulsion_strength': 3,
+        'attraction_rad': 3,
+        'attraction_strength': 1,
+
+        'poi_obs_rad': 2,
+        'poi_value': 1,
+        'poi_weight': 0,
+        'poi_coupling': 3,
+
+        'config_name': None,
+        'experiment_config': None,
+        'reward_key': None,
+        'experiment_dir': None,
+    }
+
     config_fns = [
         each_fn
         for each_fn in Path(project_properties.config_dir).rglob('*.yaml')
@@ -161,26 +151,44 @@ def main(main_args):
     ]
     stat_runs = 3
 
+    now = datetime.now()
+    experiment_id = f'experiment_{now.strftime("%Y_%m_%d_%H_%M_%S")}'
+    exp_path = Path(project_properties.cached_dir, 'experiments', f'{experiment_id}')
+    if not exp_path.exists():
+        exp_path.mkdir(parents=True, exist_ok=True)
+
     for each_fn in config_fns:
         print(f'{"=" * 80}')
         print(f'{each_fn}')
 
         exp_config = load_config(each_fn)
+        config_name = each_fn.stem
+        meta_vars['config_name'] = config_name
+        meta_vars['experiment_config'] = exp_config
+
+        config_exp_dir = Path(exp_path, f'{config_name}')
+        if not config_exp_dir.exists():
+            config_exp_dir.mkdir(parents=True, exist_ok=True)
 
         for reward_key in reward_map.keys():
-            now = datetime.now()
-            experiment_id = f'{now.strftime("%Y_%m_%d_%H_%M")}'
-            env_tag = f'{experiment_id}_{reward_key}_{each_fn.stem}'
-
-            reward_path = Path(project_properties.cached_dir, 'experiments', env_tag)
+            reward_path = Path(config_exp_dir, f'{reward_key}')
             if not reward_path.exists():
                 reward_path.mkdir(parents=True, exist_ok=True)
 
+            meta_vars['reward_key'] = reward_key
+
             for idx in range(0, stat_runs):
-                exp_path = Path(reward_path, f'stat_run_{idx}')
-                if not exp_path.exists():
-                    exp_path.mkdir(parents=True, exist_ok=True)
-                run_experiment(experiment_config=exp_config, experiment_dir=exp_path)
+                stat_path = Path(reward_path, f'stat_run_{idx}')
+                if not stat_path.exists():
+                    stat_path.mkdir(parents=True, exist_ok=True)
+
+                meta_vars['experiment_dir'] = str(stat_path)
+                meta_fname = Path(stat_path, f'meta_vars.json')
+
+                with open(meta_fname, 'w') as jfile:
+                    json.dump(meta_vars, jfile, indent=2)
+
+                run_experiment(experiment_config=exp_config, meta_vars=meta_vars)
     return
 
 

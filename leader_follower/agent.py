@@ -273,7 +273,6 @@ class Follower(Agent):
         return action_range
 
     def rule_mass_center(self, relative_agents, rule_radius):
-        # todo validate correctly calculating center of mass of nearby agents
         obs_agents = Agent.observable_agents(self, relative_agents, rule_radius)
         # adding self partially guards against when no other agents are nearby
         obs_agents.append((self, 0, 0))

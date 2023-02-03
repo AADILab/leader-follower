@@ -25,8 +25,8 @@ def parse_stat_run(stat_run_dir):
 
         fitness_data = []
         fitness_fname = Path(each_dir, 'fitnesses.csv')
-        with open(fitness_fname, 'r') as x:
-            reader = csv.reader(x, delimiter=',')
+        with open(fitness_fname, 'r') as fitness_file:
+            reader = csv.reader(fitness_file, delimiter=',')
             next(reader)
             for row in reader:
                 fitness_data.append(row)
@@ -42,7 +42,7 @@ def parse_stat_run(stat_run_dir):
             condensed_gens[each_name].append(vals)
 
     np_gens = {
-        name: np.array(data, dtype=float)
+        name: data
         for name, data in condensed_gens.items()
     }
     return np_gens
@@ -56,27 +56,40 @@ def parse_experiment_fitnesses(experiment_dir: Path):
         stat_runs.append(fitness_data)
     return stat_runs
 
-def plot_fitnesses(fitness_data, save_dir, config, reward):
+def plot_fitnesses(fitness_data, config, save_dir, tag):
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(12, 12))
 
     # todo  compute max and std_dev for each stat run rather than just plotting first stat run
-    fitness_data = fitness_data[0]
-    for reward_label, fitnesses in fitness_data.items():
-        max_vals = fitnesses.max(axis=1)
-        avg_vals = fitnesses.mean(axis=1)
+    for reward_label, stat_runs in fitness_data.items():
+        agent_fitnesses = {}
+        for each_run in stat_runs:
+            for name, each_fitnesses in each_run.items():
+                if name not in agent_fitnesses:
+                    agent_fitnesses[name] = []
+                agent_fitnesses[name].append(each_fitnesses)
 
-        axes.plot(max_vals, label=f'max {reward_label}')
-        # axes.plot(avg_vals, label=f'avg {reward_label}')
+        g_fitnesses = agent_fitnesses['G']
+        g_fitnesses = np.asarray(g_fitnesses, dtype=float)
 
-        axes.set_xlabel(f'generation')
-        axes.set_ylabel('fitness')
+        max_vals = np.max(g_fitnesses, axis=2)
+        avg_vals = np.mean(g_fitnesses, axis=2)
 
-        axes.xaxis.grid()
-        axes.yaxis.grid()
+        means = np.mean(max_vals, axis=0)
+        stds = np.std(max_vals, axis=0)
 
-        axes.legend(loc='best')
+        gen_idxs = np.arange(0, len(means))
+        axes.plot(gen_idxs, means, label=f'max {reward_label}')
+        axes.fill_between(gen_idxs, means + stds, means - stds, alpha=0.2)
 
-    fig.suptitle(f'{config}: {reward}')
+    axes.set_xlabel(f'generation')
+    axes.set_ylabel('fitness')
+
+    axes.xaxis.grid()
+    axes.yaxis.grid()
+
+    axes.legend(loc='best')
+
+    fig.suptitle(f'{config}')
 
     fig.set_size_inches(7, 5)
     fig.set_dpi(100)
@@ -84,10 +97,10 @@ def plot_fitnesses(fitness_data, save_dir, config, reward):
     if not save_dir.exists():
         save_dir.mkdir(parents=True, exist_ok=True)
 
-    plot_name = f'{config}_{reward}'
-    save_name = Path(save_dir, plot_name)
-    plt.show()
-    # plt.savefig(f'{save_name}.png')
+    plot_name = f'{config}'
+    save_name = Path(save_dir, f'{plot_name}_{tag}')
+    plt.savefig(f'{save_name}.png')
+    # plt.show()
     plt.close()
     return
 
@@ -125,36 +138,40 @@ def replay_episode(episode_dir: Path):
         env_path = Path(each_dir, f'leader_follower_env_initial.pkl')
         env = LeaderFollowerEnv.load_environment(env_path)
         env.render_mode = 'human'
-        episode_rewards = rollout(env, agent_policies, LeaderFollowerEnv.calc_diff_rewards, render=True)
+        episode_rewards = rollout(env, agent_policies, LeaderFollowerEnv.calc_diff_rewards, render={'window_size': 212, 'render_bound': 50})
         g_reward = env.calc_global()
-        print(f'stat run: {idx}: {g_reward=}: {episode_rewards=}')
+        print(f'stat_run: {idx} | {g_reward=} | {episode_rewards=}')
     return
 
 def main(main_args):
-    save_dir = Path(project_properties.output_dir, 'experiments', 'figs')
-    if not save_dir.exists():
-        save_dir.mkdir(parents=True, exist_ok=True)
+    base_save_dir = Path(project_properties.output_dir, 'experiments', 'figs')
+    if not base_save_dir.exists():
+        base_save_dir.mkdir(parents=True, exist_ok=True)
 
     base_dir = Path(project_properties.cached_dir, 'experiments')
-
-    experiment_dirs = base_dir.glob('2023_02_01_20_08_difflf_atrium')
-    # experiment_dirs = base_dir.glob('*_diff*_atrium')
-    # experiment_dirs = base_dir.glob('*_diff_whiteboardV*')
-    # experiment_dirs = list(base_dir.glob('*_neuro_evolve_diff_alpha'))
-    # experiment_dirs = experiment_dirs[:1]
+    experiment_dirs = list(base_dir.glob('experiment_2023_02_02_13_05_53'))
+    experiment_dirs = experiment_dirs
 
     for each_dir in experiment_dirs:
-        print(f'Processing experiment: {each_dir}')
-        exp_name = each_dir.stem
-        exp_name = exp_name.split('_')
-        exp_name = exp_name[5:]
+        print(f'Processing experiment: {each_dir.stem}')
 
-        reward = exp_name[0]
-        config = '_'.join(exp_name[1:])
+        # config_dirs = list(each_dir.glob(f'*'))
+        config_dirs = list(each_dir.glob(f'whiteboardV[1-2]'))
+        for config_path in config_dirs:
+            config_name = config_path.stem
+            print(f'\t{config_path.stem}')
+            reward_dirs = list(config_path.glob(f'*'))
 
-        fitness_data = parse_experiment_fitnesses(each_dir)
-        # plot_fitnesses(fitness_data, save_dir=save_dir, config=config, reward=reward)
-        replay_episode(each_dir)
+            fitnesses = {}
+            for reward_path in reward_dirs:
+                reward_name = reward_path.stem
+                print(f'\t\t{reward_name}')
+
+                fitness_data = parse_experiment_fitnesses(reward_path)
+                fitnesses[reward_name] = fitness_data
+                replay_episode(reward_path)
+
+            plot_fitnesses(fitnesses, config=config_name, save_dir=base_save_dir, tag=f'{each_dir.stem}_{config_name}')
     return
 
 
