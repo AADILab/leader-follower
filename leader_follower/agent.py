@@ -389,6 +389,11 @@ class Poi(Agent):
         return observed
 
     def sense(self, relative_agents):
+        """
+        Each entry in the observation is a tuple of (agent, angle, dist) where angle and dist are the
+        angle and distance to the agent in the tuple relative to this poi.
+
+        """
         self.state_history.append(self.location)
         # filter out other POIs from the poi observation
         # todo only store agent_names rather than full agent object

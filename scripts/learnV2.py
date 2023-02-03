@@ -96,53 +96,40 @@ def run_experiment(experiment_config, meta_vars):
     print(f'{rewards=}')
     return
 
+def run_parameter_sweep(config_exp_dir, stat_runs, experiment_config, meta_vars, **parameters):
+    for reward_key in reward_map.keys():
+        reward_path = Path(config_exp_dir, f'{reward_key}')
+        if not reward_path.exists():
+            reward_path.mkdir(parents=True, exist_ok=True)
+
+        meta_vars['reward_key'] = reward_key
+
+        for idx in range(0, stat_runs):
+            stat_path = Path(reward_path, f'stat_run_{idx}')
+            if not stat_path.exists():
+                stat_path.mkdir(parents=True, exist_ok=True)
+
+            meta_vars['experiment_dir'] = str(stat_path)
+            meta_fname = Path(stat_path, f'meta_vars.json')
+
+            with open(meta_fname, 'w') as jfile:
+                json.dump(meta_vars, jfile, indent=2)
+
+            run_experiment(experiment_config=experiment_config, meta_vars=meta_vars)
+    return
+
 def main(main_args):
     config_names = [
-        # 'whiteboardV1',
-        'whiteboardV1_all_leaders',
-        # 'whiteboardV2',
+        'whiteboardV1',
+        # 'whiteboardV1_all_leaders',
+        'whiteboardV2',
         # 'whiteboardV2_all_leaders',
         # 'alpha',
-        # 'atrium',
+        'atrium',
         # 'battery',
         # 'charlie',
         # 'echo'
     ]
-    meta_vars = {
-        'n_hidden_layers': 2,
-
-        'population_size': 25,
-        'num_simulations': 25,
-        'n_gens': 50,
-        'episode_length': 50,
-        # try increasing sensor resolution
-        'sensor_resolution': 4,
-
-        'leader_obs_rad': 100,
-        # leader and follower value determine have much "observational power" an agent has
-        'leader_value': 1,
-        'leader_max_velocity': 3,
-        # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
-        'leader_weight': 2,
-
-        'follower_value': 1,
-        'follower_max_velocity': 0.75,
-        'follower_weight': 1,
-        'repulsion_rad': 1,
-        'repulsion_strength': 3,
-        'attraction_rad': 3,
-        'attraction_strength': 1,
-
-        'poi_obs_rad': 2,
-        'poi_value': 1,
-        'poi_weight': 0,
-        'poi_coupling': 3,
-
-        'config_name': None,
-        'experiment_config': None,
-        'reward_key': None,
-        'experiment_dir': None,
-    }
 
     config_fns = [
         each_fn
@@ -151,6 +138,44 @@ def main(main_args):
     ]
     stat_runs = 3
 
+    meta_vars = {
+        'n_hidden_layers': 2,
+
+        'leader_obs_rad': 100,
+        # agent values determine have much "observational power" an agent has
+        'leader_value': 1,
+        'follower_value': 1,
+        'poi_value': 0,
+        'poi_weight': 0,
+
+        #########################################
+        # the below are things that likely have to be fine-tuned for good results on any given configuration
+        'population_size': 25,
+        'num_simulations': 25,
+        'n_gens': 50,
+        'episode_length': 75,
+        'sensor_resolution': 8,
+
+        # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
+        'follower_weight': 0.5,
+        'leader_weight': 5,
+
+        'repulsion_rad': 0.5,
+        'attraction_rad': 3,
+        'repulsion_strength': 3,
+        'attraction_strength': 0.5,
+
+        'leader_max_velocity': 3,
+        'follower_max_velocity': 0.75,
+
+        'poi_obs_rad': 2,
+        'poi_coupling': 3,
+
+        'config_name': None,
+        'experiment_config': None,
+        'reward_key': None,
+        'experiment_dir': None,
+    }
     now = datetime.now()
     experiment_id = f'experiment_{now.strftime("%Y_%m_%d_%H_%M_%S")}'
     exp_path = Path(project_properties.cached_dir, 'experiments', f'{experiment_id}')
@@ -161,34 +186,44 @@ def main(main_args):
         print(f'{"=" * 80}')
         print(f'{each_fn}')
 
-        exp_config = load_config(each_fn)
+        experiment_config = load_config(each_fn)
         config_name = each_fn.stem
         meta_vars['config_name'] = config_name
-        meta_vars['experiment_config'] = exp_config
+        meta_vars['experiment_config'] = experiment_config
 
-        config_exp_dir = Path(exp_path, f'{config_name}')
-        if not config_exp_dir.exists():
-            config_exp_dir.mkdir(parents=True, exist_ok=True)
+        config_experiment_dir = Path(exp_path, f'{config_name}')
+        if not config_experiment_dir.exists():
+            config_experiment_dir.mkdir(parents=True, exist_ok=True)
 
-        for reward_key in reward_map.keys():
-            reward_path = Path(config_exp_dir, f'{reward_key}')
-            if not reward_path.exists():
-                reward_path.mkdir(parents=True, exist_ok=True)
+        sweep_params = {
+            # 'population_size': (25, 55, 15),
+            # 'num_simulations': (25, 55, 15),
+            # 'n_gens': (100, 1000, 100),
+            # 'episode_length': (50, 150, 50),
 
-            meta_vars['reward_key'] = reward_key
+            # 'sensor_resolution': (4, 8, 4),
 
-            for idx in range(0, stat_runs):
-                stat_path = Path(reward_path, f'stat_run_{idx}')
-                if not stat_path.exists():
-                    stat_path.mkdir(parents=True, exist_ok=True)
+            # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
+            'follower_weight': (0.5, 2, 0.5),
+            'leader_weight': (1, 6, 2.5),
 
-                meta_vars['experiment_dir'] = str(stat_path)
-                meta_fname = Path(stat_path, f'meta_vars.json')
+            'repulsion_rad': (0.5, 2, 1.5),
+            'attraction_rad': (2.5, 5, 2.5),
+            'repulsion_strength': (2, 6, 2),
+            'attraction_strength': (0.5, 1.5, 0.5),
 
-                with open(meta_fname, 'w') as jfile:
-                    json.dump(meta_vars, jfile, indent=2)
+            # 'leader_max_velocity': 3,
+            # 'follower_max_velocity': 0.75,
 
-                run_experiment(experiment_config=exp_config, meta_vars=meta_vars)
+            # 'poi_obs_rad': (2, 12, 3),
+            # 'poi_coupling': (3, 12, 3),
+        }
+
+        run_parameter_sweep(
+            config_exp_dir=config_experiment_dir, stat_runs=stat_runs,
+            experiment_config=experiment_config, meta_vars=meta_vars,
+            **sweep_params
+        )
     return
 
 
