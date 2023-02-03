@@ -118,7 +118,13 @@ def run_parameter_sweep(base_dir, stat_runs, experiment_config, meta_vars, **par
                 with open(meta_fname, 'w') as jfile:
                     json.dump(meta_vars, jfile, indent=2)
 
-                run_experiment(experiment_config=experiment_config, meta_vars=meta_vars)
+                try:
+                    run_experiment(experiment_config=experiment_config, meta_vars=meta_vars)
+                except Exception as e:
+                    print(f'error occured with meta_vars:\n'
+                          f'{idx=} | {base_dir=}\n'
+                          f'{e}')
+
     else:
         param_keys = list(parameters.keys())
         first_key = param_keys[0]
@@ -129,7 +135,7 @@ def run_parameter_sweep(base_dir, stat_runs, experiment_config, meta_vars, **par
             if not param_dir.exists():
                 param_dir.mkdir(parents=True, exist_ok=True)
 
-            meta_vars[first_key] = val
+            meta_vars[first_key] = float(val)
             run_parameter_sweep(param_dir, stat_runs, experiment_config, meta_vars, **parameters)
     return
 
@@ -225,13 +231,13 @@ def main(main_args):
             # 'sensor_resolution': (4, 8, 4),
 
             # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
-            'follower_weight': (0.5, 2.5, 0.5),
+            'follower_weight': (0.5, 2, 0.5),
             'leader_weight': (1, 8.5, 2.5),
 
-            # 'repulsion_rad': (0.5, 3.5, 1.5),
-            # 'attraction_rad': (2.5, 7.5, 2.5),
-            # 'repulsion_strength': (2, 8, 2),
-            # 'attraction_strength': (0.5, 2, 0.5),
+            'repulsion_rad': (0.5, 3.5, 1.5),
+            'attraction_rad': (2.5, 7.5, 2.5),
+            'repulsion_strength': (2, 8, 2),
+            'attraction_strength': (0.5, 2, 0.5),
 
             # 'leader_max_velocity': 3,
             # 'follower_max_velocity': 0.75,

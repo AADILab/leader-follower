@@ -244,10 +244,10 @@ def neuro_evolve(
     for gen_idx in trange(starting_gen, n_gens):
         selected_policies = selection_func(agent_pops)
 
-        results = map(sim_func, selected_policies)
+        # results = map(sim_func, selected_policies)
         # pycharm will sometimes throw an error when using multiprocessing in debug mode
         #   memoryview has 1 exported buffer
-        # results = mp_pool.map(sim_func, selected_policies)
+        results = mp_pool.map(sim_func, selected_policies)
         for each_result in results:
             eval_agents = each_result[1]
             # reinsert new individual into population of policies if this result was meant to be
