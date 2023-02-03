@@ -7,7 +7,7 @@ gym~=0.26.2
 PettingZoo~=1.22.0
 PyYAML~=6.0
 scipy~=1.9.3
-torch~=1.13.1+cu116
+torch
 torchvision
 torchaudio
 pandas~=1.5.3
