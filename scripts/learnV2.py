@@ -192,7 +192,7 @@ def main(main_args):
         'repulsion_strength': 1,
         'attraction_strength': 1,
 
-        'leader_max_velocity': 1,
+        'leader_max_velocity': 5,
         'follower_max_velocity': 0.5,
 
         'poi_obs_rad': 5,

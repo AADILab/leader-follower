@@ -184,12 +184,16 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render: bool | dic
     for agent_name, policy_info in individuals.items():
         env.agent_mapping[agent_name].policy = policy_info['network']
 
+    all_rewards = []
     while not done:
         next_actions = env.get_actions_from_observations(observations=observations)
         observations, rewards, agent_dones, truncs, infos = env.step(next_actions)
+        all_rewards.append(rewards)
         done = all(agent_dones.values())
         if render:
             render_func()
+
+    print("all rewards: ", all_rewards)
 
     episode_rewards = reward_func(env)
     return episode_rewards
