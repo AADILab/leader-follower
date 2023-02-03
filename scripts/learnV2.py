@@ -207,10 +207,10 @@ def main(main_args):
             'follower_weight': (0.5, 2, 0.5),
             'leader_weight': (1, 6, 2.5),
 
-            'repulsion_rad': (0.5, 2, 1.5),
-            'attraction_rad': (2.5, 5, 2.5),
-            'repulsion_strength': (2, 6, 2),
-            'attraction_strength': (0.5, 1.5, 0.5),
+            # 'repulsion_rad': (0.5, 2, 1.5),
+            # 'attraction_rad': (2.5, 5, 2.5),
+            # 'repulsion_strength': (2, 6, 2),
+            # 'attraction_strength': (0.5, 1.5, 0.5),
 
             # 'leader_max_velocity': 3,
             # 'follower_max_velocity': 0.75,
