@@ -48,6 +48,7 @@ def parse_stat_run(stat_run_dir):
     }
     return np_gens
 
+
 def parse_experiment_fitnesses(experiment_dir: Path):
     stat_dirs = list(experiment_dir.glob('stat_run_*'))
     stat_dirs = sorted(stat_dirs, key=lambda x: int(x.stem.split('_')[-1]))
@@ -56,6 +57,7 @@ def parse_experiment_fitnesses(experiment_dir: Path):
         fitness_data = parse_stat_run(each_dir)
         stat_runs.append(fitness_data)
     return stat_runs
+
 
 def plot_fitnesses(fitness_data, config, save_dir, tag):
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(12, 12))
@@ -105,6 +107,7 @@ def plot_fitnesses(fitness_data, config, save_dir, tag):
     plt.close()
     return
 
+
 def replay_episode(episode_dir: Path):
     # load saved policies of each agent
     # load environment
@@ -131,19 +134,22 @@ def replay_episode(episode_dir: Path):
             best_fitness = agent_fitnesses[arg_best_policy]
 
             policy_fnames = list(agent_policy_dir.glob(f'*_model*.pt'))
-            policy_fnames = sorted(policy_fnames, key=lambda x: int(x.stem.split('_')[-1])) if len(policy_fnames) == len(gen_dirs) else policy_fnames
+            policy_fnames = sorted(policy_fnames, key=lambda x: int(x.stem.split('_')[-1])) if len(
+                policy_fnames) == len(gen_dirs) else policy_fnames
 
             best_policy_fn = policy_fnames[arg_best_policy] if len(policy_fnames) == len(gen_dirs) else policy_fnames[0]
             model = load_pytorch_model(best_policy_fn)
-            agent_policies[agent_name]= {'network': model, 'fitness': best_fitness}
+            agent_policies[agent_name] = {'network': model, 'fitness': best_fitness}
 
         env_path = Path(each_dir, f'leader_follower_env_initial.pkl')
         env = LeaderFollowerEnv.load_environment(env_path)
         env.render_mode = 'human'
-        episode_rewards = rollout(env, agent_policies, LeaderFollowerEnv.calc_diff_rewards, render={'window_size': 500, 'render_bound': 50})
+        episode_rewards = rollout(env, agent_policies, LeaderFollowerEnv.calc_diff_rewards,
+                                  render={'window_size': 500, 'render_bound': 50})
         g_reward = env.calc_global()
         print(f'stat_run: {idx} | {g_reward=} | {episode_rewards=}')
     return
+
 
 def main(main_args):
     base_save_dir = Path(project_properties.output_dir, 'experiments', 'figs')
@@ -152,20 +158,15 @@ def main(main_args):
 
     base_dir = Path(project_properties.cached_dir, 'experiments')
 
-    folders = os.listdir(base_dir)
-    folders.sort(reverse=True)
-    experiment_dir = list(base_dir.glob(folders[0]))[0]
-    print(experiment_dir)
-
-    config_dir = list(experiment_dir.glob(f'gecco'))[0]
-    config_name = config_dir.stem
+    experiment_dirs = list(base_dir.glob('experiment_2023_02_03_16_21_57'))
+    experiment_dir = experiment_dirs[0]
 
     fitnesses = {}
     fitness_data = parse_stat_run(experiment_dir)
     fitnesses["global"] = [fitness_data]
     replay_episode(experiment_dir)
 
-    plot_fitnesses(fitnesses, config=config_dir, save_dir=base_save_dir, tag="gecco_test")
+    plot_fitnesses(fitnesses, config='gecco', save_dir=base_save_dir, tag="gecco_test")
 
     return
 

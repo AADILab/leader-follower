@@ -10,7 +10,6 @@ from leader_follower.agent import Poi, Leader, Follower, AgentType
 
 
 class LeaderFollowerEnv:
-
     metadata = {'render_modes': ['human', 'rgb_array', 'none'], 'render_fps': 4, 'name': 'leader_follower_environment'}
 
     @property
@@ -232,8 +231,8 @@ class LeaderFollowerEnv:
             scaled_loc = np.rint(scaled_loc)
             scaled_loc = scaled_loc.astype(np.int)
             frame[
-                scaled_loc[1] - asize: scaled_loc[1] + asize,
-                scaled_loc[0] - asize: scaled_loc[0] + asize,
+            scaled_loc[1] - asize: scaled_loc[1] + asize,
+            scaled_loc[0] - asize: scaled_loc[0] + asize,
             ] = acolor
         frame = frame.astype(np.uint8)
         return frame
@@ -262,7 +261,6 @@ class LeaderFollowerEnv:
             case _:
                 frame = None
         return frame
-
 
     def close(self):
         """
@@ -337,15 +335,17 @@ class LeaderFollowerEnv:
         return actions
 
     def observed_pois(self):
-        print("self.agent_mapping:\n", self.agent_mapping)
-        # Update the internal list with any new pois that have been observed
-        # for name in self.agents:
-        #     if name[:3] == "poi":
-        #         if self.agent_mapping[name].observed and self.agent_mapping[name] not in self.observed_poi_list:
-        #             self.observed_poi_list.append(self.agent_mapping[name])
-        return self.observed_poi_list
-        # observed = [self.agent_mapping[name] for name in self.agents]
-        # return observed
+        # print("self.agent_mapping:\n", self.agent_mapping)
+        # # Update the internal list with any new pois that have been observed
+        # # for name in self.agents:
+        # #     if name[:3] == "poi":
+        # #         if self.agent_mapping[name].observed and self.agent_mapping[name] not in self.observed_poi_list:
+        # #             self.observed_poi_list.append(self.agent_mapping[name])
+        # return self.observed_poi_list
+        # # observed = [self.agent_mapping[name] for name in self.agents]
+        # # return observed
+        observed = [poi for name, poi in self.__pois.items() if poi.observed]
+        return observed
 
     def done(self):
         all_obs = len(self.observed_pois()) == len(self.__pois.values())
@@ -381,10 +381,10 @@ class LeaderFollowerEnv:
         # Get all observations
         # todo  remove a poi from self.agents if it is observed and add the poi to self.completed_agents
         observations = self.get_observations()
-        for name, observation in observations.items():
-            agent = self.agent_mapping[name]
-            if isinstance(agent, Poi) and agent.observed:
-                self.agents.remove(name)
+        # for name, observation in observations.items():
+        #     agent = self.agent_mapping[name]
+        #     if isinstance(agent, Poi) and agent.observed:
+        #         self.agents.remove(name)
 
         # Step forward and check if simulation is done
         # Update all agent dones with environment done
@@ -480,6 +480,8 @@ class LeaderFollowerEnv:
                 assigned_followers[max_influencer].append(follower_name)
 
         # todo  explore: if multiple agents are individually capable of observing a poi, neither receives a reward
+        # todo  change to only give reward to the first agent that observed the poi, and after it has been observed,
+        #       no other agent is able to observe it
         global_reward = self.calc_global()
         difference_rewards = {'G': list(global_reward.values())[0]}
         for leader_name, removed_agents in assigned_followers.items():
@@ -491,6 +493,8 @@ class LeaderFollowerEnv:
             poi_copy = copy.deepcopy(self.__pois)
             for poi_name, poi in self.__pois.items():
                 pruned_history = []
+                # todo  if there is ever a step where the poi is observed, remove all steps after that step
+                #       may need to do as well for when calculating original reward
                 for observation_step in poi.observation_history:
                     pruned_step = [
                         agent
