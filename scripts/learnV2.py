@@ -31,26 +31,30 @@ reward_map = {
     # 'dpplf': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': True})
 }
 
+
 def run_experiment(experiment_config, meta_vars):
     reward_func = reward_map[meta_vars['reward_key']]
     # todo  add noise to location of agents
     leaders = [
         Leader(
-            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['leader_value'],
+            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['leader_value'],
             max_velocity=meta_vars['leader_max_velocity'], weight=meta_vars['leader_weight'],
             observation_radius=meta_vars['leader_obs_rad'], policy=None)
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     followers = [
         Follower(
-            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['follower_value'],
+            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['follower_value'],
             max_velocity=meta_vars['follower_max_velocity'], weight=meta_vars['follower_weight'],
             repulsion_radius=meta_vars['repulsion_rad'], repulsion_strength=meta_vars['repulsion_strength'],
             attraction_radius=meta_vars['attraction_rad'], attraction_strength=meta_vars['attraction_strength'])
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     pois = [
-        Poi(agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['poi_value'],
+        Poi(agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['poi_value'],
             weight=meta_vars['poi_weight'],
             observation_radius=meta_vars['poi_obs_rad'], coupling=meta_vars['poi_coupling'])
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
@@ -69,7 +73,7 @@ def run_experiment(experiment_config, meta_vars):
                 ),
                 'fitness': None
             }
-            for _ in range(meta_vars['population_size'],)
+            for _ in range(meta_vars['population_size'], )
         ]
         for agent_name in env.agents
         if env.agent_mapping[agent_name].type == AgentType.Learner
@@ -96,6 +100,7 @@ def run_experiment(experiment_config, meta_vars):
     rewards = rollout(env, best_solution, reward_func=reward_func)
     print(f'{rewards=}')
     return
+
 
 def run_parameter_sweep(base_dir, stat_runs, experiment_config, meta_vars, **parameters):
     n_params = len(parameters)
@@ -138,6 +143,7 @@ def run_parameter_sweep(base_dir, stat_runs, experiment_config, meta_vars, **par
             meta_vars[first_key] = float(val)
             run_parameter_sweep(param_dir, stat_runs, experiment_config, meta_vars, **parameters)
     return
+
 
 def main(main_args):
     config_names = [

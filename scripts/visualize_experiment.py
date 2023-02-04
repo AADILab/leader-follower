@@ -157,26 +157,10 @@ def main(main_args):
         base_save_dir.mkdir(parents=True, exist_ok=True)
 
     base_dir = Path(project_properties.cached_dir, 'experiments')
-
-    experiment_dirs = list(base_dir.glob('experiment_2023_02_03_16_21_57'))
-    experiment_dir = experiment_dirs[0]
-
-    fitnesses = {}
-    fitness_data = parse_stat_run(experiment_dir)
-    fitnesses["global"] = [fitness_data]
-    replay_episode(experiment_dir)
-
-    plot_fitnesses(fitnesses, config='gecco', save_dir=base_save_dir, tag="gecco_test")
-
-    return
-
-    experiment_dirs = list(base_dir.glob('experiment_2023_02_03_13_07_42'))
-    experiment_dirs = experiment_dirs
+    experiment_dirs = list(base_dir.glob('experiment_*'))
 
     for each_dir in experiment_dirs:
         print(f'Processing experiment: {each_dir.stem}')
-
-        # config_dirs = list(each_dir.glob(f'*'))
         config_dirs = list(each_dir.glob(f'whiteboardV[1-2]'))
         for config_path in config_dirs:
             config_name = config_path.stem
