@@ -114,7 +114,6 @@ def replay_episode(episode_dir: Path):
     # rollout environment
     stat_dirs = list(episode_dir.glob('stat_run_*'))
     stat_dirs = sorted(stat_dirs, key=lambda x: int(x.stem.split('_')[-1]))
-    stat_dirs = [episode_dir]
     for idx, each_dir in enumerate(stat_dirs):
         fitness_data = parse_stat_run(each_dir)
         gen_dirs = list(each_dir.glob('gen_*'))
@@ -161,7 +160,7 @@ def main(main_args):
 
     for each_dir in experiment_dirs:
         print(f'Processing experiment: {each_dir.stem}')
-        config_dirs = list(each_dir.glob(f'whiteboardV[1-2]'))
+        config_dirs = list(each_dir.glob(f'*'))
         for config_path in config_dirs:
             config_name = config_path.stem
             print(f'\t{config_path.stem}')
