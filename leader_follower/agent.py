@@ -121,14 +121,15 @@ class Agent(ABC):
 
 class Leader(Agent):
 
+    # todo split leaders/followers into separate rows?
     # a row is the set of bins that correspond to a type of agent
     # each set of (sensor_resolution) bins maps to a set of agent types
     ROW_MAPPING = {
         AgentType.Learner: 0,
-        AgentType.Actor: 1,
-        AgentType.Static: 2,
+        AgentType.Actor: 0,
+        AgentType.Static: 1,
     }
-    NUM_ROWS = 3
+    NUM_ROWS = 2
 
     def __init__(self, agent_id, location, sensor_resolution, value, max_velocity, weight,
                  observation_radius, policy: NeuralNetwork | None):
@@ -192,9 +193,10 @@ class Leader(Agent):
         observation = np.zeros((2, self.sensor_resolution))
         counts = np.ones((2, self.sensor_resolution))
         for idx, entry in enumerate(obs_agents):
-            agent, angle, dist = entry
+            # todo optimize since observable_agents returns angle and distance as well
+            agent = entry[0]
             agent_type_idx = Leader.ROW_MAPPING[agent.type]
-            # angle, dist = self.relative(agent)
+            angle, dist = self.relative(agent)
             bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
             observation[agent_type_idx, bin_idx] += agent.value / max(dist, 0.01)
             counts[agent_type_idx, bin_idx] += 1
@@ -227,7 +229,7 @@ class Leader(Agent):
         self.action_history.append(action)
         return action
 
-
+# todo call an AttractionFollower to allow for other type of follower implementations
 class Follower(Agent):
 
     def __init__(self, agent_id, location, sensor_resolution, value, max_velocity, weight,
