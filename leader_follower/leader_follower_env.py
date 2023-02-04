@@ -52,6 +52,9 @@ class LeaderFollowerEnv:
         self.agents = [each_agent for each_agent in self.possible_agents]
         self.completed_agents = []
 
+        # This is a hack around pois not being observed properly
+        self.observed_poi_list = []
+
         """
         If human-rendering is used, `self.window` will be a reference
         to the window that we draw to. `self.clock` will be a clock that is used
@@ -335,8 +338,14 @@ class LeaderFollowerEnv:
 
     def observed_pois(self):
         print("self.agent_mapping:\n", self.agent_mapping)
-        observed = [self.agent_mapping[name] for name in self.agents]
-        return observed
+        # Update the internal list with any new pois that have been observed
+        # for name in self.agents:
+        #     if name[:3] == "poi":
+        #         if self.agent_mapping[name].observed and self.agent_mapping[name] not in self.observed_poi_list:
+        #             self.observed_poi_list.append(self.agent_mapping[name])
+        return self.observed_poi_list
+        # observed = [self.agent_mapping[name] for name in self.agents]
+        # return observed
 
     def done(self):
         all_obs = len(self.observed_pois()) == len(self.__pois.values())
