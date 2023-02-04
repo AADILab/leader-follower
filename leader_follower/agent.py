@@ -11,6 +11,7 @@ from enum import Enum, auto
 import numpy as np
 import torch
 from gym.vector.utils import spaces
+from numpy.random import default_rng
 
 from leader_follower.learn.neural_network import NeuralNetwork
 
@@ -34,16 +35,17 @@ class Agent(ABC):
     def action(self):
         return self.action_history[-1]
 
-    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float):
+    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float):
         self.name = f'agent_{agent_id}'
         self.id = agent_id
         self.type = AgentType.Static
 
         # lower/upper bounds agent is able to move
         # same for both x and y directions
-        self.velocity_range = np.array((-1, 1))
+        self.max_velocity = max_velocity
         self.sensor_resolution = sensor_resolution
         self.value = value
+        self.weight = weight
 
         self._initial_location = location
         self.location = location
@@ -57,7 +59,7 @@ class Agent(ABC):
         return
 
     def __repr__(self):
-        return f'{self.name=}, {self.state=}'
+        return f'({self.name}:  {self.weight=}: {self.value=}: {self.state})'
 
     def reset(self):
         self.location = self._initial_location
@@ -98,7 +100,7 @@ class Agent(ABC):
 
             angle, dist = self.relative(agent)
             if dist <= observation_radius:
-                bins.append(agent)
+                bins.append((agent, angle, dist))
         return bins
 
     @abc.abstractmethod
@@ -119,9 +121,21 @@ class Agent(ABC):
 
 class Leader(Agent):
 
-    def __init__(self, agent_id, location, sensor_resolution, value, observation_radius,
-                 policy: NeuralNetwork | None):
-        super().__init__(agent_id, location, sensor_resolution, value)
+    # todo split leaders/followers into separate rows?
+    # a row is the set of bins that correspond to a type of agent
+    # each set of (sensor_resolution) bins maps to a set of agent types
+    ROW_MAPPING = {
+        AgentType.Learner: 0,
+        AgentType.Actor: 0,
+        AgentType.Static: 1,
+    }
+    NUM_ROWS = 2
+
+    def __init__(self, agent_id, location, sensor_resolution, value, max_velocity, weight,
+                 observation_radius, policy: NeuralNetwork | None):
+
+        # agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity, weight)
         self.name = f'leader_{agent_id}'
         self.type = AgentType.Learner
 
@@ -129,19 +143,22 @@ class Leader(Agent):
         self.policy = policy
         self._policy_history = []
 
-        self.n_in = self.sensor_resolution * 2
+        self.n_in = self.sensor_resolution * Leader.NUM_ROWS
         self.n_out = 2
         return
 
     def observation_space(self):
         sensor_range = spaces.Box(
             low=0, high=np.inf,
-            shape=(self.sensor_resolution, 2), dtype=np.float64
+            shape=(self.sensor_resolution, Leader.NUM_ROWS), dtype=np.float64
         )
         return sensor_range
 
     def action_space(self):
-        action_range = spaces.Box(low=self.velocity_range[0], high=self.velocity_range[1], shape=(2,), dtype=np.float64)
+        action_range = spaces.Box(
+            low=-1 * self.max_velocity, high=self.max_velocity,
+            shape=(self.n_out,), dtype=np.float64
+        )
         return action_range
 
     def reset(self):
@@ -151,8 +168,14 @@ class Leader(Agent):
 
     def sense(self, other_agents, sensor_resolution=None, offset=False):
         """
+        Takes in the state of the worlds and counts how many agents are in each d-hyperoctant around the agent,
+        with the agent being at the center of the observation.
+
         Calculates which pois, leaders, and follower go into which d-hyperoctant, where d is the state
         resolution of the environment.
+
+        first set of (sensor_resolution) bins is for leaders/followers
+        second set of (sensor_resolution) bins is for pois
 
         :param other_agents:
         :param sensor_resolution:
@@ -169,8 +192,10 @@ class Leader(Agent):
 
         observation = np.zeros((2, self.sensor_resolution))
         counts = np.ones((2, self.sensor_resolution))
-        for idx, agent in enumerate(obs_agents):
-            agent_type_idx = 0 if isinstance(agent, Poi) else 1
+        for idx, entry in enumerate(obs_agents):
+            # todo optimize since observable_agents returns angle and distance as well
+            agent = entry[0]
+            agent_type_idx = Leader.ROW_MAPPING[agent.type]
             angle, dist = self.relative(agent)
             bin_idx = int(np.floor(angle / bin_size) % self.sensor_resolution)
             observation[agent_type_idx, bin_idx] += agent.value / max(dist, 0.01)
@@ -199,20 +224,21 @@ class Leader(Agent):
         self._policy_history.append(action)
 
         mag = np.linalg.norm(action)
-        if mag > 1:
+        if mag > self.max_velocity:
             action = action / mag
         self.action_history.append(action)
         return action
 
+# todo call an AttractionFollower to allow for other type of follower implementations
 class Follower(Agent):
 
-    def __init__(self, agent_id, location, sensor_resolution, value,
+    def __init__(self, agent_id, location, sensor_resolution, value, max_velocity, weight,
                  repulsion_radius, repulsion_strength, attraction_radius, attraction_strength):
-        super().__init__(agent_id, location, sensor_resolution, value)
+
+        # agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity, weight)
         self.name = f'follower_{agent_id}'
         self.type = AgentType.Actor
-
-        self.velocity = 0
 
         self.repulsion_radius = repulsion_radius
         self.repulsion_strength = repulsion_strength
@@ -220,10 +246,15 @@ class Follower(Agent):
         self.attraction_radius = attraction_radius
         self.attraction_strength = attraction_strength
 
+        self.__obs_rule = self.rule_mass_center
         self.rule_history = {'repulsion': [], 'attraction': []}
+        self.influence_history = {'repulsion': [], 'attraction': []}
+        return
 
-        self.__obs_rule = self.__rule_mass_center
+    def reset(self):
+        Agent.reset(self)
 
+        self.rule_history = {'repulsion': [], 'attraction': []}
         self.influence_history = {'repulsion': [], 'attraction': []}
         return
 
@@ -235,19 +266,27 @@ class Follower(Agent):
         return sensor_range
 
     def action_space(self):
-        action_range = spaces.Box(low=self.velocity_range[0], high=self.velocity_range[1], shape=(2,), dtype=np.float64)
+        action_range = spaces.Box(
+            low=-1 * self.max_velocity, high=self.max_velocity,
+            shape=(2,), dtype=np.float64
+        )
         return action_range
 
-    def __rule_mass_center(self, relative_agents, rule_radius):
-        self.observation_radius = rule_radius
-        rel_agents = Agent.observable_agents(self, relative_agents, rule_radius)
+    def rule_mass_center(self, relative_agents, rule_radius):
+        obs_agents = Agent.observable_agents(self, relative_agents, rule_radius)
         # adding self partially guards against when no other agents are nearby
-        rel_agents.append(self)
+        obs_agents.append((self, 0, 0))
 
-        locs = [each_agent.location for each_agent in rel_agents]
-        avg_locs = np.average(locs, axis=0)
-        rel_agents.remove(self)
-        return avg_locs, rel_agents
+        # weight center of mass by agent weight
+        rel_locs = [
+            ((each_agent[0].location[0] - self.location[0]) * each_agent[0].weight,
+             (each_agent[0].location[1] - self.location[1]) * each_agent[0].weight)
+            for each_agent in obs_agents
+        ]
+        avg_locs = np.average(rel_locs, axis=0)
+
+        obs_agents.remove((self, 0, 0))
+        return avg_locs, obs_agents
 
     def sense(self, relative_agents):
         """
@@ -269,39 +308,41 @@ class Follower(Agent):
         return observation
 
     def influence_counts(self):
-        repulsion_names = [agent.name for agent in self.influence_history['repulsion']]
+        repulsion_names = [agent[0].name for agent in self.influence_history['repulsion']]
         repulsion_counts = np.unique(repulsion_names, return_counts=True)
 
-        attraction_names = [agent.name for agent in self.influence_history['attraction']]
+        attraction_names = [agent[0].name for agent in self.influence_history['attraction']]
         attraction_counts = np.unique(attraction_names, return_counts=True)
 
         repulsion_names.extend(attraction_names)
         total_counts = np.unique(repulsion_names, return_counts=True)
+
         return total_counts, repulsion_counts, attraction_counts
 
     def get_action(self, observation):
-        # todo take into account current velocity
-        # todo check repulsion is moving the agent in the correct direction
-        # todo bug fix
-        #   RuntimeWarning: invalid value encountered in divide
-        #   unit_repulsion = repulsion_diff / (repulsion_diff**2).sum()**0.5
-        repulsion_diff = np.subtract(observation[0], self.location)
+        # todo  Followers should not have repulsion and attraction radii with xy update rules
+        repulsion_diff = observation[0]
         self.rule_history['repulsion'].append(repulsion_diff)
-        mag = np.linalg.norm(repulsion_diff)
-        if mag > 1:
-            repulsion_diff = repulsion_diff / mag
         repulsion_diff = np.nan_to_num(repulsion_diff)
-        weighted_repulsion = - repulsion_diff * self.repulsion_strength
+        # todo  weight repulsion and attraction by max radii for each. center of mass further
+        #       away will affect a follower less than if it is nearby
+        weighted_repulsion = repulsion_diff * self.repulsion_strength
+        weighted_repulsion *= -1
 
-        attraction_diff = np.subtract(observation[1], self.location)
+        attraction_diff = observation[1]
         self.rule_history['attraction'].append(attraction_diff)
-        mag = np.linalg.norm(attraction_diff)
-        if mag > 1:
-            attraction_diff = attraction_diff / mag
         attraction_diff = np.nan_to_num(attraction_diff)
-        weighted_attraction = - attraction_diff * self.attraction_strength
+        weighted_attraction = attraction_diff * self.attraction_strength
 
-        action = weighted_attraction - weighted_repulsion
+        action = weighted_attraction + weighted_repulsion
+        mag = np.linalg.norm(action)
+        if mag > self.max_velocity:
+            action = action / mag
+
+        # add noise to updates because if two followers end up in the same location, they will not separate
+        rng = default_rng()
+        noise = rng.random(size=2) * self.max_velocity / 100
+        action += noise
         self.action_history.append(action)
         return action
 
@@ -312,13 +353,15 @@ class Poi(Agent):
         max_seen = 0
         for each_step in self.observation_history:
             # using value allows for different agents to contribute different weights to observing the poi
-            curr_seen = sum(each_agent.value for each_agent in each_step)
+            curr_seen = sum(each_agent[0].value for each_agent in each_step)
             max_seen = max(max_seen, curr_seen)
         obs = max_seen >= self.coupling
         return obs
 
-    def __init__(self, agent_id, location, sensor_resolution, value, observation_radius, coupling):
-        super().__init__(agent_id, location, sensor_resolution, value)
+    def __init__(self, agent_id, location, sensor_resolution, value, weight,
+                 observation_radius, coupling):
+        # agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float
+        super().__init__(agent_id, location, sensor_resolution, value, max_velocity=0, weight=weight)
         self.name = f'poi_{agent_id}'
         self.type = AgentType.Static
 
@@ -327,19 +370,39 @@ class Poi(Agent):
         return
 
     def __repr__(self):
-        return f'{self.name=}, {self.observed=}, {self.state=}'
+        parent_repr = Agent.__repr__(self)
+        return f'({parent_repr} -> {self.observed=})'
 
     def observation_space(self):
         sensor_range = spaces.Box(low=0, high=self.coupling, shape=(1,))
         return sensor_range
 
     def action_space(self):
+        # static agents do not move during an episode
         action_range = spaces.Box(low=0, high=0, shape=(2,), dtype=np.float64)
         return action_range
 
+    def observed_idx(self, idx):
+        idx_obs = self.observation_history[idx]
+        idx_seen = len(idx_obs)
+        observed = idx_seen >= self.coupling
+        return observed
+
     def sense(self, relative_agents):
+        """
+        Each entry in the observation is a tuple of (agent, angle, dist) where angle and dist are the
+        angle and distance to the agent in the tuple relative to this poi.
+
+        """
         self.state_history.append(self.location)
-        observation = self.observable_agents(relative_agents, self.observation_radius)
+        # filter out other POIs from the poi observation
+        # todo only store agent_names rather than full agent object
+        observable = self.observable_agents(relative_agents, self.observation_radius)
+        observation = [
+            each_obs
+            for each_obs in observable
+            if not isinstance(each_obs[0], Poi)
+        ]
         self.observation_history.append(observation)
         return observation
 

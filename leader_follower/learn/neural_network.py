@@ -5,6 +5,7 @@
 
 """
 import argparse
+import copy
 from pathlib import Path
 
 import numpy as np
@@ -47,13 +48,22 @@ def linear_relu_stack(n_inputs, n_hidden, n_outputs):
     return network
 
 
+def load_pytorch_model(model_path):
+    model = torch.load(model_path)
+    model.eval()
+    return model
+
+
 class NeuralNetwork(nn.Module):
+
+    LAST_CREATED = 0
 
     def __init__(self, n_inputs, n_outputs, n_hidden=2, network_func=linear_layer):
         super(NeuralNetwork, self).__init__()
+        self.name = f'{self.LAST_CREATED}'
+        self.LAST_CREATED += 1
 
         self.network_func = network_func
-        self.name = 'pytorch_lrs'
 
         self.n_inputs = n_inputs
         self.n_outputs = n_outputs
@@ -61,6 +71,15 @@ class NeuralNetwork(nn.Module):
         self.flatten = nn.Flatten()
         self.network = self.network_func(n_inputs=n_inputs, n_hidden=n_hidden, n_outputs=n_outputs)
         return
+
+    def __repr__(self):
+        return f'{self.name}'
+
+    def copy(self):
+        new_copy = copy.copy(self)
+        self.LAST_CREATED += 1
+        new_copy.name = f'{self.LAST_CREATED}'
+        return new_copy
 
     def device(self):
         dev = next(self.parameters()).device
@@ -81,24 +100,22 @@ class NeuralNetwork(nn.Module):
         logits = self.network(x)
         return logits
 
-    def save_model(self, save_dir=None):
+    def save_model(self, save_dir=None, tag=''):
+        # todo optimize saving pytorch model
+        # https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
         if save_dir is None:
             save_dir = project_properties.output_dir
-        save_dir = Path(save_dir, 'models')
+            save_dir = Path(save_dir, 'models')
+
         if not save_dir.exists():
             save_dir.mkdir(parents=True, exist_ok=True)
 
-        save_name = Path(save_dir, f'{self.name}_model.pt')
-        torch.save(self.state_dict(), save_name)
+        if tag != '':
+            tag = f'_{tag}'
+
+        save_name = Path(save_dir, f'{self.name}_model{tag}.pt')
+        torch.save(self, save_name)
         return save_name
-
-    def load_model(self, load_dir=None):
-        if load_dir is None:
-            load_dir = Path(project_properties.output_dir, 'models')
-
-        load_name = Path(load_dir, f'{self.name}_model.pt')
-        self.load_state_dict(torch.load(load_name))
-        return
 
 
 def main(main_args):

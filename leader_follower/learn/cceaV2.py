@@ -4,62 +4,178 @@
 @description
 
 """
-
 import copy
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
-from torch.distributions import Normal
+from numpy.random import default_rng
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from tqdm import trange
 
-from leader_follower import project_properties
-from leader_follower.agent import AgentType
 from leader_follower.leader_follower_env import LeaderFollowerEnv
-from leader_follower.learn.neural_network import NeuralNetwork
 
 
-def select_roulette(population, select_size):
-    fitness_vals = [pop['fitness'] for pop in population]
+def select_roulette(agent_pops, select_size, noise=0.01):
+    """
+    output a list of dicts, where each dict in the list contains a policy for each agent in agent_pops
 
-    # add small amount of noise to each fitness value (help deal with all same value)
-    noise = np.random.uniform(0, 1, len(fitness_vals))
-    fitness_vals += noise
+    :param agent_pops:
+    :param select_size:
+    :param noise:
+    :return:
+    """
+    chosen_agent_pops = {}
+    for agent_name, policy_population in agent_pops.items():
+        pop_copy = [
+            {'network': each_policy['network'].copy(), 'fitness': each_policy['fitness']}
+            for each_policy in policy_population
+        ]
+        fitness_vals = np.asarray([pop['fitness'] for pop in pop_copy])
 
-    # if there is one positive fitness, then the others all being negative causes issues when calculating the probs
-    fitness_norms = (fitness_vals - np.min(fitness_vals)) / (np.max(fitness_vals) - np.min(fitness_vals))
-    if np.isnan(fitness_norms).any():
-        fitness_norms = fitness_vals
-    fitness_probs = fitness_norms / np.sum(fitness_norms)
+        # add small amount of noise to each fitness value (help deal with all same value)
+        noise = np.random.uniform(0, noise, len(fitness_vals))
+        fitness_vals += noise
 
-    sim_pop = np.random.choice(population, select_size, replace=False, p=fitness_probs)
-    return sim_pop
+        # adding an extra bogey population and fitness value fixes an issue arising when trying to select from the
+        # population when select_size == len(population), which causes the min value of the normalized fitnesses
+        # to be 0, which is not a valid probability. The extra fitness makes it so the 0 probability fitness is not
+        # an actual fitness, and we have to add an extra (fake) population to make the lengths of the population
+        # and fitness arrays to be equal. They are both added at the end of the array, so the fake population
+        # is correlated with the fake fitness.
+        min_fitness = np.min(fitness_vals)
+        fitness_vals = np.append(fitness_vals, min_fitness - 2)
+
+        bogey_entry = {'network': None, 'fitness': -1}
+        pop_copy.append(bogey_entry)
+
+        # if there is one positive fitness, then the others all being negative causes issues when calculating the probs
+        fitness_norms = (fitness_vals - np.min(fitness_vals)) / (np.max(fitness_vals) - np.min(fitness_vals))
+        if np.isnan(fitness_norms).any():
+            fitness_norms = fitness_vals
+        fitness_probs = fitness_norms / np.sum(fitness_norms)
+
+        # validation check to make sure adding the bogey fitness and policy do not mess up the random selection
+        arg_minfitness = np.argmin(fitness_probs)
+        assert arg_minfitness == fitness_probs.size - 1
+        assert pop_copy[arg_minfitness] == bogey_entry
+
+        rand_pop = np.random.choice(pop_copy, select_size, replace=True, p=fitness_probs)
+        chosen_agent_pops[agent_name] = rand_pop
+
+    agent_names = list(chosen_agent_pops.keys())
+    chosen_pops = [
+        [{agent_name: pops[idx] for agent_name, pops in chosen_agent_pops.items()}, agent_names]
+        for idx in range(0, select_size)
+    ]
+    return chosen_pops
+
+def select_egreedy(agent_pops, select_size, epsilon):
+    # todo implement egreedy selection
+    rng = default_rng()
+    chosen_agent_pops = {}
+    for agent_name, policy_population in agent_pops.items():
+        rand_val = rng.random()
+        if rand_val <= epsilon:
+            pass
+        else:
+            pass
+        # chosen_agent_pops[agent_name] = rand_pop
+
+    agent_names = list(chosen_agent_pops.keys())
+    chosen_pops = [
+        [{agent_name: pops[idx] for agent_name, pops in chosen_agent_pops.items()}, agent_names]
+        for idx in range(0, select_size)
+    ]
+    return chosen_pops
 
 
-def mutate_gaussian(individual, proportion=0.1, amount=0.05):
-    model = individual['network']
-    model_copy = copy.deepcopy(model)
+def select_leniency(agent_pops, select_size):
+    # todo  implement leniency
+    rng = default_rng()
+    best_policies = select_top_n(agent_pops, select_size=1)[0]
+    chosen_pops = []
+    for agent_name, policies in agent_pops.items():
+        # todo  weight select based on fitness
+        policies = rng.choice(policies, size=select_size)
+        for each_policy in policies:
+            entry = {
+                name: policy if name != agent_name else each_policy
+                for name, policy in best_policies.items()
+            }
+            chosen_pops.append([entry, [agent_name]])
+    return chosen_pops
 
-    # todo  add small amount of noise to each value
-    #       add more noise to fewer values
-    with torch.no_grad():
-        param_vector = parameters_to_vector(model_copy.parameters())
+def select_hall_of_fame(agent_pops, select_size):
+    rng = default_rng()
+    best_policies = select_top_n(agent_pops, select_size=1)[0]
+    chosen_pops = []
+    for agent_name, policies in agent_pops.items():
+        # todo  weight select based on fitness
+        policies = rng.choice(policies, size=select_size)
+        for each_policy in policies:
+            entry = {
+                name: policy if name != agent_name else each_policy
+                for name, policy in best_policies.items()
+            }
+            chosen_pops.append([entry, [agent_name]])
+    return chosen_pops
 
-        n_params = len(param_vector)
-        noise = Normal(0, 1).sample(torch.Size((n_params,)))
-        param_vector.add_(noise)
+def select_top_n(agent_pops, select_size):
+    chosen_agent_pops = {}
+    for agent_name, population in agent_pops.items():
+        sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
+        top_pop = sorted_pop[:select_size]
+        chosen_agent_pops[agent_name] = top_pop
 
-        vector_to_parameters(param_vector, model_copy.parameters())
-    new_ind = {
-        'network': model_copy,
-        'fitness': None
-    }
-    return new_ind
+    chosen_pops = [
+        {agent_name: pops[idx] for agent_name, pops in chosen_agent_pops.items()}
+        for idx in range(0, select_size)
+    ]
+    return chosen_pops
 
-def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
+
+def mutate_gaussian(agent_policies, mutation_scalar=0.1, probability_to_mutate=0.05):
+    mutated_agents = {}
+    for agent_name, individual in agent_policies.items():
+        model = individual['network']
+        model_copy = copy.deepcopy(model)
+
+        rng = default_rng()
+        with torch.no_grad():
+            param_vector = parameters_to_vector(model_copy.parameters())
+
+            for each_val in param_vector:
+                rand_val = rng.random()
+                if rand_val <= probability_to_mutate:
+                    # todo  base proportion on current weight rather than scaled random sample
+                    noise = torch.randn(each_val.size()) * mutation_scalar
+                    each_val.add_(noise)
+
+            vector_to_parameters(param_vector, model_copy.parameters())
+        new_ind = {
+            'network': model_copy,
+            'fitness': None
+        }
+        mutated_agents[agent_name] = new_ind
+    return mutated_agents
+
+
+def downselect_top_n(agent_pops, select_size):
+    chosen_agent_pops = {}
+    for agent_name, population in agent_pops.items():
+        sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
+        top_pop = sorted_pop[:select_size]
+        chosen_agent_pops[agent_name] = top_pop
+    return chosen_agent_pops
+
+def rollout(env: LeaderFollowerEnv, individuals, reward_func, render: bool | dict = False):
+    render_func = partial(env.render, **render) if isinstance(render, dict) else env.render
+
     observations = env.reset()
     agent_dones = env.done()
     done = all(agent_dones.values())
@@ -68,146 +184,101 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render=False):
     for agent_name, policy_info in individuals.items():
         env.agent_mapping[agent_name].policy = policy_info['network']
 
+    all_rewards = []
     while not done:
         next_actions = env.get_actions_from_observations(observations=observations)
         observations, rewards, agent_dones, truncs, infos = env.step(next_actions)
+        all_rewards.append(rewards)
         done = all(agent_dones.values())
         if render:
-            env.render()
+            render_func()
 
-#     if type(episode_rewards) == float:
-#         # agent_rewards = [agent_rewards] * (len(env._leaders)+len(env._followers))
-#         episode_rewards = {
-#             agent_name: episode_rewards for agent_name, _ in individuals.items()
-#         }
-#
-#     return episode_rewards
+    print("all rewards: ", all_rewards)
 
-    episode_rewards, g_calls = reward_func(env)
-    return episode_rewards, g_calls
+    episode_rewards = reward_func(env)
+    return episode_rewards
 
+def simulate_subpop(agent_policies, env, mutate_func, reward_func):
+    mutated_policies = mutate_func(agent_policies[0])
 
-def downselect_top_n(population, max_size):
-    sorted_pop = sorted(population, key=lambda x: x['fitness'], reverse=True)
-    return sorted_pop[:max_size]
+    # rollout and evaluate
+    agent_rewards = rollout(env, mutated_policies, reward_func=reward_func, render=False)
+    for agent_name, policy_info in mutated_policies.items():
+        policy_fitness = agent_rewards[agent_name]
+        policy_info['fitness'] = policy_fitness
+    return mutated_policies, agent_policies[1]
 
+def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
+    gen_path = Path(experiment_dir, f'gen_{gen_idx}')
+    if not gen_path:
+        gen_path.mkdir(parents=True, exist_ok=True)
 
-def neuro_evolve(env, n_hidden, population_size, n_gens, sim_pop_size, reward_func):
-    debug = False
-    select_func = select_roulette
-    mutate_func = partial(mutate_gaussian, proportion=0.1, amount=0.05)
-    downselect_func = downselect_top_n
+    env.save_environment(gen_path, tag=f'gen_{gen_idx}')
+    for agent_name, policy_info in agent_pops.items():
+        network_save_path = Path(gen_path, f'{agent_name}_networks')
+        if not network_save_path:
+            network_save_path.mkdir(parents=True, exist_ok=True)
 
-    # only creat sub-pops for agents capable of learning
-    # todo allow for policy sharing
-    agent_pops = {
-        agent_name: [
-            {
-                'network': NeuralNetwork(
-                    n_inputs=env.agent_mapping[agent_name].n_in,
-                    n_hidden=n_hidden,
-                    n_outputs=env.agent_mapping[agent_name].n_out,
-                ),
-                'fitness': None
-            }
-            for _ in range(population_size)
-        ]
-        for agent_name in env.agents
-        if env.agent_mapping[agent_name].type == AgentType.Learner
-    }
-    print(f'Using device: {list(agent_pops.values())[0][0]["network"].device()}')
+        for idx, each_policy in enumerate(policy_info):
+            # fitnesses[agent_name].append(each_policy['fitness'])
+            network = each_policy['network']
+            network.save_model(save_dir=network_save_path, tag=f'{idx}')
 
-    # initial fitness evaluation of all networks in population
-    # todo check reward structure/assignment to make sure reward is being properly assigned
-    for pop_idx in range(population_size):
-        new_inds = {agent_name: policy_info[pop_idx] for agent_name, policy_info in agent_pops.items()}
-        agent_rewards, g_calls = rollout(env, new_inds, reward_func=reward_func, render=debug)
-        for agent_name, policy_info in agent_pops.items():
-            policy_fitness = agent_rewards[agent_name]
-            policy_info[pop_idx]['fitness'] = policy_fitness
+    fitnesses_path = Path(gen_path, 'fitnesses.csv')
+    fitnesses_df = pd.DataFrame.from_dict(fitnesses, orient='index')
+    fitnesses_df.to_csv(fitnesses_path, header=True, index_label='agent_name')
+    return
 
-    max_fitnesses = []
-    avg_fitnesses = []
-    for gen_idx in trange(n_gens):
-        fitnesses = [
-            [
-                policy_info[pop_idx]['fitness']
-                for agent_name, policy_info in agent_pops.items()
-            ]
-            for pop_idx in range(population_size)
-        ]
-        max_fitnesses.append(np.max(fitnesses, axis=0))
-        avg_fitnesses.append(np.average(fitnesses, axis=0))
-        sim_pops = [
-            select_func(policy_population, sim_pop_size)
-            for agent_name, policy_population in agent_pops.items()
-        ]
-        # todo multiprocess simulating each simulation population
-        for sim_pop_idx, each_ind in enumerate(sim_pops):
-            new_inds = {
-                agent_name: mutate_func(policy_info[sim_pop_idx])
-                for agent_name, policy_info in agent_pops.items()
-            }
+def neuro_evolve(
+        env: LeaderFollowerEnv, agent_pops, population_size, n_gens, num_simulations,
+        reward_func, experiment_dir, starting_gen=0
+):
+    # todo  implement leniency
+    # selection_func = partial(select_roulette, **{'select_size': num_simulations, 'noise': 0.01})
+    selection_func = partial(select_hall_of_fame, **{'select_size': num_simulations})
 
-            # rollout and evaluate
-            agent_rewards, g_calls = rollout(env, new_inds, reward_func=reward_func, render=debug)
-            for agent_name, policy_info in new_inds.items():
-                policy_fitness = agent_rewards[agent_name]
-                policy_info['fitness'] = policy_fitness
-                # reinsert new individual into population of policies
-                agent_pops[agent_name].append(policy_info)
+    mutate_func = partial(mutate_gaussian, mutation_scalar=0.1, probability_to_mutate=0.05)
+    sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
+    downselect_func = partial(downselect_top_n, **{'select_size': population_size})
+
+    env.save_environment(experiment_dir, tag='initial')
+
+    num_cores = multiprocessing.cpu_count()
+    mp_pool = ProcessPoolExecutor(max_workers=num_cores-1)
+    for gen_idx in trange(starting_gen, n_gens):
+        selected_policies = selection_func(agent_pops)
+
+        # results = map(sim_func, selected_policies)
+        # pycharm will sometimes throw an error when using multiprocessing in debug mode
+        #   memoryview has 1 exported buffer
+        results = mp_pool.map(sim_func, selected_policies)
+        for each_result in results:
+            eval_agents = each_result[1]
+            # reinsert new individual into population of policies if this result was meant to be
+            # evaluating a particular agent
+            # e.g. for hall of fame or leniency, each entry in selected_policies should only be
+            # evaluating a single policy
+            for name, policy in each_result[0].items():
+                if name in eval_agents:
+                    agent_pops[name].append(policy)
 
         # downselect
-        agent_pops = {
-            agent_name: downselect_func(policy_info, population_size)
+        agent_pops = downselect_func(agent_pops)
+
+        top_inds = select_top_n(agent_pops, select_size=1)[0]
+        _ = rollout(env, top_inds, reward_func=reward_func, render=False)
+        g_reward = env.calc_global()
+        g_reward = list(g_reward.values())[0]
+        # todo  bug fix sometimes there is more than population_size policies in the population
+        fitnesses = {
+            agent_name: [each_individual['fitness'] for each_individual in policy_info]
             for agent_name, policy_info in agent_pops.items()
         }
+        fitnesses['G'] = [g_reward for _ in range(population_size)]
 
-    best_policies = {}
-    for agent_name, policy_info in agent_pops.items():
-        fitness_vals = [pop['fitness'] for pop in policy_info]
-        arg_best = np.argmax(fitness_vals)
-        best_ind = policy_info[arg_best]
-        print(best_ind['fitness'])
-        best_policies[agent_name] = best_ind
-    return best_policies, max_fitnesses, avg_fitnesses
+        # save all policies of each agent and save fitnesses mapping policies to fitnesses
+        save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses)
+    mp_pool.shutdown()
 
-
-def plot_fitnesses(avg_fitnesses, max_fitnesses, xtag=None, ytag=None):
-    fig, axes = plt.subplots()
-
-    avg_fitnesses = np.transpose(avg_fitnesses)
-    max_fitnesses = np.transpose(max_fitnesses)
-
-    # todo filter out non-learning agents
-    for idx, each_fitness in enumerate(avg_fitnesses):
-        axes.plot(each_fitness, label=f'Avg: Agent {idx+1}')
-
-    for idx, each_fitness in enumerate(max_fitnesses):
-        axes.plot(each_fitness, label=f'Max: Agent {idx+1}')
-
-    axes.xaxis.grid()
-    axes.yaxis.grid()
-    axes.legend(loc='best')
-
-    if xtag is None:
-        xtag = 'Generation'
-
-    if ytag is None:
-        ytag = 'Fitness'
-
-    axes.set_ylabel(ytag)
-    axes.set_xlabel(xtag)
-
-    fig.suptitle('Fitnesses of Agents Across Generations')
-    fig.set_size_inches(7, 5)
-    fig.set_dpi(100)
-
-    fig_dir = Path(project_properties.output_dir, 'figs')
-    if not fig_dir.exists():
-        fig_dir.mkdir(parents=True, exist_ok=True)
-
-    num_figs = len(list(fig_dir.iterdir()))
-    figname = Path(fig_dir, f'fitnesses_{num_figs}.png')
-    plt.savefig(figname)
-    return
+    top_inds = select_top_n(agent_pops, select_size=1)[0]
+    return top_inds

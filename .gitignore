@@ -133,3 +133,6 @@ dmypy.json
 .idea/
 /data/
 /trials/
+/cached/
+
+scripts/sandbox.py

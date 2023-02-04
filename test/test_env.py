@@ -88,7 +88,7 @@ def test_render(env):
 def test_step(env, render):
     render_delay = 0.1
 
-    # action is (vx, vy)
+    # action is (dx, dy)
     forward_action = np.array((0, 1.5))
     backwards_action = np.array((0, -1.5))
     left_action = np.array((-1.5, 0))
@@ -140,7 +140,7 @@ def test_step(env, render):
     print(f'=' * 80)
     influence_counts = [
         follower.influence_counts()
-        for follower_name, follower in env.followers.items()
+        for follower_name, follower in env.__followers.items()
     ]
     print(f'{influence_counts=}')
     return
@@ -207,7 +207,6 @@ def test_rollout(env, render):
             plt.imshow(frame)
             plt.show()
             time.sleep(render_delay)
-
     return
 
 
@@ -218,6 +217,20 @@ def test_api(env):
     print(f'{result=}')
     display_final_agents(env)
     print(f'=' * 80)
+    return
+
+def test_persistence(env: LeaderFollowerEnv):
+    save_path = env.save_environment()
+    test_env = LeaderFollowerEnv.load_environment(save_path)
+    # todo  inspect object
+    #       agents
+    #           histories
+    #           leaders
+    #               policies
+    #           followers
+    #           pois
+    #       reward history
+    #       state history
     return
 
 
@@ -262,18 +275,20 @@ def main(main_args):
 
     # test_observations(env)
     # test_actions(env)
-    # test_render(env)
+    # test_render(env)uhu
 
-    test_step(env, render=None)
+    # test_step(env, render=None)
     # test_step(env, render='rgb_array')
 
     # test_random(env, render=None)
     # test_random(env, render='rgb_array')
 
     # test_rollout(env, render=None)
-    test_rollout(env, render='rgb_array')
-    #
-    test_api(env)
+    # test_rollout(env, render='rgb_array')
+
+    # test_api(env)
+
+    test_persistence(env)
     return
 
 
