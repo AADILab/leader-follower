@@ -128,15 +128,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-#ide configurations
-/.vs/
-/.idea/
-
 # artifacts and outputs
 /output/
+.idea/
 /data/
 /trials/
 /cached/
 
-# individual executable files
 scripts/sandbox.py
