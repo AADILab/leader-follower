@@ -152,10 +152,11 @@ def main(main_args):
         # 'whiteboardV2',
         # 'whiteboardV2_all_leaders',
         # 'alpha',
-        'atrium',
+        # 'atrium',
         # 'battery',
         # 'charlie',
-        # 'echo'
+        # 'echo',
+        'follower_poi'
     ]
 
     config_fns = [

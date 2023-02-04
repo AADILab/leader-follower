@@ -15,6 +15,7 @@ from numpy.random import default_rng
 
 from leader_follower.learn.neural_network import NeuralNetwork
 
+
 class AgentType(Enum):
     Learner = auto()
     Actor = auto()
@@ -35,7 +36,8 @@ class Agent(ABC):
     def action(self):
         return self.action_history[-1]
 
-    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float):
+    def __init__(self, agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float,
+                 weight: float):
         self.name = f'agent_{agent_id}'
         self.id = agent_id
         self.type = AgentType.Static
@@ -119,8 +121,8 @@ class Agent(ABC):
     def get_action(self, observation):
         return NotImplemented
 
-class Leader(Agent):
 
+class Leader(Agent):
     # todo split leaders/followers into separate rows?
     # a row is the set of bins that correspond to a type of agent
     # each set of (sensor_resolution) bins maps to a set of agent types
@@ -229,12 +231,12 @@ class Leader(Agent):
         self.action_history.append(action)
         return action
 
+
 # todo call an AttractionFollower to allow for other type of follower implementations
 class Follower(Agent):
 
     def __init__(self, agent_id, location, sensor_resolution, value, max_velocity, weight,
                  repulsion_radius, repulsion_strength, attraction_radius, attraction_strength):
-
         # agent_id: int, location: tuple, sensor_resolution: int, value: float, max_velocity: float, weight: float
         super().__init__(agent_id, location, sensor_resolution, value, max_velocity, weight)
         self.name = f'follower_{agent_id}'
@@ -345,6 +347,7 @@ class Follower(Agent):
         action += noise
         self.action_history.append(action)
         return action
+
 
 class Poi(Agent):
 
