@@ -334,7 +334,7 @@ class LeaderFollowerEnv:
         return actions
 
     def observed_pois(self):
-        observed = [self.agent_mapping[name] for name in self.agents]
+        observed = [poi.observed for name, poi in self.__pois.items()]
         return observed
 
     def done(self):
@@ -371,10 +371,10 @@ class LeaderFollowerEnv:
         # Get all observations
         # todo  remove a poi from self.agents if it is observed and add the poi to self.completed_agents
         observations = self.get_observations()
-        for name, observation in observations.items():
-            agent = self.agent_mapping[name]
-            if isinstance(agent, Poi) and agent.observed:
-                self.agents.remove(name)
+        # for name, observation in observations.items():
+        #     agent = self.agent_mapping[name]
+        #     if isinstance(agent, Poi) and agent.observed:
+        #         self.agents.remove(name)
 
         # Step forward and check if simulation is done
         # Update all agent dones with environment done
