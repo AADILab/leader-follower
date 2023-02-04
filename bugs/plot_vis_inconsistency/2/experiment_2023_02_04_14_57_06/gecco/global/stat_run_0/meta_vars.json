@@ -1,0 +1,53 @@
+{
+  "n_hidden_layers": 1,
+  "leader_obs_rad": 100,
+  "leader_value": 1,
+  "follower_value": 1,
+  "poi_value": 1,
+  "poi_weight": 0,
+  "population_size": 30,
+  "num_simulations": 1,
+  "n_gens": 100,
+  "episode_length": 30,
+  "sensor_resolution": 4,
+  "follower_weight": 0.5,
+  "leader_weight": 5,
+  "repulsion_rad": 0.5,
+  "attraction_rad": 3,
+  "repulsion_strength": 3,
+  "attraction_strength": 0.5,
+  "leader_max_velocity": 1,
+  "follower_max_velocity": 0.75,
+  "poi_obs_rad": 1,
+  "poi_coupling": 1,
+  "config_name": "gecco",
+  "experiment_config": {
+    "leader_positions": [
+      [
+        25,
+        25
+      ]
+    ],
+    "follower_positions": [],
+    "poi_positions": [
+      [
+        30,
+        25
+      ],
+      [
+        32,
+        25
+      ],
+      [
+        34,
+        25
+      ],
+      [
+        36,
+        25
+      ]
+    ]
+  },
+  "reward_key": "global",
+  "experiment_dir": "/home/egonzalez/leader-follower/cached/experiments/experiment_2023_02_04_14_57_06/gecco/global/stat_run_0"
+}
