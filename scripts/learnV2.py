@@ -24,7 +24,7 @@ from leader_follower.utils import load_config
 reward_map = {
     'global': LeaderFollowerEnv.calc_global,
 
-    'diff': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': False}),
+    # 'diff': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': False}),
     # 'difflf': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': True}),
 
     # 'dpp': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': False}),
@@ -152,10 +152,11 @@ def main(main_args):
         # 'whiteboardV2',
         # 'whiteboardV2_all_leaders',
         # 'alpha',
-        'atrium',
+        # 'atrium',
         # 'battery',
         # 'charlie',
-        # 'echo'
+        # 'echo',
+        'gecco'
     ]
 
     config_fns = [
@@ -163,10 +164,10 @@ def main(main_args):
         for each_fn in Path(project_properties.config_dir).rglob('*.yaml')
         if each_fn.stem in config_names
     ]
-    stat_runs = 2
+    stat_runs = 1
 
     meta_vars = {
-        'n_hidden_layers': 2,
+        'n_hidden_layers': 1,
 
         'leader_obs_rad': 100,
         # leader and follower values determine have much "observational power" an agent has
@@ -178,10 +179,10 @@ def main(main_args):
 
         #########################################
         # the below are things that likely have to be fine-tuned for good results on any given configuration
-        'population_size': 5,
-        'num_simulations': 5,
-        'n_gens': 5,
-        'episode_length': 5,
+        'population_size': 30,
+        'num_simulations': 1,
+        'n_gens': 100,
+        'episode_length': 30,
         'sensor_resolution': 4,
         # 'population_size': 5,
         # 'num_simulations': 5,
@@ -198,11 +199,11 @@ def main(main_args):
         'repulsion_strength': 3,
         'attraction_strength': 0.5,
 
-        'leader_max_velocity': 3,
+        'leader_max_velocity': 1,
         'follower_max_velocity': 0.75,
 
-        'poi_obs_rad': 2,
-        'poi_coupling': 3,
+        'poi_obs_rad': 1,
+        'poi_coupling': 1,
 
         'config_name': None,
         'experiment_config': None,
@@ -252,6 +253,8 @@ def main(main_args):
             # 'poi_coupling': (3, 15, 3),
         }
 
+        # NOTE: run_parameter_sweep is the method for running any and all experiments
+        # Make changes above to change the parameters used
         run_parameter_sweep(
             base_dir=config_experiment_dir, stat_runs=stat_runs,
             experiment_config=experiment_config, meta_vars=meta_vars,
