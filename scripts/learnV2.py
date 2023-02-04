@@ -25,32 +25,36 @@ reward_map = {
     'global': LeaderFollowerEnv.calc_global,
 
     'diff': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': False}),
-    'difflf': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': True}),
+    # 'difflf': partial(LeaderFollowerEnv.calc_diff_rewards, **{'remove_followers': True}),
 
     # 'dpp': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': False}),
     # 'dpplf': partial(LeaderFollowerEnv.calc_dpp, **{'remove_followers': True})
 }
+
 
 def run_experiment(experiment_config, meta_vars):
     reward_func = reward_map[meta_vars['reward_key']]
     # todo  add noise to location of agents
     leaders = [
         Leader(
-            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['leader_value'],
+            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['leader_value'],
             max_velocity=meta_vars['leader_max_velocity'], weight=meta_vars['leader_weight'],
             observation_radius=meta_vars['leader_obs_rad'], policy=None)
         for idx, each_pos in enumerate(experiment_config['leader_positions'])
     ]
     followers = [
         Follower(
-            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['follower_value'],
+            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['follower_value'],
             max_velocity=meta_vars['follower_max_velocity'], weight=meta_vars['follower_weight'],
             repulsion_radius=meta_vars['repulsion_rad'], repulsion_strength=meta_vars['repulsion_strength'],
             attraction_radius=meta_vars['attraction_rad'], attraction_strength=meta_vars['attraction_strength'])
         for idx, each_pos in enumerate(experiment_config['follower_positions'])
     ]
     pois = [
-        Poi(agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'], value=meta_vars['poi_value'],
+        Poi(agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['poi_value'],
             weight=meta_vars['poi_weight'],
             observation_radius=meta_vars['poi_obs_rad'], coupling=meta_vars['poi_coupling'])
         for idx, each_pos in enumerate(experiment_config['poi_positions'])
@@ -69,7 +73,7 @@ def run_experiment(experiment_config, meta_vars):
                 ),
                 'fitness': None
             }
-            for _ in range(meta_vars['population_size'],)
+            for _ in range(meta_vars['population_size'], )
         ]
         for agent_name in env.agents
         if env.agent_mapping[agent_name].type == AgentType.Learner
@@ -96,6 +100,7 @@ def run_experiment(experiment_config, meta_vars):
     rewards = rollout(env, best_solution, reward_func=reward_func)
     print(f'{rewards=}')
     return
+
 
 def run_parameter_sweep(base_dir, stat_runs, experiment_config, meta_vars, **parameters):
     n_params = len(parameters)
@@ -139,6 +144,7 @@ def run_parameter_sweep(base_dir, stat_runs, experiment_config, meta_vars, **par
             run_parameter_sweep(param_dir, stat_runs, experiment_config, meta_vars, **parameters)
     return
 
+
 def main(main_args):
     config_names = [
         # 'whiteboardV1',
@@ -146,7 +152,7 @@ def main(main_args):
         # 'whiteboardV2',
         # 'whiteboardV2_all_leaders',
         # 'alpha',
-        'gecco',
+        'atrium',
         # 'battery',
         # 'charlie',
         # 'echo'
@@ -157,10 +163,10 @@ def main(main_args):
         for each_fn in Path(project_properties.config_dir).rglob('*.yaml')
         if each_fn.stem in config_names
     ]
-    # stat_runs = 1
+    stat_runs = 2
 
     meta_vars = {
-        'n_hidden_layers': 1,
+        'n_hidden_layers': 2,
 
         'leader_obs_rad': 100,
         # leader and follower values determine have much "observational power" an agent has
@@ -172,11 +178,11 @@ def main(main_args):
 
         #########################################
         # the below are things that likely have to be fine-tuned for good results on any given configuration
-        'population_size': 30,
-        'num_simulations': 1,
-        'n_gens': 100,
-        'episode_length': 75,
-        'sensor_resolution': 8,
+        'population_size': 5,
+        'num_simulations': 5,
+        'n_gens': 5,
+        'episode_length': 5,
+        'sensor_resolution': 4,
         # 'population_size': 5,
         # 'num_simulations': 5,
         # 'n_gens': 5,
@@ -184,25 +190,24 @@ def main(main_args):
         # 'sensor_resolution': 4,
 
         # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
-        'follower_weight': 1,
-        'leader_weight': 1,
+        'follower_weight': 0.5,
+        'leader_weight': 5,
 
         'repulsion_rad': 0.5,
         'attraction_rad': 3,
-        'repulsion_strength': 1,
-        'attraction_strength': 1,
+        'repulsion_strength': 3,
+        'attraction_strength': 0.5,
 
-        'leader_max_velocity': 5,
-        'follower_max_velocity': 0.5,
+        'leader_max_velocity': 3,
+        'follower_max_velocity': 0.75,
 
-        'poi_obs_rad': 5,
-        'poi_coupling': 1,
+        'poi_obs_rad': 2,
+        'poi_coupling': 3,
 
-        # 'config_name': None,
-        # 'experiment_config': None,
-        # 'reward_key': None,
-        # 'experiment_dir': None,
-        'reward_key': "global"
+        'config_name': None,
+        'experiment_config': None,
+        'reward_key': None,
+        'experiment_dir': None,
     }
     now = datetime.now()
     experiment_id = f'experiment_{now.strftime("%Y_%m_%d_%H_%M_%S")}'
@@ -218,45 +223,40 @@ def main(main_args):
         config_name = each_fn.stem
         meta_vars['config_name'] = config_name
         meta_vars['experiment_config'] = experiment_config
-        meta_vars['experiment_dir'] = exp_path
-
-        print(exp_path)
 
         config_experiment_dir = Path(exp_path, f'{config_name}')
         if not config_experiment_dir.exists():
             config_experiment_dir.mkdir(parents=True, exist_ok=True)
 
-        run_experiment(experiment_config, meta_vars)
+        sweep_params = {
+            # 'population_size': (25, 55, 15),
+            # 'num_simulations': (25, 55, 15),
+            # 'n_gens': (100, 1000, 100),
+            # 'episode_length': (50, 150, 50),
 
-        # sweep_params = {
-        #     # 'population_size': (25, 55, 15),
-        #     # 'num_simulations': (25, 55, 15),
-        #     # 'n_gens': (100, 1000, 100),
-        #     # 'episode_length': (50, 150, 50),
+            # 'sensor_resolution': (4, 8, 4),
 
-        #     # 'sensor_resolution': (4, 8, 4),
+            # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
+            # 'follower_weight': (0.5, 2, 0.5),
+            # 'leader_weight': (1, 8.5, 2.5),
+            #
+            # 'repulsion_rad': (0.5, 3.5, 1.5),
+            # 'attraction_rad': (2.5, 7.5, 2.5),
+            # 'repulsion_strength': (2, 8, 2),
+            # 'attraction_strength': (0.5, 2, 0.5),
 
-        #     # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
-        #     'follower_weight': (0.5, 2, 0.5),
-        #     'leader_weight': (1, 8.5, 2.5),
+            # 'leader_max_velocity': 3,
+            # 'follower_max_velocity': 0.75,
 
-        #     'repulsion_rad': (0.5, 3.5, 1.5),
-        #     'attraction_rad': (2.5, 7.5, 2.5),
-        #     'repulsion_strength': (2, 8, 2),
-        #     'attraction_strength': (0.5, 2, 0.5),
+            # 'poi_obs_rad': (2, 15, 3),
+            # 'poi_coupling': (3, 15, 3),
+        }
 
-        #     # 'leader_max_velocity': 3,
-        #     # 'follower_max_velocity': 0.75,
-
-        #     # 'poi_obs_rad': (2, 15, 3),
-        #     # 'poi_coupling': (3, 15, 3),
-        # }
-
-        # run_parameter_sweep(
-        #     base_dir=config_experiment_dir, stat_runs=stat_runs,
-        #     experiment_config=experiment_config, meta_vars=meta_vars,
-        #     **sweep_params
-        # )
+        run_parameter_sweep(
+            base_dir=config_experiment_dir, stat_runs=stat_runs,
+            experiment_config=experiment_config, meta_vars=meta_vars,
+            **sweep_params
+        )
     return
 
 

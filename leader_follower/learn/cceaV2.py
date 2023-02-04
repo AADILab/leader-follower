@@ -193,8 +193,6 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render: bool | dic
         if render:
             render_func()
 
-    print("all rewards: ", all_rewards)
-
     episode_rewards = reward_func(env)
     return episode_rewards
 

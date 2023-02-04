@@ -335,15 +335,6 @@ class LeaderFollowerEnv:
         return actions
 
     def observed_pois(self):
-        # print("self.agent_mapping:\n", self.agent_mapping)
-        # # Update the internal list with any new pois that have been observed
-        # # for name in self.agents:
-        # #     if name[:3] == "poi":
-        # #         if self.agent_mapping[name].observed and self.agent_mapping[name] not in self.observed_poi_list:
-        # #             self.observed_poi_list.append(self.agent_mapping[name])
-        # return self.observed_poi_list
-        # # observed = [self.agent_mapping[name] for name in self.agents]
-        # # return observed
         observed = [poi for name, poi in self.__pois.items() if poi.observed]
         return observed
 
@@ -408,11 +399,8 @@ class LeaderFollowerEnv:
     def calc_global(self):
         # todo  value based on distance to poi rather than if observed
         observed_pois = self.observed_pois()
-        print("observed_pois", observed_pois)
         value_pois = sum(each_poi.value for each_poi in observed_pois)
-        print("value_pois", value_pois)
         total_value = sum(each_poi.value for name, each_poi in self.__pois.items())
-        print("total_value", total_value)
         reward = value_pois / total_value
 
         # scale reward based on time in environment
