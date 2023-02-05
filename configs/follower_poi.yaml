@@ -1,5 +1,5 @@
 leader_positions:
-  []
+  - [10, 12]
 follower_positions:
   - [11, 12]
 poi_positions:

@@ -74,6 +74,7 @@ def select_roulette(agent_pops, select_size, noise=0.01):
     ]
     return chosen_pops
 
+
 def select_egreedy(agent_pops, select_size, epsilon):
     # todo implement egreedy selection
     rng = default_rng()
@@ -110,6 +111,7 @@ def select_leniency(agent_pops, select_size):
             chosen_pops.append([entry, [agent_name]])
     return chosen_pops
 
+
 def select_hall_of_fame(agent_pops, select_size):
     rng = default_rng()
     best_policies = select_top_n(agent_pops, select_size=1)[0]
@@ -124,6 +126,7 @@ def select_hall_of_fame(agent_pops, select_size):
             }
             chosen_pops.append([entry, [agent_name]])
     return chosen_pops
+
 
 def select_top_n(agent_pops, select_size):
     chosen_agent_pops = {}
@@ -173,6 +176,7 @@ def downselect_top_n(agent_pops, select_size):
         chosen_agent_pops[agent_name] = top_pop
     return chosen_agent_pops
 
+
 def rollout(env: LeaderFollowerEnv, individuals, reward_func, render: bool | dict = False):
     render_func = partial(env.render, **render) if isinstance(render, dict) else env.render
 
@@ -196,6 +200,7 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render: bool | dic
     episode_rewards = reward_func(env)
     return episode_rewards
 
+
 def simulate_subpop(agent_policies, env, mutate_func, reward_func):
     mutated_policies = mutate_func(agent_policies[0])
 
@@ -205,6 +210,7 @@ def simulate_subpop(agent_policies, env, mutate_func, reward_func):
         policy_fitness = agent_rewards[agent_name]
         policy_info['fitness'] = policy_fitness
     return mutated_policies, agent_policies[1]
+
 
 def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     gen_path = Path(experiment_dir, f'gen_{gen_idx}')
@@ -227,6 +233,7 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     fitnesses_df.to_csv(fitnesses_path, header=True, index_label='agent_name')
     return
 
+
 def neuro_evolve(
         env: LeaderFollowerEnv, agent_pops, population_size, n_gens, num_simulations,
         reward_func, experiment_dir, starting_gen=0
@@ -242,7 +249,7 @@ def neuro_evolve(
     env.save_environment(experiment_dir, tag='initial')
 
     num_cores = multiprocessing.cpu_count()
-    mp_pool = ProcessPoolExecutor(max_workers=num_cores-1)
+    mp_pool = ProcessPoolExecutor(max_workers=num_cores - 1)
     for gen_idx in trange(starting_gen, n_gens):
         selected_policies = selection_func(agent_pops)
 

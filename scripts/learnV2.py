@@ -200,7 +200,7 @@ def main(main_args):
         'attraction_strength': 0.5,
 
         'leader_max_velocity': 3,
-        'follower_max_velocity': 0.75,
+        'follower_max_velocity': 0.5,
 
         'poi_obs_rad': 2,
         'poi_coupling': 3,
