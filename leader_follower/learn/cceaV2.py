@@ -112,13 +112,13 @@ def select_leniency(agent_pops, select_size):
     return chosen_pops
 
 
-def select_hall_of_fame(agent_pops, select_size):
+def select_hall_of_fame(agent_pops, select_size, replace=False):
     rng = default_rng()
     best_policies = select_top_n(agent_pops, select_size=1)[0]
     chosen_pops = []
     for agent_name, policies in agent_pops.items():
         # todo  weight select based on fitness
-        policies = rng.choice(policies, size=select_size)
+        policies = rng.choice(policies, size=select_size, replace=replace)
         for each_policy in policies:
             entry = {
                 name: policy if name != agent_name else each_policy
@@ -156,7 +156,8 @@ def mutate_gaussian(agent_policies, mutation_scalar=0.1, probability_to_mutate=0
                 rand_val = rng.random()
                 if rand_val <= probability_to_mutate:
                     # todo  base proportion on current weight rather than scaled random sample
-                    noise = torch.randn(each_val.size()) * mutation_scalar
+                    noise = torch.randn(each_val.size())
+                    noise *= mutation_scalar
                     each_val.add_(noise)
 
             vector_to_parameters(param_vector, model_copy.parameters())
@@ -239,12 +240,12 @@ def neuro_evolve(
         reward_func, experiment_dir, starting_gen=0
 ):
     # todo  implement leniency
-    # selection_func = partial(select_roulette, **{'select_size': num_simulations, 'noise': 0.01})
-    selection_func = partial(select_hall_of_fame, **{'select_size': num_simulations})
+    # selection_func = partial(select_roulette, select_size=num_simulations, noise=0.01)
+    selection_func = partial(select_hall_of_fame, select_size=num_simulations, replace=False)
 
     mutate_func = partial(mutate_gaussian, mutation_scalar=0.1, probability_to_mutate=0.05)
-    sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
-    downselect_func = partial(downselect_top_n, **{'select_size': population_size})
+    sim_func = partial(simulate_subpop, env=env, mutate_func=mutate_func, reward_func=reward_func)
+    downselect_func = partial(downselect_top_n, select_size=population_size)
 
     env.save_environment(experiment_dir, tag='initial')
 
