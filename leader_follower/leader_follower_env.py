@@ -39,14 +39,14 @@ class LeaderFollowerEnv:
         self.delta_time = delta_time
 
         # these are meant to store a reference to the possible agents
-        self.__leaders = {f'{each_agent.name}': each_agent for each_agent in leaders}
-        self.__followers = {f'{each_agent.name}': each_agent for each_agent in followers}
-        self.__pois = {f'{each_agent.name}': each_agent for each_agent in pois}
-        self.agent_mapping = self.__leaders | self.__followers | self.__pois
+        self.leaders = {f'{each_agent.name}': each_agent for each_agent in leaders}
+        self.followers = {f'{each_agent.name}': each_agent for each_agent in followers}
+        self.pois = {f'{each_agent.name}': each_agent for each_agent in pois}
+        self.agent_mapping = self.leaders | self.followers | self.pois
 
-        self.possible_agents = list(self.__leaders.keys())
-        self.possible_agents.extend(self.__followers.keys())
-        self.possible_agents.extend(self.__pois.keys())
+        self.possible_agents = list(self.leaders.keys())
+        self.possible_agents.extend(self.followers.keys())
+        self.possible_agents.extend(self.pois.keys())
 
         self.agents = [each_agent for each_agent in self.possible_agents]
         self.completed_agents = []
@@ -161,17 +161,17 @@ class LeaderFollowerEnv:
                 canvas, line_color, (pix_square_size * x, 0), (pix_square_size * x, window_size), width=1,
             )
 
-        for name, agent in self.__leaders.items():
+        for name, agent in self.leaders.items():
             location = np.array(agent.location)
             pygame.draw.rect(
                 canvas, leader_color, pygame.Rect(pix_square_size * location, (pix_square_size, pix_square_size))
             )
 
-        for name, agent in self.__followers.items():
+        for name, agent in self.followers.items():
             location = np.array(agent.location)
             pygame.draw.circle(canvas, follower_color, (location + 0.5) * pix_square_size, pix_square_size / 1.5)
 
-        for name, agent in self.__pois.items():
+        for name, agent in self.pois.items():
             # different colors to distinguish if the poi is captured
             location = np.array(agent.location)
             agent_color = obs_poi_color if agent.observed else non_obs_poi_color
@@ -291,9 +291,9 @@ class LeaderFollowerEnv:
         self.completed_agents = []
         self._current_step = 0
 
-        _ = [each_agent.reset() for each_agent in self.__leaders.values()]
-        _ = [each_agent.reset() for each_agent in self.__followers.values()]
-        _ = [each_agent.reset() for each_agent in self.__pois.values()]
+        _ = [each_agent.reset() for each_agent in self.leaders.values()]
+        _ = [each_agent.reset() for each_agent in self.followers.values()]
+        _ = [each_agent.reset() for each_agent in self.pois.values()]
 
         observations = self.get_observations()
         return observations
@@ -335,11 +335,11 @@ class LeaderFollowerEnv:
         return actions
 
     def observed_pois(self):
-        observed = [poi for name, poi in self.__pois.items() if poi.observed]
+        observed = [poi for name, poi in self.pois.items() if poi.observed]
         return observed
 
     def done(self):
-        all_obs = len(self.observed_pois()) == len(self.__pois.values())
+        all_obs = len(self.observed_pois()) == len(self.pois.values())
         time_over = self._current_step >= self.max_steps
         episode_done = any([all_obs, time_over])
 
@@ -400,7 +400,7 @@ class LeaderFollowerEnv:
         # todo  value based on distance to poi rather than if observed
         observed_pois = self.observed_pois()
         value_pois = sum(each_poi.value for each_poi in observed_pois)
-        total_value = sum(each_poi.value for name, each_poi in self.__pois.items())
+        total_value = sum(each_poi.value for name, each_poi in self.pois.items())
         reward = value_pois / total_value
 
         # scale reward based on time in environment
@@ -415,13 +415,13 @@ class LeaderFollowerEnv:
         # todo change difference calculation to use this function
         assigned_followers = {
             leader_name: [leader_name]
-            for leader_name, leader in self.__leaders.items()
+            for leader_name, leader in self.leaders.items()
         }
         assigned_followers['leader_null'] = []
 
         follower_influences = {
             follower_name: follower.influence_counts()[0]
-            for follower_name, follower in self.__followers.items()
+            for follower_name, follower in self.followers.items()
         }
 
         for follower_name, counts in follower_influences.items():
@@ -452,7 +452,7 @@ class LeaderFollowerEnv:
         if remove_followers:
             follower_influences = {
                 follower_name: follower.influence_counts()[0]
-                for follower_name, follower in self.__followers.items()
+                for follower_name, follower in self.followers.items()
             }
 
             for follower_name, counts in follower_influences.items():
@@ -478,8 +478,8 @@ class LeaderFollowerEnv:
 
             removed_agents.append(leader_name)
 
-            poi_copy = copy.deepcopy(self.__pois)
-            for poi_name, poi in self.__pois.items():
+            poi_copy = copy.deepcopy(self.pois)
+            for poi_name, poi in self.pois.items():
                 pruned_history = []
                 # todo  if there is ever a step where the poi is observed, remove all steps after that step
                 #       may need to do as well for when calculating original reward
@@ -494,7 +494,7 @@ class LeaderFollowerEnv:
 
             difference_global = self.calc_global()
             difference_rewards[leader_name] = global_reward[leader_name] - difference_global[leader_name]
-            self.__pois = poi_copy
+            self.pois = poi_copy
         return difference_rewards
 
     def calc_dpp_n(self, agent_names, n):
@@ -547,10 +547,10 @@ class LeaderFollowerEnv:
         :param remove_followers:
         :return dpp_rewards: Numpy array containing each rover's D++ reward
         """
-        num_agents = len(self.__leaders)
-        dpp_rewards = {name: 0 for name, agent in self.__leaders.items()}
+        num_agents = len(self.leaders)
+        dpp_rewards = {name: 0 for name, agent in self.leaders.items()}
         assigned = self.assign_followers()
-        for name in self.__leaders:
+        for name in self.leaders:
             if name == 'leader_null':
                 continue
 

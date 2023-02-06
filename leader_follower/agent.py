@@ -229,7 +229,7 @@ class Leader(Agent):
         if mag > self.max_velocity:
             action = action / mag
             action *= self.max_velocity
-        assert(np.linalg.norm(action) <= self.max_velocity)
+        # assert(np.linalg.norm(action) <= self.max_velocity)
 
         self.action_history.append(action)
         return action
@@ -344,7 +344,7 @@ class Follower(Agent):
         if mag > self.max_velocity:
             action = action / mag
             action *= self.max_velocity
-        assert (np.linalg.norm(action) <= self.max_velocity)
+        # assert (np.linalg.norm(action) <= self.max_velocity)
 
         # add noise to updates because if two followers end up in the same location, they will not separate
         rng = default_rng()

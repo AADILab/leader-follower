@@ -6,6 +6,7 @@
 """
 import argparse
 import csv
+import json
 from pathlib import Path
 import os
 
@@ -13,9 +14,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from leader_follower import project_properties
+from leader_follower.agent import Leader, Follower, Poi
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 from leader_follower.learn.cceaV2 import rollout
 from leader_follower.learn.neural_network import load_pytorch_model
+from scripts.learnV2 import reward_map
 
 
 def parse_stat_run(stat_run_dir):
@@ -108,6 +111,37 @@ def plot_fitnesses(fitness_data, config, save_dir, tag):
     return
 
 
+def recreate_environment(meta_vars):
+    experiment_config = meta_vars['experiment_config']
+    reward_func = reward_map[meta_vars['reward_key']]
+    leaders = [
+        Leader(
+            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['leader_value'],
+            max_velocity=meta_vars['leader_max_velocity'], weight=meta_vars['leader_weight'],
+            observation_radius=meta_vars['leader_obs_rad'], policy=None)
+        for idx, each_pos in enumerate(experiment_config['leader_positions'])
+    ]
+    followers = [
+        Follower(
+            agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['follower_value'],
+            max_velocity=meta_vars['follower_max_velocity'], weight=meta_vars['follower_weight'],
+            repulsion_radius=meta_vars['repulsion_rad'], repulsion_strength=meta_vars['repulsion_strength'],
+            attraction_radius=meta_vars['attraction_rad'], attraction_strength=meta_vars['attraction_strength'])
+        for idx, each_pos in enumerate(experiment_config['follower_positions'])
+    ]
+    pois = [
+        Poi(agent_id=idx, location=each_pos, sensor_resolution=meta_vars['sensor_resolution'],
+            value=meta_vars['poi_value'],
+            weight=meta_vars['poi_weight'],
+            observation_radius=meta_vars['poi_obs_rad'], coupling=meta_vars['poi_coupling'])
+        for idx, each_pos in enumerate(experiment_config['poi_positions'])
+    ]
+    env = LeaderFollowerEnv(leaders=leaders, followers=followers, pois=pois, max_steps=meta_vars['episode_length'])
+    return env, reward_func
+
+
 def replay_episode(episode_dir: Path):
     # load saved policies of each agent
     # load environment
@@ -140,11 +174,14 @@ def replay_episode(episode_dir: Path):
             model = load_pytorch_model(best_policy_fn)
             agent_policies[agent_name] = {'network': model, 'fitness': best_fitness}
 
-        env_path = Path(each_dir, f'leader_follower_env_initial.pkl')
-        env = LeaderFollowerEnv.load_environment(env_path)
+        # env_path = Path(each_dir, f'leader_follower_env_initial.pkl')
+        # env = LeaderFollowerEnv.load_environment(env_path)
+        meta_fname = Path(each_dir, 'meta_vars.json')
+        with open(meta_fname, 'r') as meta_file:
+            meta_vars = json.load(meta_file)
+        env, reward_func = recreate_environment(meta_vars)
         env.render_mode = 'human'
-        episode_rewards = rollout(env, agent_policies, LeaderFollowerEnv.calc_diff_rewards,
-                                  render={'window_size': 500, 'render_bound': 50})
+        episode_rewards = rollout(env, agent_policies, reward_func, render={'window_size': 500, 'render_bound': 50})
         g_reward = env.calc_global()
         print(f'stat_run: {idx} | {g_reward=} | {episode_rewards=}')
     return

@@ -140,7 +140,7 @@ def test_step(env, render):
     print(f'=' * 80)
     influence_counts = [
         follower.influence_counts()
-        for follower_name, follower in env.__followers.items()
+        for follower_name, follower in env.followers.items()
     ]
     print(f'{influence_counts=}')
     return
