@@ -17,7 +17,8 @@ from tqdm import trange
 from leader_follower import project_properties
 from leader_follower.agent import Leader, Follower, Poi, AgentType
 from leader_follower.leader_follower_env import LeaderFollowerEnv
-from leader_follower.learn.cceaV2 import neuro_evolve, rollout
+from leader_follower.learn.cceaV2 import neuro_evolve, rollout, select_hall_of_fame, mutate_gaussian, simulate_subpop, \
+    downselect_top_n
 from leader_follower.learn.neural_network import NeuralNetwork
 from leader_follower.utils import load_config
 
@@ -88,11 +89,20 @@ def run_experiment(experiment_config, meta_vars):
             policy_fitness = agent_rewards[agent_name]
             policy_info[pop_idx]['fitness'] = policy_fitness
     ########################################################
+    # selection_func = partial(select_roulette, **{'select_size': num_simulations, 'noise': 0.01})
+    selection_func = partial(select_hall_of_fame, select_size=meta_vars['num_simulations'])
+
+    mutate_func = partial(mutate_gaussian, mutation_scalar=meta_vars['mutation_scalar'],
+                          probability_to_mutate=meta_vars['probability_to_mutate'])
+    sim_func = partial(simulate_subpop, env=env, mutate_func=mutate_func, reward_func=reward_func)
+    downselect_func = partial(downselect_top_n, select_size=meta_vars['population_size'])
+    ########################################################
     print(f'Starting experiment: {meta_vars["config_name"]} | {meta_vars["reward_key"]}')
     start_time = time.time()
     best_solution = neuro_evolve(
-        env, agent_pops, meta_vars['population_size'], meta_vars['n_gens'], meta_vars['num_simulations'],
-        reward_func=reward_func, experiment_dir=meta_vars['experiment_dir']
+        env, agent_pops, meta_vars['population_size'], n_gens=meta_vars['n_gens'],
+        reward_func=reward_func, experiment_dir=meta_vars['experiment_dir'],
+        selection_func=selection_func, sim_func=sim_func, downselect_func=downselect_func
     )
     end_time = time.time()
     print(f'Time to train: {end_time - start_time}')
@@ -152,11 +162,11 @@ def main(main_args):
         # 'whiteboardV2',
         # 'whiteboardV2_all_leaders',
         # 'alpha',
-        # 'atrium',
+        'atrium',
         # 'battery',
         # 'charlie',
         # 'echo',
-        'follower_poi'
+        # 'follower_poi'
     ]
 
     config_fns = [
@@ -181,14 +191,16 @@ def main(main_args):
         # the below are things that likely have to be fine-tuned for good results on any given configuration
         'population_size': 5,
         'num_simulations': 5,
-        'n_gens': 5,
-        'episode_length': 5,
+        'n_gens': 5000,
+        'episode_length': 50,
         'sensor_resolution': 4,
         # 'population_size': 5,
         # 'num_simulations': 5,
         # 'n_gens': 5,
         # 'episode_length': 5,
         # 'sensor_resolution': 4,
+        'probability_to_mutate': 0.3,
+        'mutation_scalar': 1,
 
         # leaders have a higher weight to allow for followers to be attracted to leaders more than followers
         'follower_weight': 0.5,

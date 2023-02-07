@@ -235,16 +235,16 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
 
 
 def neuro_evolve(
-        env: LeaderFollowerEnv, agent_pops, population_size, n_gens, num_simulations,
-        reward_func, experiment_dir, starting_gen=0
+        env: LeaderFollowerEnv, agent_pops, population_size, n_gens,
+        reward_func, experiment_dir, selection_func, sim_func, downselect_func, starting_gen=0,
 ):
     # todo  implement leniency
-    # selection_func = partial(select_roulette, **{'select_size': num_simulations, 'noise': 0.01})
-    selection_func = partial(select_hall_of_fame, **{'select_size': num_simulations})
-
-    mutate_func = partial(mutate_gaussian, mutation_scalar=0.1, probability_to_mutate=0.05)
-    sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
-    downselect_func = partial(downselect_top_n, **{'select_size': population_size})
+    # # selection_func = partial(select_roulette, **{'select_size': num_simulations, 'noise': 0.01})
+    # selection_func = partial(select_hall_of_fame, **{'select_size': num_simulations})
+    #
+    # mutate_func = partial(mutate_gaussian, mutation_scalar=0.1, probability_to_mutate=0.05)
+    # sim_func = partial(simulate_subpop, **{'env': env, 'mutate_func': mutate_func, 'reward_func': reward_func})
+    # downselect_func = partial(downselect_top_n, **{'select_size': population_size})
 
     env.save_environment(experiment_dir, tag='initial')
 
