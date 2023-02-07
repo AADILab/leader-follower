@@ -20,6 +20,9 @@ from tqdm import trange
 from leader_follower.leader_follower_env import LeaderFollowerEnv
 
 
+# selection_functions
+
+
 def select_roulette(agent_pops, select_size, noise=0.01):
     """
     output a list of dicts, where each dict in the list contains a policy for each agent in agent_pops
@@ -142,6 +145,8 @@ def select_top_n(agent_pops, select_size):
     return chosen_pops
 
 
+# Mutation Functions
+
 def mutate_gaussian(agent_policies, mutation_scalar=0.1, probability_to_mutate=0.05):
     mutated_agents = {}
     for agent_name, individual in agent_policies.items():
@@ -166,6 +171,17 @@ def mutate_gaussian(agent_policies, mutation_scalar=0.1, probability_to_mutate=0
         }
         mutated_agents[agent_name] = new_ind
     return mutated_agents
+
+
+def simulate_subpop(agent_policies, env, mutate_func, reward_func):
+    mutated_policies = mutate_func(agent_policies[0])
+
+    # rollout and evaluate
+    agent_rewards = rollout(env, mutated_policies, reward_func=reward_func, render=False)
+    for agent_name, policy_info in mutated_policies.items():
+        policy_fitness = agent_rewards[agent_name]
+        policy_info['fitness'] = policy_fitness
+    return mutated_policies, agent_policies[1]
 
 
 def downselect_top_n(agent_pops, select_size):
@@ -201,17 +217,6 @@ def rollout(env: LeaderFollowerEnv, individuals, reward_func, render: bool | dic
     return episode_rewards
 
 
-def simulate_subpop(agent_policies, env, mutate_func, reward_func):
-    mutated_policies = mutate_func(agent_policies[0])
-
-    # rollout and evaluate
-    agent_rewards = rollout(env, mutated_policies, reward_func=reward_func, render=False)
-    for agent_name, policy_info in mutated_policies.items():
-        policy_fitness = agent_rewards[agent_name]
-        policy_info['fitness'] = policy_fitness
-    return mutated_policies, agent_policies[1]
-
-
 def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     gen_path = Path(experiment_dir, f'gen_{gen_idx}')
     if not gen_path:
@@ -233,6 +238,26 @@ def save_agent_policies(experiment_dir, gen_idx, env, agent_pops, fitnesses):
     fitnesses_df.to_csv(fitnesses_path, header=True, index_label='agent_name')
     return
 
+
+SELECTION_FUNCTIONS = {
+    'select_roulette': select_roulette,
+    'select_egreedy': select_egreedy,
+    'select_leniency': select_leniency,
+    'select_hall_of_fame': select_hall_of_fame,
+    'select_top_n': select_top_n,
+}
+
+MUTATION_FUNCTIONS = {
+    'mutate_gaussian': mutate_gaussian,
+}
+
+SIMULATION_FUNCTIONS = {
+    'simulate_subpop': simulate_subpop,
+}
+
+DOWNSELECT_FUNCTIONS = {
+    'downselect_top_n': downselect_top_n,
+}
 
 def neuro_evolve(
         env: LeaderFollowerEnv, agent_pops, population_size, n_gens,
