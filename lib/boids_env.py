@@ -144,6 +144,7 @@ class BoidsEnv(ParallelEnv):
         self.boids_colony.reset(reset_state=self.boid_spawner.getSpawnState())
         self.poi_colony.reset(positions=self.poi_spawner.getSpawnPositions())
         observations = self.getObservations()
+        self.position_history = [self.boids_colony.state.positions.copy()]
         return observations
 
     def getObservations(self):

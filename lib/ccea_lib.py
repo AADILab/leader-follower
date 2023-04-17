@@ -3,6 +3,8 @@ import traceback
 from copy import copy, deepcopy
 from multiprocessing import Event, Process, Queue
 from typing import List, Dict, Optional, Any
+import time
+import sys
 
 import numpy as np
 from tqdm import tqdm
@@ -97,7 +99,14 @@ class EvaluationWorker:
                     continue
 
                 try:
+                    start_evaluate_team_time = time.time()
                     team_data.fitness, team_data.difference_evaluations = self.evaluateTeam(team_data, False)
+                    stop_evaluate_team_time = time.time()
+                    interval_evaluate_team_time = stop_evaluate_team_time - start_evaluate_team_time
+                    print("evaluateTeam time: ", interval_evaluate_team_time)
+                    # print(sys.getsizeof(self.env))
+                    print(len(self.env.position_history))
+
                 except AttributeError as e:
                     print(f"AttributeError on EvaluationWorker {self.id}")
                     print(traceback.format_exc())
@@ -338,13 +347,22 @@ class CCEA:
         # evaluation_seed = self.generateSeed()
         evaluation_seed = np.random.randint(0, 100)
 
+        start_random_time = time.time()
         # Form random teams from population
         random_teams = self.randomTeams(evaluation_seed=evaluation_seed)
+        stop_random_time = time.time()
+        interval_random_time = stop_random_time - start_random_time
+        print("random teams: ", interval_random_time)
 
+        start_queue_time = time.time()
         # Send teams to Evaluation Workers for evaluation
         for team_data in random_teams:
             self.work_queue.put(team_data)
+        stop_queue_time = time.time()
+        interval_queue_time = stop_queue_time - start_queue_time
+        print("queue_time: ", interval_queue_time)
 
+        start_received_time = time.time()
         # Keep track of which teams have been recieved after evaluation
         receieved = [False for _ in random_teams]
         timeout = 10  # seconds
@@ -360,15 +378,23 @@ class CCEA:
                 receieved[team_data.id] = True
             except queue.Empty:
                 pass
+        stop_received_time = time.time()
+        interval_received_time = stop_received_time - start_received_time
+        print("receive_time: ", interval_received_time)
 
         # Go back and assign fitnesses for genomes on teams. This is necessary for keeping metadata consistent.
         # The teams evaluated by the workers contain copies of the genomes, not the originals, meaning we have to
         # manually update the fitnesses of genomes on teams.
 
+        start_assign_time = time.time()
         for evaluated_team_data in self.teams:
             for agent_id, genome_data in enumerate(evaluated_team_data.team):
                 genome_data.fitness = evaluated_team_data.difference_evaluations[agent_id]
+        stop_assign_time = time.time()
+        interval_assign_time = stop_assign_time - start_assign_time
+        print("assign time: ", interval_assign_time)
 
+        start_policy_assign_time = time.time()
         # This array is helpful for debugging and ensuring that difference evaluations
         # are assigned correctly to each policy
         covered = [[0 for _ in sub_pop] for sub_pop in self.population]
@@ -384,14 +410,21 @@ class CCEA:
                 else:
                     self.population[agent_id][genome_data.id].fitness = evaluated_team_data.fitness
                 covered[agent_id][genome_data.id] += 1
+        stop_policy_assign_time = time.time()
+        interval_policy_assign_time = stop_policy_assign_time - start_policy_assign_time
+        print("policy assign time: ", interval_policy_assign_time)
 
+        start_highest_time = time.time()
         # Save the team with the highest fitness. Both a filtered one and the current best
         self.teams.sort(reverse=True)
         self.current_best_team_data = deepcopy(self.teams[0])
         if self.best_team_data is None or self.teams[0].fitness > self.best_team_data.fitness:
             self.best_team_data = deepcopy(self.teams[0])
-            print("Team Fitness: ", self.best_team_data.fitness, " | Agent Fitnesses: ",
-                  [genome_data.fitness for genome_data in self.best_team_data.team])
+            # print("Team Fitness: ", self.best_team_data.fitness, " | Agent Fitnesses: ",
+            #       [genome_data.fitness for genome_data in self.best_team_data.team])
+        stop_highest_time = time.time()
+        interval_highest_time = stop_highest_time - start_highest_time
+        print("highest time: ", interval_highest_time)
 
     def downSelectPopulation(self):
         """Take a population which has already been evaluated and create a new population
@@ -426,11 +459,19 @@ class CCEA:
 
     def step(self):
         # Select genomes for next generation
+        start_downselect_time = time.time()
         self.downSelectPopulation()
+        stop_downselect_time = time.time()
+        interval_downselect_time = stop_downselect_time - start_downselect_time
+        print("downselect time: ", interval_downselect_time)
 
         # Evaluate the population
         # todo check if seed is set before here
+        start_evaluate_time = time.time()
         self.evaluatePopulation()
+        stop_evaluate_time = time.time()
+        interval_evaluate_time = stop_evaluate_time - start_evaluate_time
+        print("evaluate time: ", interval_evaluate_time)
 
         # Increase iterations counter
         self.iterations += 1
@@ -462,8 +503,25 @@ class CCEA:
 
         # Save fitnesses for initial random policies as generation 0
         self.saveFitnesses()
-        for _ in tqdm(range(num_generations)):
+        
+        for _ in range(num_generations):
+            print("--------------------")
+            start_gen_time = time.time()
+
+            start_step_time = time.time()
             self.step()
+            end_step_time = time.time()
+            interval_step_time = end_step_time - start_step_time
+            print("step time:", interval_step_time)
+
             # Track fitness over time
+            start_fitness_save_time = time.time()
             self.saveFitnesses()
+            end_fitness_save_time = time.time()
+            interval_fitness_save_time = end_fitness_save_time - start_fitness_save_time
+            print("fitness save time:", interval_fitness_save_time)
+
+            stop_gen_time = time.time()
+            interval_gen_time = stop_gen_time - start_gen_time
+            print("total gen time: ", interval_gen_time)
         return None
