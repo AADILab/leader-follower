@@ -39,7 +39,7 @@ if PLOT_SCORES:
         plt.plot(unfiltered_agent_scores, color=tuple(leader_colors[ind%len(leader_colors)]))
     plt.xlabel("Generation")
     plt.ylabel("Fitness Score")
-    plt.ylim([0.0,1.2])
+    # plt.ylim([0.0,1.2])
     plt.title("Best Performance")
     legend = ["Best Team Filtered", "Best Team Unfiltered"]
     for i in range(len(unfiltered_agent_scores_list)):
@@ -55,7 +55,7 @@ if PLOT_SCORES:
         plt.plot(unfiltered_agent_scores, color=tuple(leader_colors[ind%len(leader_colors)]))
     plt.xlabel("Generation")
     plt.ylabel("Fitness Score")
-    plt.ylim([0.0,1.2])
+    # plt.ylim([0.0,1.2])
     plt.title("Average Performance")
     legend = ["Average Team Performance"]
     for i in range(len(average_agent_fitness_lists_unfiltered)):

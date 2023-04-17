@@ -1,6 +1,8 @@
 from typing import List, Optional
 from copy import deepcopy
 
+import numpy as np
+
 from lib.poi_colony import POIColony, POI
 from lib.boids_colony import BoidsColony, Boid
 from lib.math_helpers import argmax
@@ -9,6 +11,26 @@ class FitnessCalculator():
     def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony) -> None:
         self.poi_colony = poi_colony
         self.boids_colony = boids_colony
+
+    def calculateContinuousTeamFitness(self, poi_colony: Optional[POIColony], position_history: List[np.ndarray]):
+        if poi_colony is None:
+            poi_colony = self.poi_colony
+
+        # Go through position history. Calculate score for each timestep. Keep the highest one. 
+        # Basically, the highest value observation is the one we count
+        # Coupling determines how many agents we look at to determine the observation value
+        total_score = 0
+        for poi in poi_colony.pois:
+            highest_poi_score = 0
+            for t, agent_positions in enumerate(position_history):
+                distances = np.linalg.norm(poi.position - agent_positions, axis=1) # TODO: Double check axis. may be wrong
+                # Coupling determines how many distances we use here
+                distances_sorted = np.sort(distances)
+                poi_score = 1/( (1/poi_colony.coupling) * (np.sum(distances_sorted[:poi_colony.coupling])) )
+                if poi_score > highest_poi_score:
+                    highest_poi_score = poi_score
+            total_score += highest_poi_score
+        return total_score
 
     def getTeamFitness(self, poi_colony: Optional[POIColony] = None):
         if poi_colony is None:

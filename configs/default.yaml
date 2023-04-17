@@ -115,15 +115,16 @@ CCEA:
           x: 100
           y: 100
       init_seed: 1
-      max_steps: !eval 5*5
+      max_steps: !eval 5*20
       render_mode: none
   mutation_probability: 0.15
   mutation_rate: 0.1
   nn_hidden:
   - 10
+  - 10
   num_evaluations: 1
-  num_workers: 8
+  num_workers: 15
   sub_population_size: 30
   use_difference_evaluations: false
 load_population: null
-num_generations: 20
+num_generations: 500

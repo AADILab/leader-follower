@@ -33,8 +33,6 @@ class BoidsEnv(ParallelEnv):
 
         These attributes should not be changed after initialization.
         """
-        # todo yell at Ever
-        # np.random.seed(init_seed)
         self.max_steps = max_steps
         if type(render_mode) == str:
             render_mode = RenderMode[render_mode]
@@ -88,6 +86,11 @@ class BoidsEnv(ParallelEnv):
         )
         self.config = config
 
+        # Position history will be a list of the positions of all agents (leaders and followers) in the environment
+        # Each element captures the positions of all agents at a particular timestep, starting with t=0
+        # Each element is a np array of positions 
+        self.position_history = [self.boids_colony.state.positions.copy()]
+
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
     @functools.lru_cache(maxsize=None)
@@ -135,7 +138,6 @@ class BoidsEnv(ParallelEnv):
         Returns the observations for each agent
         '''
         if seed is not None:
-            # todo yell at every about possible issues with how this flows
             np.random.seed(seed)
         self.agents = self.possible_agents[:]
         self.num_steps = 0
@@ -176,6 +178,9 @@ class BoidsEnv(ParallelEnv):
             leader_desired_delta_headings=leader_desired_delta_headings
         )
 
+        # Update the position history
+        self.position_history.append(self.boids_colony.state.positions.copy())
+
         # Get leader observations
         observations = self.getObservations()
 
@@ -203,7 +208,7 @@ class BoidsEnv(ParallelEnv):
                 for agent, reward
                 in zip(self.agents, self.fitness_calculator.calculateDifferenceEvaluations())
             }
-            rewards["team"] = self.fitness_calculator.getTeamFitness()
+            rewards["team"] = self.fitness_calculator.calculateContinuousTeamFitness(self.poi_colony, self.position_history)
         else:
             rewards = {agent: 0.0 for agent in self.agents}
             rewards["team"] = 0.0
