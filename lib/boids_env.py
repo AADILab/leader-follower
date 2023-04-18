@@ -210,6 +210,7 @@ class BoidsEnv(ParallelEnv):
                 in zip(self.agents, self.fitness_calculator.calculateDifferenceEvaluations())
             }
             rewards["team"] = self.fitness_calculator.calculateContinuousTeamFitness(self.poi_colony, self.position_history)
+            self.fitness_calculator.calculateCounterfactualTeamFitness(leader=self.boids_colony.getLeaders()[0], position_history=self.position_history)
         else:
             rewards = {agent: 0.0 for agent in self.agents}
             rewards["team"] = 0.0

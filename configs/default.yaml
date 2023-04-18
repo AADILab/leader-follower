@@ -123,7 +123,7 @@ CCEA:
   - 10
   - 10
   num_evaluations: 1
-  num_workers: 1
+  num_workers: 15
   sub_population_size: 30
   use_difference_evaluations: false
 load_population: null

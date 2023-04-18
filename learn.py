@@ -25,7 +25,7 @@ if __name__ == '__main__':
         config = loadConfig()
         config["CCEA"]["use_difference_evaluations"] = False
         config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 1
-        config["num_generations"] = 3
+        config["num_generations"] = 500
         runExperiment(config)
     exit()
 
