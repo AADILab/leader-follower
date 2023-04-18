@@ -51,19 +51,11 @@ class FitnessCalculator():
             counterfactual_position_history[:,boid_id+1:,:]),
             axis=1
         )
-        print(counterfactual_position_history.shape)
-        print(type(counterfactual_position_history))
-        print(len(counterfactual_position_history))
-        print(counterfactual_position_history)
-        for x in counterfactual_position_history:
-            print(x)
         # Special case where there is only one agent and removing it causes
         # the counterfactual position history to be empty
         if counterfactual_position_history.shape[1] == 0:
-            print("return 0")
             return 0.0
         else:
-            print("return calculate")
             return self.calculateContinuousTeamFitness(poi_colony=None, position_history=counterfactual_position_history)
 
     # def calculateContinuousDifferenceFitness(self, leader: Boid, position_history: List[np.ndarray]):

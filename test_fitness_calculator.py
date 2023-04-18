@@ -22,7 +22,7 @@ class TestContinousFitness(unittest.TestCase):
         
         self.assertTrue(np.isclose(G, expected_G))
 
-        for boid_id in position_history.shape[1]:
+        for boid_id in range(position_history.shape[1]):
             # Calculate counterfactual with the agent removed
             G_c = fitness_calculator.calculateCounterfactualTeamFitness(boid_id=0, position_history=position_history)
             self.assertTrue(np.isclose(G_c, expected_G_cs[boid_id]))
@@ -53,7 +53,7 @@ class TestContinousFitness(unittest.TestCase):
         # G should be 1.0 because the fitness is the inverse nearest distance to the poi, and that is 1/1.0
         # If we counterfacutally remove the only agent, then the counterfactual score should be 0.0
         # And then D should be 1.0
-        self.helperTeamFitness(poi_colony, position_history, 1.0, 0.0, 1.0)
+        self.helperTeamFitness(poi_colony, position_history, 1.0, [0.0], [1.0])
 
         # Now we setup the problem again, but with two agents, one traveling on each side of the poi
         position_history_2 = np.array([
@@ -64,7 +64,10 @@ class TestContinousFitness(unittest.TestCase):
             [[3,1], [1,1]]
         ])
 
-
+        # G should be 1.0 based on proximity of agents to the poi
+        # If we counterfactually remove one, then the score should be 1.0, regardless of which we remove
+        # So that makes D for each agent 0.0
+        self.helperTeamFitness(poi_colony, position_history_2, 1.0, [1.0,1.0], [0.0,0.0])
 
 if __name__ == '__main__':
     unittest.main()
