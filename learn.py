@@ -23,7 +23,7 @@ if __name__ == '__main__':
         # Second run the experiment where we have 2 Follow per leader.
         #   4 leaders. 4 pois with 3 coupling. Learn with Dswarm
         config = loadConfig()
-        config["CCEA"]["use_difference_evaluations"] = False
+        config["CCEA"]["use_difference_evaluations"] = True
         config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 1
         config["num_generations"] = 500
         runExperiment(config)
