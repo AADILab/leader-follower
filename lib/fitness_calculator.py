@@ -6,6 +6,7 @@ import numpy as np
 from lib.poi_colony import POIColony, POI
 from lib.boids_colony import BoidsColony, Boid
 from lib.math_helpers import argmax
+from lib.np_helpers import invertInds
 
 class FitnessCalculator():
     def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony) -> None:
@@ -69,6 +70,33 @@ class FitnessCalculator():
             difference_evaluations.append(D)
         return difference_evaluations
 
+    def calculateDifferenceFollowerEvaluations(self, position_history=List[np.ndarray]):
+        G = self.calculateContinuousTeamFitness(poi_colony=None, position_history=position_history)
+        # Assign followers to each leader
+        all_assigned_followers = [[] for _ in range(self.boids_colony.bounds.num_leaders)]
+        for follower in self.boids_colony.getFollowers():
+            # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
+            all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
+
+        # First just copy the position_history as a np array. Np array makes it easier to slice
+        counterfactual_position_history = np.array(position_history).copy()
+        
+        # Calculate the actual difference evaluations
+        difference_follower_evaluations = []
+        for leader in self.boids_colony.getLeaders():
+            # Figure out which trajectories we're actually removing
+            ids_to_remove = [leader.id]+all_assigned_followers[leader.id]
+            # And from that, which ones we're keeping
+            ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
+
+            # Calculate G with only the trajectories we're keeping
+            # (Remove leader and its followers)
+            G_c = self.calculateContinuousTeamFitness(poi_colony=None, position_history=counterfactual_position_history[:,ids_to_keep,:])
+            D_follow = G-G_c
+            difference_follower_evaluations.append(D_follow)
+
+        return difference_follower_evaluations
+
     # def calculateContinuousDifferenceFitness(self, leader: Boid, position_history: List[np.ndarray]):
     #     # Make a copy of the POI m
 
@@ -97,13 +125,13 @@ class FitnessCalculator():
     #                 break
     #     return self.getTeamFitness() - self.getTeamFitness(poi_colony_copy)
 
-    # def calculateDifferenceEvaluations(self):
-    #     # Assign followers to each leader
-    #     all_assigned_followers = [[] for _ in range(self.boids_colony.bounds.num_leaders)]
-    #     for follower in self.boids_colony.getFollowers():
-    #         # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
-    #         all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
-    #     difference_rewards = []
-    #     for leader, assigned_followers in zip(self.boids_colony.getLeaders(), all_assigned_followers):
-    #         difference_rewards.append(self.calculateDifferenceEvaluation(leader, assigned_followers))
-    #     return difference_rewards
+    def calculateDifferenceEvaluations(self):
+        # Assign followers to each leader
+        all_assigned_followers = [[] for _ in range(self.boids_colony.bounds.num_leaders)]
+        for follower in self.boids_colony.getFollowers():
+            # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
+            all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
+        difference_rewards = []
+        for leader, assigned_followers in zip(self.boids_colony.getLeaders(), all_assigned_followers):
+            difference_rewards.append(self.calculateDifferenceEvaluation(leader, assigned_followers))
+        return difference_rewards

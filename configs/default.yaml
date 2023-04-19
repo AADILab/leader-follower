@@ -27,11 +27,11 @@ CCEA:
             - [90, 85] 
         BoidsColony:
           dt: !eval 1/5
-          radius_attraction: !eval 5
-          radius_orientation: !eval 1.000000001
-          radius_repulsion: !eval   1
-          attraction_multiplier: 5
-          orientation_multiplier: 0
+          radius_attraction: !eval 10
+          radius_orientation: !eval 6
+          radius_repulsion: !eval   4
+          attraction_multiplier: 1
+          orientation_multiplier: 1
           repulsion_multiplier: 1
           wall_avoidance_multiplier: 1
         ObservationManager:

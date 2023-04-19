@@ -63,6 +63,7 @@ class TestContinousFitness(unittest.TestCase):
             [[3,2], [1,2]],
             [[3,1], [1,1]]
         ])
+        print(position_history.shape)
 
         # G should be 1.0 based on proximity of agents to the poi
         # If we counterfactually remove one, then the score should be 1.0, regardless of which we remove
