@@ -10,21 +10,21 @@ CCEA:
           velocity_fraction: 0.0
           start_heading: !eval 3.14159
           leader_positions: # 4 leaders
-            - [70, 90]
-            - [70, 80]
-            - [80, 80]
-            - [90, 80]
+            - [35, 45]
+            - [35, 40]
+            - [40, 40]
+            - [45, 40]
           follower_positions: # 8 followers
             # First row
-            - [75, 90]
-            - [80, 90]
-            - [85, 90]
-            - [90, 90]
+            - [37.5, 45]
+            - [40, 45]
+            - [42.5, 45]
+            - [45, 45]
             # Second row
-            - [75, 85]
-            - [80, 85]
-            - [85, 85]
-            - [90, 85] 
+            - [37.5, 42.5]
+            - [40, 42.5]
+            - [42.5, 42.5]
+            - [45, 42.5] 
         BoidsColony:
           dt: !eval 1/5
           radius_attraction: !eval 10
@@ -44,44 +44,44 @@ CCEA:
           full_observability: true
         POIColony:
           coupling: 3
-          observation_radius: 5
+          observation_radius: 0.1
         POISpawner:
           positions:
             # A
-            - [10, 80]
-            - [10, 80]
+            - [5, 40]
+            - [5, 40]
             # B
-            - [20, 70]
-            - [20, 70]
-            - [20, 70]
-            - [20, 70]
+            - [10, 35]
+            - [10, 35]
+            - [10, 35]
+            - [10, 35]
             # C
-            - [10, 60]
-            - [10, 60]
-            - [10, 60]
-            - [10, 60]
+            - [5, 30]
+            - [5, 30]
+            - [5, 30]
+            - [5, 30]
             # D
-            - [5, 20]
-            - [5, 20]
-            - [5, 20]
-            - [5, 20]
-            - [5, 20]
+            - [2.5, 10]
+            - [2.5, 10]
+            - [2.5, 10]
+            - [2.5, 10]
+            - [2.5, 10]
             # E
-            - [10, 15]
+            - [5, 7.5]
             # F
-            - [25, 15]
-            - [25, 15]
+            - [12.5, 7.5]
+            - [12.5, 7.5]
             # G
-            - [30, 20]
-            - [30, 20]
-            - [30, 20]
+            - [15, 10]
+            - [15, 10]
+            - [15, 10]
             # H
-            - [80, 20]
-            - [80, 20]
+            - [40, 10]
+            - [40, 10]
             # I
-            - [80, 30]
+            - [40, 15]
             # J
-            - [80, 40]
+            - [40, 20]
           poi_spawn_rule: Set
         Renderer:
           leader_colors:
@@ -112,8 +112,8 @@ CCEA:
           num_followers: 8
           num_leaders: 4
         map_dimensions:
-          x: 100
-          y: 100
+          x: 50
+          y: 50
       init_seed: 1
       max_steps: !eval 5*20
       render_mode: none
@@ -125,6 +125,6 @@ CCEA:
   num_evaluations: 1
   num_workers: 15
   sub_population_size: 30
-  use_difference_evaluations: false
+  use_difference_evaluations: true
 load_population: null
 num_generations: 500
