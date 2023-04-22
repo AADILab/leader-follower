@@ -31,10 +31,10 @@ if __name__ == '__main__':
         # config["num_generations"] = 500
         runExperiment(config)
 
-    for _ in range(3):
-        config = loadConfig()
-        config["CCEA"]["use_difference_evaluations"] = False
-        runExperiment(config)
+    # for _ in range(3):
+    #     config = loadConfig()
+    #     config["CCEA"]["use_difference_evaluations"] = False
+    #     runExperiment(config)
 
 
     exit()
