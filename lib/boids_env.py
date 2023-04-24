@@ -62,7 +62,8 @@ class BoidsEnv(ParallelEnv):
         )
         self.fitness_calculator = FitnessCalculator(
             boids_colony=self.boids_colony,
-            poi_colony=self.poi_colony
+            poi_colony=self.poi_colony,
+            **config["FitnessCalculator"]
         )
         self.observation_manager = ObservationManager(
             boids_colony=self.boids_colony,
@@ -204,12 +205,13 @@ class BoidsEnv(ParallelEnv):
 
         # Calculate fitnesses
         if env_done:
+            G = self.fitness_calculator.calculateG(self.position_history)
             rewards = {
                 agent: reward
                 for agent, reward
-                in zip(self.agents, self.fitness_calculator.calculateDifferenceFollowerEvaluations(position_history=self.position_history))
+                in zip(self.agents, self.fitness_calculator.calculateDs(G=G, position_history=self.position_history))
             }
-            rewards["team"] = self.fitness_calculator.calculateContinuousTeamFitness(self.poi_colony, self.position_history)
+            rewards["team"] = G
         else:
             rewards = {agent: 0.0 for agent in self.agents}
             rewards["team"] = 0.0

@@ -35,6 +35,9 @@ CCEA:
         POIColony:
           coupling: 2
           observation_radius: 0.1
+        FitnessCalculator:
+          which_G: MinContinuous
+          which_D: DFollow
         POISpawner:
           positions:
             - [10, 90]
@@ -82,6 +85,5 @@ CCEA:
   num_evaluations: 1
   num_workers: 15
   sub_population_size: 30
-  use_difference_evaluations: true
 load_population: null
 num_generations: 50

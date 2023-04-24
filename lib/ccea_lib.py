@@ -78,13 +78,12 @@ def computeAction(net, observation, env):
 
 
 class EvaluationWorker:
-    def __init__(self, in_queue, out_queue, stop_event: Event, id: int, team_size: int, use_difference_rewards: bool,
+    def __init__(self, in_queue, out_queue, stop_event: Event, id: int, team_size: int,
                  num_evaluations: int, env_kwargs: Dict = None, nn_kwargs: Dict = None):
         self.in_queue = in_queue
         self.out_queue = out_queue
         self.stop_event = stop_event
         self.id = id
-        self.use_difference_rewards = use_difference_rewards
         self.num_evaluations = num_evaluations
         self.env = BoidsEnv(**env_kwargs)
         self.team_policies = [NN(**nn_kwargs) for _ in range(team_size)]
@@ -153,10 +152,7 @@ class EvaluationWorker:
                 traj[self.env.num_steps] = self.env.boids_colony.state.positions[0]
             self.env.close()
 
-            if self.use_difference_rewards:
-                fitnesses[eval_count] = np.array([rewards["team"]] + [rewards[agent] for agent in self.env.agents])
-            else:
-                fitnesses[eval_count] = rewards["team"] * np.ones(1 + len(self.env.agents))
+            fitnesses[eval_count] = np.array([rewards["team"]] + [rewards[agent] for agent in self.env.agents])
 
         team_fitness = np.average(fitnesses[:, 0])
         agent_fitnesses = [np.average(fitnesses[:, num_agent + 1]) for num_agent in range(self.env.num_agents)]
@@ -168,7 +164,6 @@ class CCEA:
                  sub_population_size: int,
                  mutation_rate: float, mutation_probability: float,
                  nn_hidden: int,
-                 use_difference_evaluations: bool,
                  num_workers: int,
                  num_evaluations: int,
                  # This is for when initial state is random. Evaluating several times ensures we dont
@@ -192,7 +187,6 @@ class CCEA:
         self.average_agent_fitness_lists_unfiltered = [[] for _ in range(self.num_agents)]
         self.best_team_data = None
         self.current_best_team_data = None
-        self.use_difference_rewards = use_difference_evaluations
         self.genome_uid = 0
 
         # Setup nn variables
@@ -255,7 +249,6 @@ class CCEA:
                 out_queue=self.fitness_queue,
                 stop_event=self.stop_event,
                 id=worker_id,
-                use_difference_rewards=self.use_difference_rewards,
                 num_evaluations=self.num_evaluations,
                 env_kwargs=self.config["BoidsEnv"],
                 team_size=self.num_agents,
@@ -384,11 +377,7 @@ class CCEA:
             # Each team is ordered by agent id. And each genome has an id corresponding
             # to its position in the sub population
             for agent_id, genome_data in enumerate(evaluated_team_data.team):
-                if self.use_difference_rewards:
-                    self.population[agent_id][genome_data.id].fitness = evaluated_team_data.difference_evaluations[
-                        agent_id]
-                else:
-                    self.population[agent_id][genome_data.id].fitness = evaluated_team_data.fitness
+                self.population[agent_id][genome_data.id].fitness = evaluated_team_data.difference_evaluations[agent_id]
                 covered[agent_id][genome_data.id] += 1
 
         # Save the team with the highest fitness. Both a filtered one and the current best

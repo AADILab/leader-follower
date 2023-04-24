@@ -1,5 +1,6 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from copy import deepcopy
+from enum import IntEnum
 
 import numpy as np
 
@@ -8,10 +9,78 @@ from lib.boids_colony import BoidsColony, Boid
 from lib.math_helpers import argmax
 from lib.np_helpers import invertInds
 
+class WhichG(IntEnum):
+    # Continuous is what D++ used. 
+    # Inverse distance to POIs w. coupling through an episode
+    Continuous = 0
+    # MinContinous is continuous, but we only use the min inverse distance(s) at
+    # a particular timestep. Found by iterating through each timestep in an episode
+    MinContinuous = 1
+    # MinDiscrete is the all or nothing reward structure. Basically, for each POI,
+    # check if enough agents were within its observation radius at each point during the episode
+    # If at any point, the coupling requirement is met, then we count that POI as observed
+    # Num poi observed / total num poi
+    MinDiscrete = 2
+
+class WhichD(IntEnum):
+    # Don't calculate a difference reward. Just give each agent G
+    G = 0
+    # Use standard D where we just remove this agent's trajectory
+    D = 1
+    # Calculate D of this (leader) agent and its followers
+    DFollow = 2
+
 class FitnessCalculator():
-    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony) -> None:
+    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str]) -> None:
         self.poi_colony = poi_colony
         self.boids_colony = boids_colony
+        
+        if type(which_G) == str:
+            which_G = WhichG[which_G]
+        if type(which_D) == str:
+            which_D = WhichD[which_D]
+        
+        self.which_G = which_G
+        self.which_D = which_D
+
+    def calculateG(self, position_history: List[np.ndarray]):
+        if self.which_G == WhichG.Continuous:
+            raise NotImplementedError()
+        elif self.which_G == WhichG.MinContinuous:
+            return self.calculateMinContinuousG(position_history)
+        elif self.which_G == WhichG.MinDiscrete:
+            raise NotImplementedError()
+    
+    def calculateDs(self, G: float, position_history: List[np.ndarray]):
+        if self.which_D == WhichD.G:
+            return [G for leader in self.boids_colony.getLeaders()]
+    
+        elif self.which_D == WhichD.D:
+            difference_evaluations = []
+            for leader in self.boids_colony.getLeaders():
+                D = self.calculateD(G, [leader.id], position_history)
+                difference_evaluations.append(D)
+            return difference_evaluations
+
+        elif self.which_D == WhichD.DFollow:
+            # Assign followers to each leader
+            all_assigned_followers = [[] for _ in range(self.boids_colony.bounds.num_leaders)]
+            for follower in self.boids_colony.getFollowers():
+                # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
+                all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
+
+            difference_follower_evaluations = []
+            for leader in self.boids_colony.getLeaders():
+                # Figure out which trajectories we're actually removing
+                ids_to_remove = [leader.id]+all_assigned_followers[leader.id]
+                # Calculate Dfollow
+                D_follow = self.calculateD(G, ids_to_remove, position_history)
+                difference_follower_evaluations.append(D_follow)
+            return difference_follower_evaluations
+            
+    def calculateD(self, G: float, ids_to_remove: int, position_history: List[np.ndarray]):
+        G_c = self.calculateCounterfactualG(position_history, ids_to_remove)
+        return G-G_c
     
     def calculateDistances(self, poi, agent_positions):
         # Calculate the distances for one timestep for a given poi and positions of all agents
@@ -31,7 +100,7 @@ class FitnessCalculator():
                 highest_poi_score = poi_score
         return highest_poi_score
 
-    def calculateContinuousTeamFitness(self, poi_colony: Optional[POIColony], position_history: List[np.ndarray]):
+    def calculateMinContinuousG(self, position_history: List[np.ndarray]):
         # if poi_colony is None:
         #     poi_colony = self.poi_colony
         total_score = 0
@@ -42,60 +111,68 @@ class FitnessCalculator():
                 highest_poi_score = 1.0
             total_score += highest_poi_score
         return total_score
-
-    def calculateCounterfactualTeamFitness(self, boid_id: int, position_history: List[np.ndarray]):
-        # Remove the specified boid's trajectory from the position history and calculate the fitness
-
-        # First just copy the position_history as a np array. Np array makes it easier to slice
-        counterfactual_position_history = np.array(position_history).copy()
-        # Array is (timesteps, agents, xy)
-        counterfactual_position_history = np.concatenate(
-            (counterfactual_position_history[:,:boid_id,:],
-            counterfactual_position_history[:,boid_id+1:,:]),
-            axis=1
-        )
-        # Special case where there is only one agent and removing it causes
-        # the counterfactual position history to be empty
-        if counterfactual_position_history.shape[1] == 0:
-            return 0.0
-        else:
-            return self.calculateContinuousTeamFitness(poi_colony=None, position_history=counterfactual_position_history)
     
-    def calculateDifferenceEvaluations(self, position_history=List[np.ndarray]):
-        G = self.calculateContinuousTeamFitness(poi_colony=None, position_history=position_history)
-        difference_evaluations = []
-        for leader in self.boids_colony.getLeaders():
-            G_c = self.calculateCounterfactualTeamFitness(leader.id, position_history)
-            D = G-G_c
-            difference_evaluations.append(D)
-        return difference_evaluations
-
-    def calculateDifferenceFollowerEvaluations(self, position_history=List[np.ndarray]):
-        G = self.calculateContinuousTeamFitness(poi_colony=None, position_history=position_history)
-        # Assign followers to each leader
-        all_assigned_followers = [[] for _ in range(self.boids_colony.bounds.num_leaders)]
-        for follower in self.boids_colony.getFollowers():
-            # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
-            all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
-
+    def calculateCounterfactualG(self, position_history, ids_to_remove):
         # First just copy the position_history as a np array. Np array makes it easier to slice
         counterfactual_position_history = np.array(position_history).copy()
+        # Invert ids to remove to which ones we're keeping
+        ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
+        # Calculate G but with those ids removed. Hence, G_c
+        return self.calculateG(counterfactual_position_history[:,ids_to_keep,:])
+
+    # def calculateCounterfactualTeamFitness(self, boid_id: int, position_history: List[np.ndarray]):
+    #     # Remove the specified boid's trajectory from the position history and calculate the fitness
+
+    #     # First just copy the position_history as a np array. Np array makes it easier to slice
+    #     counterfactual_position_history = np.array(position_history).copy()
+    #     # Array is (timesteps, agents, xy)
+    #     counterfactual_position_history = np.concatenate(
+    #         (counterfactual_position_history[:,:boid_id,:],
+    #         counterfactual_position_history[:,boid_id+1:,:]),
+    #         axis=1
+    #     )
+    #     # Special case where there is only one agent and removing it causes
+    #     # the counterfactual position history to be empty
+    #     if counterfactual_position_history.shape[1] == 0:
+    #         return 0.0
+    #     else:
+    #         return self.calculateContinuousTeamFitness(poi_colony=None, position_history=counterfactual_position_history)
+    
+    # def calculateDifferenceEvaluations(self, position_history=List[np.ndarray]):
+    #     G = self.calculateContinuousTeamFitness(poi_colony=None, position_history=position_history)
+    #     difference_evaluations = []
+    #     for leader in self.boids_colony.getLeaders():
+    #         G_c = self.calculateCounterfactualTeamFitness(leader.id, position_history)
+    #         D = G-G_c
+    #         difference_evaluations.append(D)
+    #     return difference_evaluations
+
+    # def calculateDifferenceFollowerEvaluations(self, position_history=List[np.ndarray]):
+    #     G = self.calculateContinuousTeamFitness(poi_colony=None, position_history=position_history)
+    #     # Assign followers to each leader
+    #     all_assigned_followers = [[] for _ in range(self.boids_colony.bounds.num_leaders)]
+    #     for follower in self.boids_colony.getFollowers():
+    #         # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
+    #         all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
+
+    #     # First just copy the position_history as a np array. Np array makes it easier to slice
+    #     counterfactual_position_history = np.array(position_history).copy()
         
-        # Calculate the actual difference evaluations
-        difference_follower_evaluations = []
-        for leader in self.boids_colony.getLeaders():
-            # Figure out which trajectories we're actually removing
-            ids_to_remove = [leader.id]+all_assigned_followers[leader.id]
-            # And from that, which ones we're keeping
-            ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
+    #     # Calculate the actual difference evaluations
+    #     difference_follower_evaluations = []
+    #     for leader in self.boids_colony.getLeaders():
+    #         # Figure out which trajectories we're actually removing
+    #         ids_to_remove = [leader.id]+all_assigned_followers[leader.id]
+    #         # And from that, which ones we're keeping
+    #         ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
 
-            # Calculate G with only the trajectories we're keeping
-            # (Remove leader and its followers)
-            G_c = self.calculateContinuousTeamFitness(poi_colony=None, position_history=counterfactual_position_history[:,ids_to_keep,:])
-            D_follow = G-G_c
-            difference_follower_evaluations.append(D_follow)
+    #         # Calculate G with only the trajectories we're keeping
+    #         # (Remove leader and its followers)
+    #         G_c = self.calculateContinuousTeamFitness(poi_colony=None, position_history=counterfactual_position_history[:,ids_to_keep,:])
+    #         D_follow = G-G_c
+    #         difference_follower_evaluations.append(D_follow)
 
-        return difference_follower_evaluations
+    #     return difference_follower_evaluations
 
     # def calculateContinuousDifferenceFitness(self, leader: Boid, position_history: List[np.ndarray]):
     #     # Make a copy of the POI m
