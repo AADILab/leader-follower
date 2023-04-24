@@ -3,43 +3,49 @@ CCEA:
     BoidsEnv:
       config:
         BoidSpawner:
-          spawn_rule: Individual
-          position_rule: Set
-          velocity_rule: FixedStart
+          follower_positions:
+          - - 85
+            - 85
+          - - 85
+            - 80
           heading_rule: FixedStart
+          leader_positions:
+          - - 85
+            - 90
+          - - 85
+            - 75
+          position_rule: Set
+          spawn_rule: Individual
+          start_heading: 3.14159
           velocity_fraction: 0.0
-          start_heading: !eval 3.14159
-          leader_positions: # 2 leaders
-            - [85, 90]
-            - [85, 75]
-          follower_positions: # 2 followers
-            - [85, 85]
-            - [85, 80]
+          velocity_rule: FixedStart
         BoidsColony:
-          dt: !eval 1/5
-          radius_attraction: !eval 10
-          radius_orientation: !eval 6
-          radius_repulsion: !eval   4
-          attraction_multiplier: 2
-          orientation_multiplier: 2
-          repulsion_multiplier: 2
+          attraction_multiplier: 1
+          dt: 0.2
+          orientation_multiplier: 1
+          radius_attraction: 10
+          radius_orientation: 6
+          radius_repulsion: 4
+          repulsion_multiplier: 1
           wall_avoidance_multiplier: 1
         ObservationManager:
+          full_observability: true
           num_poi_bins: 4
           num_swarm_bins: 4
+          observation_radius: null
           observation_rule: Individual
           poi_sensor_type: Density
           swarm_sensor_type: Density
-          observation_radius: ~
-          full_observability: true
         POIColony:
           coupling: 2
           observation_radius: 0.1
         POISpawner:
-          positions:
-            - [10, 90]
-            - [10, 10]
           poi_spawn_rule: Set
+          positions:
+          - - 10
+            - 90
+          - - 10
+            - 10
         Renderer:
           leader_colors:
           - - 250
@@ -72,7 +78,7 @@ CCEA:
           x: 100
           y: 100
       init_seed: 1
-      max_steps: !eval 5*20
+      max_steps: 100
       render_mode: none
   mutation_probability: 0.15
   mutation_rate: 0.1
