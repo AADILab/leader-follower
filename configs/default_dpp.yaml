@@ -54,7 +54,10 @@ CCEA:
           swarm_sensor_type: Density
         POIColony:
           coupling: 3
-          observation_radius: 0.1
+          observation_radius: 5
+        FitnessCalculator:
+          which_G: ContinuousObsRad
+          which_D: G
         POISpawner:
           poi_spawn_rule: Set
           positions:
@@ -150,6 +153,5 @@ CCEA:
   num_evaluations: 1
   num_workers: 15
   sub_population_size: 30
-  use_difference_evaluations: true
 load_population: null
 num_generations: 500
