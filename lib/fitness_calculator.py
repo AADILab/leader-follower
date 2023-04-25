@@ -10,17 +10,22 @@ from lib.math_helpers import argmax
 from lib.np_helpers import invertInds
 
 class WhichG(IntEnum):
-    # Continuous is what D++ used. 
     # Inverse distance to POIs w. coupling through an episode
     Continuous = 0
     # MinContinous is continuous, but we only use the min inverse distance(s) at
     # a particular timestep. Found by iterating through each timestep in an episode
+    # Note that I cap each POI score at 1 so agents cant get near inifinte score for being right on top of a POI
     MinContinuous = 1
     # MinDiscrete is the all or nothing reward structure. Basically, for each POI,
     # check if enough agents were within its observation radius at each point during the episode
     # If at any point, the coupling requirement is met, then we count that POI as observed
     # Num poi observed / total num poi
     MinDiscrete = 2
+    # ContinuosObsRad is what D++ used.
+    # Inverse distance to POIs w. coupling through an episode
+    # Only count observations if they are within the observation radius of the poi
+    ContinuousObsRad = 3
+
 
 class WhichD(IntEnum):
     # Don't calculate a difference reward. Just give each agent G
@@ -50,6 +55,35 @@ class FitnessCalculator():
             return self.calculateMinContinuousG(position_history)
         elif self.which_G == WhichG.MinDiscrete:
             return self.calculateMinDiscreteG(position_history)
+        elif self.which_G == WhichG.ContinuousObsRad:
+            return self.calculateContinuousObsRadG(position_history)
+    
+    def calculateContinuousObsRadG(self, position_history: List[np.ndarray]):
+        total_score = 0
+        for poi in self.poi_colony.pois:
+            rolling_poi_score = self.calculateContinuousObsRadPOIScore(poi, position_history)
+            total_score += rolling_poi_score
+        return total_score
+
+    def calculateContinuousObsRadPOIScore(self, poi: POI, position_history: List[np.ndarray]):
+        # Go through position history. Calculate score for each timestep. Aggregate scores
+        # Coupling determines how many agents we look at to determine the observation value
+        # The score is 0 if not enough agents are within the observation radius
+
+        rolling_poi_score = 0
+        for t, agent_positions in enumerate(position_history):
+            distances = self.calculateDistances(poi, agent_positions)
+            # Coupling determines how many distances we use here
+            distances_sorted = np.sort(distances)
+            # Make sure to only calculate a score if the coupling requirement is met
+            # AND if all the distances were within the observation radius of that poi
+            if len(distances_sorted) >= self.poi_colony.coupling \
+                and np.all(distances_sorted[:self.poi_colony.coupling]<=self.poi_colony.observation_radius):
+                poi_score = 1/( (1/self.poi_colony.coupling) * (np.sum(distances_sorted[:self.poi_colony.coupling])) )
+            else:
+                poi_score = 0
+            rolling_poi_score += poi_score
+        return rolling_poi_score
     
     def calculateDs(self, G: float, position_history: List[np.ndarray]):
         if self.which_D == WhichD.G:
@@ -88,7 +122,7 @@ class FitnessCalculator():
         # Calculate the distances for one timestep for a given poi and positions of all agents
         return np.linalg.norm(poi.position - agent_positions, axis=1)
 
-    def calculatePOIScore(self, poi: POI, position_history: List[np.ndarray]):
+    def calculateMinContPOIScore(self, poi: POI, position_history: List[np.ndarray]):
         # Go through position history. Calculate score for each timestep. Keep the highest one. 
         # Basically, the highest value observation is the one we count
         # Coupling determines how many agents we look at to determine the observation value
@@ -116,7 +150,7 @@ class FitnessCalculator():
         #     poi_colony = self.poi_colony
         total_score = 0
         for poi in self.poi_colony.pois:
-            highest_poi_score = self.calculatePOIScore(poi, position_history)
+            highest_poi_score = self.calculateMinContPOIScore(poi, position_history)
             # Cap the highest score at 1.0 so agents can't get near infinite score for getting really close
             if highest_poi_score > 1.0:
                 highest_poi_score = 1.0

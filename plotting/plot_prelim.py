@@ -4,9 +4,29 @@ import matplotlib.pyplot as plt
 from lib.file_helper import loadConfig, loadTrial
 
 # Grab trials for each reward structure
-trials_Dfollow = ["trial_999", "trial_1000", "trial_1001"]
-trials_G = ["trial_1002", "trial_1003", "trial_1004"]
-trials_D = ["trial_1005", "trial_1006", "trial_1007"]
+# trials_Dfollow = ["trial_999", "trial_1000", "trial_1001"]
+# trials_G = ["trial_1002", "trial_1003", "trial_1004"]
+# trials_D = ["trial_1005", "trial_1006", "trial_1007"]
+
+trials_Dfollow = []
+trial_num = 1067
+for i in range(10):
+    trials_Dfollow.append("trial_"+str(trial_num))
+    trial_num -= 1
+
+trials_D = []
+for i in range(10):
+    trials_D.append("trial_"+str(trial_num))
+    trial_num -= 1
+
+trials_G = []
+for i in range(10):
+    trials_G.append("trial_"+str(trial_num))
+    trial_num -= 1
+
+print(trials_Dfollow)
+print(trials_D)
+print(trials_G)
 
 def getStatistics(trials):
     save_datas = [loadTrial(trial) for trial in trials]
@@ -23,12 +43,12 @@ def getStatistics(trials):
     # Get statistics accross these runs
     avg_team_fitness_arr = np.average(all_team_fitness_arr, axis=0)
     std_dev_team_fitness_arr = np.std(all_team_fitness_arr, axis=0)
-    upper_std_dev_team_fitness_arr = avg_team_fitness_arr + std_dev_team_fitness_arr
-    lower_std_dev_team_fitness_arr = avg_team_fitness_arr - std_dev_team_fitness_arr
+    upper_err_team_fitness_arr = avg_team_fitness_arr + std_dev_team_fitness_arr/np.sqrt(len(avg_team_fitness_arr))
+    lower_err_team_fitness_arr = avg_team_fitness_arr - std_dev_team_fitness_arr/np.sqrt(len(avg_team_fitness_arr))
     upper_range = np.max(avg_team_fitness_arr, axis=0)
     lower_range = np.min(avg_team_fitness_arr, axis=0)
 
-    return avg_team_fitness_arr, std_dev_team_fitness_arr, upper_std_dev_team_fitness_arr, lower_std_dev_team_fitness_arr, upper_range, lower_range
+    return avg_team_fitness_arr, std_dev_team_fitness_arr, upper_err_team_fitness_arr, lower_err_team_fitness_arr, upper_range, lower_range
 
 # def plotStatistics(middle, upper, lower):
 #     plt.figure(0)

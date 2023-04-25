@@ -10,9 +10,9 @@ from lib.ccea_lib import computeAction
 from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 
 PLOT_SCORES = True
-PLAY_ENV = True
+PLAY_ENV = False
 TRIALNAME = getLatestTrialName()
-# TRIALNAME = "trial_784"
+TRIALNAME = "trial_1048"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME)
