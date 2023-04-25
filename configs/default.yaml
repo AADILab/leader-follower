@@ -83,7 +83,7 @@ CCEA:
   - 10
   - 10
   num_evaluations: 1
-  num_workers: 15
+  num_workers: 1
   sub_population_size: 30
 load_population: null
 num_generations: 50

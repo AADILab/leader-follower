@@ -158,7 +158,11 @@ class TestFitnessCalculator(unittest.TestCase):
         self.assertEqual(len(Ds), len(expected_Ds))
         for D, expected_D in zip(Ds, expected_Ds):
             self.assertTrue(np.isclose(D,expected_D))
-        
+
+    # def test_MinContinous_Dfollow(self):
+    #     """This is based on a particular failure where the counterfactual evaluation was somehow greater than the actual evaluation"""
+    #     ids_to_remove=[0,2,3]
+
 
     def test_MinDiscrete_G_D(self):
         # Setup pois
