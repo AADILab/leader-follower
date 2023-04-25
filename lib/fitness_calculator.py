@@ -44,12 +44,15 @@ class FitnessCalculator():
         self.which_D = which_D
 
     def calculateG(self, position_history: List[np.ndarray]):
+        print("calculateG()")
+        print("position_history:")
+        print(position_history)
         if self.which_G == WhichG.Continuous:
             raise NotImplementedError()
         elif self.which_G == WhichG.MinContinuous:
             return self.calculateMinContinuousG(position_history)
         elif self.which_G == WhichG.MinDiscrete:
-            raise NotImplementedError()
+            return self.calculateMinDiscreteG(position_history)
     
     def calculateDs(self, G: float, position_history: List[np.ndarray]):
         if self.which_D == WhichD.G:
@@ -58,6 +61,7 @@ class FitnessCalculator():
         elif self.which_D == WhichD.D:
             difference_evaluations = []
             for leader in self.boids_colony.getLeaders():
+                print("Removing leader.id: ", leader.id)
                 D = self.calculateD(G, [leader.id], position_history)
                 difference_evaluations.append(D)
             return difference_evaluations
@@ -71,8 +75,10 @@ class FitnessCalculator():
 
             difference_follower_evaluations = []
             for leader in self.boids_colony.getLeaders():
+                print("Removing leader.id: ", leader.id)
                 # Figure out which trajectories we're actually removing
                 ids_to_remove = [leader.id]+all_assigned_followers[leader.id]
+                print("Removing these ids: ", ids_to_remove)
                 # Calculate Dfollow
                 D_follow = self.calculateD(G, ids_to_remove, position_history)
                 difference_follower_evaluations.append(D_follow)
@@ -95,26 +101,54 @@ class FitnessCalculator():
             distances = self.calculateDistances(poi, agent_positions)
             # Coupling determines how many distances we use here
             distances_sorted = np.sort(distances)
-            poi_score = 1/( (1/self.poi_colony.coupling) * (np.sum(distances_sorted[:self.poi_colony.coupling])) )
+            if len(distances_sorted) == 0:
+                poi_score = 0
+            else:
+                poi_score = 1/( (1/self.poi_colony.coupling) * (np.sum(distances_sorted[:self.poi_colony.coupling])) )
             if poi_score > highest_poi_score:
                 highest_poi_score = poi_score
         return highest_poi_score
 
     def calculateMinContinuousG(self, position_history: List[np.ndarray]):
+        print("calculateMinContinuousG()")
         # if poi_colony is None:
         #     poi_colony = self.poi_colony
         total_score = 0
         for poi in self.poi_colony.pois:
             highest_poi_score = self.calculatePOIScore(poi, position_history)
+            print("highest_poi_score: ", highest_poi_score)
             # Cap the highest score at 1.0 so agents can't get near infinite score for getting really close
             if highest_poi_score > 1.0:
                 highest_poi_score = 1.0
             total_score += highest_poi_score
         return total_score
     
+    def calculateMinDiscreteG(self, position_history: List[np.ndarray]):
+        num_observed = 0.0
+        for poi in self.poi_colony.pois:
+            for t, agent_positions in enumerate(position_history):
+                distances = self.calculateDistances(poi, agent_positions)
+                # Figure out how many of these distances are within the observation radius
+                within_obs_radius = 0
+                for dist in distances:
+                    if dist <= self.poi_colony.observation_radius:
+                        within_obs_radius += 1
+                # Check if enough were within the observation radius to satisfy the coupling requirement
+                if within_obs_radius >= self.poi_colony.coupling:
+                    num_observed += 1
+                    # Break the for loop for this POI and move onto the next POI
+                    # There are no double points for observing the same POI multiple times
+                    break
+        return num_observed/self.poi_colony.num_pois                
+    
     def calculateCounterfactualG(self, position_history, ids_to_remove):
+        print("calculateCounterfactualG()")
+        print("position_history:")
+        print(position_history)
         # First just copy the position_history as a np array. Np array makes it easier to slice
         counterfactual_position_history = np.array(position_history).copy()
+        print("counterfactual_position_history:")
+        print(counterfactual_position_history)
         # Invert ids to remove to which ones we're keeping
         ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
         # Calculate G but with those ids removed. Hence, G_c
