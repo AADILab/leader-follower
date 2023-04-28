@@ -9,18 +9,20 @@ from lib.file_helper import loadConfig, loadTrial
 # trials_D = ["trial_1005", "trial_1006", "trial_1007"]
 
 trials_Dfollow = []
-trial_num = 1067
-for i in range(10):
+# trial_num = 1142
+trial_num = 1160
+num_stat_runs = 3
+for i in range(num_stat_runs):
     trials_Dfollow.append("trial_"+str(trial_num))
     trial_num -= 1
 
 trials_D = []
-for i in range(10):
+for i in range(num_stat_runs):
     trials_D.append("trial_"+str(trial_num))
     trial_num -= 1
 
 trials_G = []
-for i in range(10):
+for i in range(num_stat_runs):
     trials_G.append("trial_"+str(trial_num))
     trial_num -= 1
 
@@ -43,8 +45,8 @@ def getStatistics(trials):
     # Get statistics accross these runs
     avg_team_fitness_arr = np.average(all_team_fitness_arr, axis=0)
     std_dev_team_fitness_arr = np.std(all_team_fitness_arr, axis=0)
-    upper_err_team_fitness_arr = avg_team_fitness_arr + std_dev_team_fitness_arr/np.sqrt(len(avg_team_fitness_arr))
-    lower_err_team_fitness_arr = avg_team_fitness_arr - std_dev_team_fitness_arr/np.sqrt(len(avg_team_fitness_arr))
+    upper_err_team_fitness_arr = avg_team_fitness_arr + std_dev_team_fitness_arr/np.sqrt(all_team_fitness_arr.shape[0])
+    lower_err_team_fitness_arr = avg_team_fitness_arr - std_dev_team_fitness_arr/np.sqrt(all_team_fitness_arr.shape[0])
     upper_range = np.max(avg_team_fitness_arr, axis=0)
     lower_range = np.min(avg_team_fitness_arr, axis=0)
 
@@ -63,7 +65,7 @@ num_generations_arr = np.arange(avg_G.shape[0])
 
 plt.figure(0)
 
-plt.ylim([0,16])
+# plt.ylim([0,16])
 
 plt.plot(num_generations_arr, avg_G)
 plt.plot(num_generations_arr, avg_D)

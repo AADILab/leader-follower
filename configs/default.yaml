@@ -3,114 +3,52 @@ CCEA:
     BoidsEnv:
       config:
         BoidSpawner:
-          follower_positions:
-          - - 37.5
-            - 45
-          - - 40
-            - 45
-          - - 42.5
-            - 45
-          - - 45
-            - 45
-          - - 37.5
-            - 42.5
-          - - 40
-            - 42.5
-          - - 42.5
-            - 42.5
-          - - 45
-            - 42.5
-          heading_rule: FixedStart
-          leader_positions:
-          - - 35
-            - 45
-          - - 35
-            - 40
-          - - 40
-            - 40
-          - - 45
-            - 40
-          position_rule: Set
           spawn_rule: Individual
-          start_heading: 3.14159
-          velocity_fraction: 0.0
+          position_rule: Set
           velocity_rule: FixedStart
+          heading_rule: FixedStart
+          velocity_fraction: 0.0
+          start_heading: !eval 3.14159
+          leader_positions: # 2 leaders
+            - [85, 90]
+            - [85, 50]
+          follower_positions: # 8 followers
+            - [90, 90]
+            - [90, 95]
+            - [90, 85]
+            - [85, 95]
+            - [90, 50]
+            - [90, 45]
+            - [90, 55]
+            - [85, 45]
         BoidsColony:
-          attraction_multiplier: 1
-          dt: 0.2
-          orientation_multiplier: 1
-          radius_attraction: 10
-          radius_orientation: 6
-          radius_repulsion: 4
-          repulsion_multiplier: 1
+          dt: !eval 1/5
+          radius_attraction: !eval 10
+          radius_orientation: !eval 6
+          radius_repulsion: !eval   4
+          attraction_multiplier: 2
+          orientation_multiplier: 2
+          repulsion_multiplier: 2
           wall_avoidance_multiplier: 1
         ObservationManager:
-          full_observability: true
           num_poi_bins: 4
           num_swarm_bins: 4
-          observation_radius: null
           observation_rule: Individual
           poi_sensor_type: Density
           swarm_sensor_type: Density
+          observation_radius: ~
+          full_observability: true
         POIColony:
-          coupling: 3
-          observation_radius: 5
+          coupling: 5
+          observation_radius: 10
         FitnessCalculator:
-          which_G: ContinuousObsRad
-          which_D: G
+          which_G: Continuous
+          which_D: DFollow
         POISpawner:
-          poi_spawn_rule: Set
           positions:
-          - - 5
-            - 40
-          - - 5
-            - 40
-          - - 10
-            - 35
-          - - 10
-            - 35
-          - - 10
-            - 35
-          - - 10
-            - 35
-          - - 5
-            - 30
-          - - 5
-            - 30
-          - - 5
-            - 30
-          - - 5
-            - 30
-          - - 2.5
-            - 10
-          - - 2.5
-            - 10
-          - - 2.5
-            - 10
-          - - 2.5
-            - 10
-          - - 2.5
-            - 10
-          - - 5
-            - 7.5
-          - - 12.5
-            - 7.5
-          - - 12.5
-            - 7.5
-          - - 15
-            - 10
-          - - 15
-            - 10
-          - - 15
-            - 10
-          - - 40
-            - 10
-          - - 40
-            - 10
-          - - 40
-            - 15
-          - - 40
-            - 20
+            - [50, 90]
+            - [50, 50]
+          poi_spawn_rule: Set
         Renderer:
           leader_colors:
           - - 250
@@ -138,12 +76,12 @@ CCEA:
           max_velocity: 10
           min_velocity: 0
           num_followers: 8
-          num_leaders: 4
+          num_leaders: 2
         map_dimensions:
-          x: 50
-          y: 50
+          x: 100
+          y: 100
       init_seed: 1
-      max_steps: 100
+      max_steps: !eval 5*20
       render_mode: none
   mutation_probability: 0.15
   mutation_rate: 0.1
@@ -154,4 +92,4 @@ CCEA:
   num_workers: 15
   sub_population_size: 30
 load_population: null
-num_generations: 500
+num_generations: 150
