@@ -10,8 +10,8 @@ from lib.file_helper import loadConfig, loadTrial
 
 trials_Dfollow = []
 # trial_num = 1142
-trial_num = 1160
-num_stat_runs = 3
+trial_num = 1200
+num_stat_runs = 10
 for i in range(num_stat_runs):
     trials_Dfollow.append("trial_"+str(trial_num))
     trial_num -= 1
