@@ -81,4 +81,6 @@ plt.xlabel("Number of Generations")
 plt.ylabel("Average Team Fitness")
 plt.title("Reward Shaping with Informative G")
 
+# plt.xlim([0,150])
+
 plt.show()
