@@ -8,27 +8,38 @@ from lib.file_helper import loadConfig, loadTrial
 # trials_G = ["trial_1002", "trial_1003", "trial_1004"]
 # trials_D = ["trial_1005", "trial_1006", "trial_1007"]
 
-trials_Dfollow = []
+
 # trial_num = 1142
-trial_num = 1200
-num_stat_runs = 10
-for i in range(num_stat_runs):
-    trials_Dfollow.append("trial_"+str(trial_num))
-    trial_num -= 1
+# trial_num = 1569 # w. 20 trials shows D, Df are better than g
+# trial_num = 1665 # w. 20 trials shows G is better (this trial num might be wrong actually, did not track this well)
+trial_num = 1926
+num_stat_runs = 20
 
-trials_D = []
-for i in range(num_stat_runs):
-    trials_D.append("trial_"+str(trial_num))
-    trial_num -= 1
+tested_G = True
+tested_D = True
+tested_Dfollow = True
+plot_min_max_range = True
 
-trials_G = []
-for i in range(num_stat_runs):
-    trials_G.append("trial_"+str(trial_num))
-    trial_num -= 1
+if tested_Dfollow:
+    trials_Dfollow = []
+    for i in range(num_stat_runs):
+        trials_Dfollow.append("trial_"+str(trial_num))
+        trial_num -= 1
+    print("Dfollow trials: ", trials_Dfollow)
 
-print(trials_Dfollow)
-print(trials_D)
-print(trials_G)
+if tested_D:
+    trials_D = []
+    for i in range(num_stat_runs):
+        trials_D.append("trial_"+str(trial_num))
+        trial_num -= 1
+    print("D trials: ", trials_D)
+
+if tested_G:
+    trials_G = []
+    for i in range(num_stat_runs):
+        trials_G.append("trial_"+str(trial_num))
+        trial_num -= 1
+    print("G trials: ", trials_G)
 
 def getStatistics(trials):
     save_datas = [loadTrial(trial) for trial in trials]
@@ -47,8 +58,8 @@ def getStatistics(trials):
     std_dev_team_fitness_arr = np.std(all_team_fitness_arr, axis=0)
     upper_err_team_fitness_arr = avg_team_fitness_arr + std_dev_team_fitness_arr/np.sqrt(all_team_fitness_arr.shape[0])
     lower_err_team_fitness_arr = avg_team_fitness_arr - std_dev_team_fitness_arr/np.sqrt(all_team_fitness_arr.shape[0])
-    upper_range = np.max(avg_team_fitness_arr, axis=0)
-    lower_range = np.min(avg_team_fitness_arr, axis=0)
+    upper_range = np.max(all_team_fitness_arr, axis=0)
+    lower_range = np.min(all_team_fitness_arr, axis=0)
 
     return avg_team_fitness_arr, std_dev_team_fitness_arr, upper_err_team_fitness_arr, lower_err_team_fitness_arr, upper_range, lower_range
 
@@ -56,30 +67,52 @@ def getStatistics(trials):
 #     plt.figure(0)
 #     plt.plot()
 
-# Get statistics for different reward structures
-avg_G, _, upper_dev_G, lower_dev_G, _, _ = getStatistics(trials_G)
-avg_D, _, upper_dev_D, lower_dev_D, _, _ = getStatistics(trials_D)
-avg_Df, _, upper_dev_Df, lower_dev_Df, _, _ = getStatistics(trials_Dfollow)
-
-num_generations_arr = np.arange(avg_G.shape[0])
-
 plt.figure(0)
 
-# plt.ylim([0,16])
+plt.ylim([0,1.0])
 
-plt.plot(num_generations_arr, avg_G)
-plt.plot(num_generations_arr, avg_D)
-plt.plot(num_generations_arr, avg_Df)
+# Get statistics for different reward structures
+legend = []
+if tested_G: 
+    avg_G, std_dev_G, upper_dev_G, lower_dev_G, upper_range_G, lower_range_G = getStatistics(trials_G)
+    num_generations_arr = np.arange(avg_G.shape[0])
+    plt.plot(num_generations_arr, avg_G, color='tab:blue')
+    legend.append("$G$")
 
-plt.fill_between(num_generations_arr, upper_dev_G, lower_dev_G, alpha=0.2)
-plt.fill_between(num_generations_arr, upper_dev_D, lower_dev_D, alpha=0.2)
-plt.fill_between(num_generations_arr, upper_dev_Df, lower_dev_Df, alpha=0.2)
+if tested_D: 
+    avg_D, std_dev_D, upper_dev_D, lower_dev_D, upper_range_D, lower_range_D = getStatistics(trials_D)
+    num_generations_arr = np.arange(avg_D.shape[0])
+    plt.plot(num_generations_arr, avg_D, color='tab:orange')
+    legend.append("$D$")
 
-plt.legend(["$G$", "$D$", r'$D_{follow}$'])
+if tested_Dfollow: 
+    avg_Df, std_dev_Df, upper_dev_Df, lower_dev_Df, upper_range_Df, lower_range_Df = getStatistics(trials_Dfollow)
+    num_generations_arr = np.arange(avg_Df.shape[0])
+    plt.plot(num_generations_arr, avg_Df, color="tab:green")
+    legend.append(r'$D_{follow}$')
+
+if tested_G: 
+    plt.fill_between(num_generations_arr, upper_dev_G, lower_dev_G, alpha=0.2, color="tab:blue")
+    if plot_min_max_range:
+        plt.fill_between(num_generations_arr, upper_range_G, lower_range_G, alpha=0.2, color="tab:blue")
+
+if tested_D: 
+    plt.fill_between(num_generations_arr, upper_dev_D, lower_dev_D, alpha=0.2, color="tab:orange")
+    if plot_min_max_range:
+        plt.fill_between(num_generations_arr, upper_range_D, lower_range_D, alpha=0.2, color="tab:orange")
+
+if tested_Dfollow: 
+    plt.fill_between(num_generations_arr, upper_dev_Df, lower_dev_Df, alpha=0.2, color="tab:green")
+    if plot_min_max_range:
+        plt.fill_between(num_generations_arr, upper_range_Df, lower_range_Df, alpha=0.2, color="tab:green")
+
+plt.legend(legend)
+
+# plt.legend(["$G$", "$D$", r'$D_{follow}$'])
 
 plt.xlabel("Number of Generations")
 plt.ylabel("Average Team Fitness")
-plt.title("Reward Shaping with Informative G")
+# plt.title("Reward Shaping with Informative G")
 
 # plt.xlim([0,150])
 

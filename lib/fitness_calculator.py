@@ -21,10 +21,14 @@ class WhichG(IntEnum):
     # If at any point, the coupling requirement is met, then we count that POI as observed
     # Num poi observed / total num poi
     MinDiscrete = 2
-    # ContinuosObsRad is what D++ used.
-    # Inverse distance to POIs w. coupling through an episode
+    # ContinuosObsRad is what D++ used. (Actually it's not clear if G was just for the final state-action or aggregated throughout the episode)
+    # Inverse distance to POIs w. coupling through an episode. Aggregates score at each time step
     # Only count observations if they are within the observation radius of the poi
     ContinuousObsRad = 3
+    # ContinuousObsRadLastStep is maybe what D++ used?
+    # Inverse distance to POIs w. coupling, only uses the last step in the trajectory.
+    # Only count observations if they are within the observation radius of the poi
+    ContinuousObsRadLastStep = 4
 
 
 class WhichD(IntEnum):
@@ -57,13 +61,37 @@ class FitnessCalculator():
             return self.calculateMinDiscreteG(position_history)
         elif self.which_G == WhichG.ContinuousObsRad:
             return self.calculateContinuousObsRadG(position_history)
+        elif self.which_G == WhichG.ContinuousObsRadLastStep:
+            return self.calculateContinuousObsRadLastStepG(position_history)
+        
+    def calculateContinuousObsRadLastStepPOIScore(self, poi: POI, position_history: List[np.ndarray]):
+        # Grab the last positions of agents in the environment
+        agent_positions = position_history[-1]
+        distances = self.calculateDistances(poi, agent_positions)
+        distances_sorted = np.sort(distances)
+        distances_sorted[distances_sorted < 1] = 1
+        if len(distances_sorted) >= self.poi_colony.coupling \
+            and np.all(distances_sorted[:self.poi_colony.coupling]<=self.poi_colony.observation_radius):
+            poi_score = 1/( (1/self.poi_colony.coupling) * (np.sum(distances_sorted[:self.poi_colony.coupling])) )
+        else:
+            poi_score = 0
+        return poi_score
+    
+    def calculateContinuousObsRadLastStepG(self, position_history: List[np.ndarray]):
+        total_score = 0
+        for poi in self.poi_colony.pois:
+            last_step_poi_score = self.calculateContinuousObsRadLastStepPOIScore(poi, position_history)
+            total_score += last_step_poi_score
+        # Normalize score by number of pois
+        return total_score / self.poi_colony.num_pois
     
     def calculateContinuousObsRadG(self, position_history: List[np.ndarray]):
         total_score = 0
         for poi in self.poi_colony.pois:
             rolling_poi_score = self.calculateContinuousObsRadPOIScore(poi, position_history)
             total_score += rolling_poi_score
-        return total_score
+        # Normalize score by number of pois
+        return total_score / self.poi_colony.num_pois
 
     def calculateContinuousObsRadPOIScore(self, poi: POI, position_history: List[np.ndarray]):
         # Go through position history. Calculate score for each timestep. Aggregate scores
@@ -83,7 +111,8 @@ class FitnessCalculator():
             else:
                 poi_score = 0
             rolling_poi_score += poi_score
-        return rolling_poi_score
+        # Normalize by the number of timesteps
+        return rolling_poi_score / len(position_history)
     
     def calculateDs(self, G: float, position_history: List[np.ndarray]):
         if self.which_D == WhichD.G:

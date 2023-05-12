@@ -9,10 +9,10 @@ from lib.network_lib import createNNfromWeights
 from lib.ccea_lib import computeAction
 from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 
-PLOT_SCORES = False
+PLOT_SCORES = True
 PLAY_ENV = True
 TRIALNAME = getLatestTrialName()
-TRIALNAME = "trial_1327"
+# TRIALNAME = "trial_1724"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME)
@@ -55,7 +55,7 @@ if PLOT_SCORES:
         plt.plot(unfiltered_agent_scores, color=tuple(leader_colors[ind%len(leader_colors)]))
     plt.xlabel("Generation")
     plt.ylabel("Fitness Score")
-    # plt.ylim([0.0,1.2])
+    plt.ylim([0.0,1.2])
     plt.title("Average Performance")
     legend = ["Average Team Performance"]
     for i in range(len(average_agent_fitness_lists_unfiltered)):
