@@ -12,7 +12,7 @@ from lib.file_helper import loadConfig, loadTrial
 # trial_num = 1142
 # trial_num = 1569 # w. 20 trials shows D, Df are better than g
 # trial_num = 1665 # w. 20 trials shows G is better (this trial num might be wrong actually, did not track this well)
-trial_num = 1926
+trial_num = 1989
 num_stat_runs = 20
 
 tested_G = True

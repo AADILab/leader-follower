@@ -88,7 +88,7 @@ CCEA:
             - 120
           position_rule: Set
           spawn_rule: Individual
-          start_heading: !eval 3.14159/2
+          start_heading: 1.570795
           velocity_fraction: 0.0
           velocity_rule: FixedStart
         BoidsColony:
@@ -101,7 +101,7 @@ CCEA:
           repulsion_multiplier: 2
           wall_avoidance_multiplier: 1
         FitnessCalculator:
-          which_D: D
+          which_D: DFollow
           which_G: ContinuousObsRadLastStep
         ObservationManager:
           full_observability: true
@@ -112,7 +112,7 @@ CCEA:
           poi_sensor_type: Density
           swarm_sensor_type: Density
         POIColony:
-          coupling: 3
+          coupling: 2
           observation_radius: 1000
         POISpawner:
           poi_spawn_rule: Set
@@ -196,7 +196,7 @@ CCEA:
   nn_hidden:
   - 9
   num_evaluations: 1
-  num_workers: 10
+  num_workers: 19
   sub_population_size: 15
 load_population: null
 num_generations: 100
