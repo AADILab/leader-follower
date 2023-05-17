@@ -13,7 +13,7 @@ if __name__ == '__main__':
         config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "D"
         runExperiment(config)
     
-    # for _ in range(3):
-    #     config = loadConfig()
-    #     config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "DFollow"
-    #     runExperiment(config)
+    for _ in range(3):
+        config = loadConfig()
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "DFollow"
+        runExperiment(config)

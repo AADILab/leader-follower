@@ -12,7 +12,9 @@ from lib.file_helper import loadConfig, loadTrial
 # trial_num = 1142
 # trial_num = 1569 # w. 20 trials shows D, Df are better than g
 # trial_num = 1665 # w. 20 trials shows G is better (this trial num might be wrong actually, did not track this well)
-trial_num = 1989
+# trial_num = 2229 # one the runs looking at varying coupling, num_stat_runs=20
+trial_num = 2780 # w. 20 trials is where I start to trick D with followers
+# trial_num = 2598
 num_stat_runs = 20
 
 tested_G = True
