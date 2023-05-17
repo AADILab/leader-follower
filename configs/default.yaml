@@ -16,8 +16,8 @@ CCEA:
           leader_positions:
           - - 30
             - 10
-          - - 30
-            - 20
+          # - - 30
+          #   - 20
           position_rule: Set
           spawn_rule: Individual
           start_heading: 1.570795
@@ -51,8 +51,8 @@ CCEA:
           positions:
           - - 10
             - 10
-          - - 10
-            - 20
+          # - - 10
+          #   - 20
         Renderer:
           leader_colors:
           - - 250
