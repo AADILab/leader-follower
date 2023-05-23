@@ -1,4 +1,4 @@
-import sys; sys.path.append("/home/egonzalez/leaders")
+import sys; sys.path.append("/home/gonzaeve/boids/leader-follower")
 import numpy as np
 import matplotlib.pyplot as plt
 from lib.file_helper import loadConfig, loadTrial
