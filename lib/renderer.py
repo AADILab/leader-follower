@@ -28,7 +28,7 @@ class Renderer():
         # ]
         self.leader_colors = leader_colors
 
-        self.poi_observed_color = (0,255,0)
+        self.poi_observed_color = (0,150,0)
         self.poi_not_observed_color = (255,0,0)
 
         self.boid_radius = 1 # unit, not pixel

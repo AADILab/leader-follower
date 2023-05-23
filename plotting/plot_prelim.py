@@ -37,14 +37,15 @@ def main():
     # trial_num = 1569 # w. 20 trials shows D, Df are better than g
     # trial_num = 1665 # w. 20 trials shows G is better (this trial num might be wrong actually, did not track this well)
     # trial_num = 2229 # one the runs looking at varying coupling, num_stat_runs=20
-    trial_num = 2780 # w. 20 trials is where I start to trick D with followers
-    # trial_num = 2598
-    num_stat_runs = 20
+    # trial_num = 2780 # w. 20 trials is where I start to trick D with followers
+    # trial_num = 2598 # w 20 stat runs?? not sure what this trial number was for
+    trial_num = 4836
+    num_stat_runs = 10
 
     tested_G = True
     tested_D = True
     tested_Dfollow = True
-    plot_min_max_range = True
+    plot_min_max_range = False
 
     if tested_Dfollow:
         trials_Dfollow = []
