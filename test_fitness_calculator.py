@@ -374,5 +374,72 @@ class TestFitnessCalculator(unittest.TestCase):
         expected_G = 2./3.
         self.assertTrue(np.isclose(G, expected_G))
 
+    def test_d_zero(self):
+        # Setup Pois
+        poi_colony = POIColony(
+            # Place two pois vertically stacked
+            positions=np.array([
+                [10, 10],
+                [10, 13]
+            ]),
+            # Observation radius to see them from anywhere
+            observation_radius=100,
+            # 2 agents need to observe each poi
+            coupling=2
+        )
+        # Setup position history
+        # Remember that leaders are the left side, and followers are on the right side
+        position_history = np.array([
+            [[10, 9], [10, 14], [10, 11], [10,12]]
+        ])
+        # [leader, leader, follower, follower]
+        # Followers are in between the pois.
+        # Leaders are on the outside
+
+        # Setup minimal boids colony
+        boids_colony = BoidsColony(
+            init_state=BoidsColonyState(
+                positions=position_history[0],
+                headings=np.array([0,0,0,0]),
+                velocities=np.array([0,0,0,0]),
+                is_leader=np.array([True, True, False, False])
+            ),
+            bounds=StateBounds(
+                map_dimensions=np.array([100,100]),
+                min_velocity=0,
+                max_velocity=0,
+                max_acceleration=0,
+                max_angular_velocity=0,
+                num_leaders=2,
+                num_followers=2
+            ),
+            radius_repulsion=0,
+            radius_orientation=0,
+            radius_attraction=1,
+            repulsion_multiplier=0,
+            orientation_multiplier=0,
+            attraction_multiplier=0,
+            wall_avoidance_multiplier=0,
+            dt=0
+        )
+
+        # Setup the FitnessCalculator with G and D
+        # Set it up first to count leaders and followers
+        fitness_calculator = FitnessCalculator(
+            poi_colony=poi_colony, 
+            boids_colony=boids_colony, 
+            which_G=WhichG.ContinuousObsRadLastStep, 
+            which_D=WhichD.Zero, 
+            follower_switch=FollowerSwitch.UseLeadersAndFollowers
+        )
+
+
+        # Calculate G when we count the leaders and followers
+        G = fitness_calculator.calculateG(position_history)
+
+        # Just make sure Ds are zeros
+        Ds = fitness_calculator.calculateDs(G, position_history)
+        self.assertTrue(np.allclose(Ds, np.zeros(2)))
+
 if __name__ == '__main__':
     unittest.main()
