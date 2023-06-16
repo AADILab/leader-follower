@@ -9,15 +9,17 @@ import numpy as np
 from lib.poi_colony import POIColony
 from lib.boids_colony import BoidsColony
 from lib.colony_helpers import BoidsColonyState, StateBounds
-from lib.fitness_calculator import FitnessCalculator, WhichG, WhichD
+from lib.fitness_calculator import FitnessCalculator, WhichG, WhichD, FollowerSwitch
 
 class TestFitnessCalculator(unittest.TestCase):
-    def helperTeamFitness(self, poi_colony, boids_colony, position_history, expected_G, expected_G_cs, expected_Ds, which_G, which_D):
+    def helperTeamFitness(self, poi_colony, boids_colony, position_history, expected_G, expected_G_cs, expected_Ds, which_G, which_D, follower_switch):
+        """ This method takes in information for a configuration and trajectories and checks if they result in the expected Gs and Ds for a particular G and D combination
+        """
         # Make sure we don't modify any input objects
         poi_colony = deepcopy(poi_colony)
         position_history = deepcopy(position_history)
         # Setup the FitnessCalculator
-        fitness_calculator = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=which_G, which_D=which_D)
+        fitness_calculator = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=which_G, which_D=which_D, follower_switch=follower_switch)
         # distances = fitness_calculator.calculateDistances(poi_colony.pois[0], position_history[3])
         # # Distance should be 1.0 at nearest point in trajectory
         # self.assertTrue(np.isclose(distances[0], 1.0))
@@ -58,7 +60,7 @@ class TestFitnessCalculator(unittest.TestCase):
         # G should be 1.0 because the fitness is the inverse nearest distance to the poi, and that is 1/1.0
         # If we counterfacutally remove the only agent, then the counterfactual score should be 0.0
         # And then D should be 1.0
-        self.helperTeamFitness(poi_colony, None, position_history, 1.0, [0.0], [1.0], WhichG.MinContinuous, WhichD.D)
+        self.helperTeamFitness(poi_colony, None, position_history, 1.0, [0.0], [1.0], WhichG.MinContinuous, WhichD.D, FollowerSwitch.UseLeadersAndFollowers)
 
         # Now we setup the problem again, but with two agents, one traveling on each side of the poi
         position_history_2 = np.array([
@@ -72,7 +74,7 @@ class TestFitnessCalculator(unittest.TestCase):
         # G should be 1.0 based on proximity of agents to the poi
         # If we counterfactually remove one, then the score should be 1.0, regardless of which we remove
         # So that makes D for each agent 0.0
-        self.helperTeamFitness(poi_colony, None, position_history_2, 1.0, [1.0,1.0], [0.0,0.0], WhichG.MinContinuous, WhichD.D)
+        self.helperTeamFitness(poi_colony, None, position_history_2, 1.0, [1.0,1.0], [0.0,0.0], WhichG.MinContinuous, WhichD.D, FollowerSwitch.UseLeadersAndFollowers)
     
     def test_MinContinuous_G_D_Dfollow(self):
         # Setup pois
@@ -134,7 +136,7 @@ class TestFitnessCalculator(unittest.TestCase):
                 self.assertEqual(e,a)
         
         # Setup FitnessCalculator with G and D (regular D, not D_follow)
-        fitness_calculator = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=WhichG.MinContinuous, which_D=WhichD.D)
+        fitness_calculator = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=WhichG.MinContinuous, which_D=WhichD.D, follower_switch=FollowerSwitch.UseLeadersAndFollowers)
         # G=1.0
         # If we calculate Ds for the leaders, then Ds=[0.33333, 0.0]
         G = fitness_calculator.calculateG(position_history)
@@ -147,7 +149,7 @@ class TestFitnessCalculator(unittest.TestCase):
             self.assertTrue(np.isclose(D, expected_D))
 
         # Setup FitnessCalculator with G and D_follow
-        fitness_calculator_follow = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=WhichG.MinContinuous, which_D=WhichD.DFollow)
+        fitness_calculator_follow = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=WhichG.MinContinuous, which_D=WhichD.DFollow, follower_switch=FollowerSwitch.UseLeadersAndFollowers)
         # G=1.0
         # If we calculate D follow for leaders, then Ds=[0.5, 1.0]
         G = fitness_calculator_follow.calculateG(position_history)
@@ -192,7 +194,8 @@ class TestFitnessCalculator(unittest.TestCase):
             expected_G_cs=[0,0,0,0.5,0.5,0.5],
             expected_Ds=[0.5,0.5,0.5,0,0,0],
             which_G=WhichG.MinDiscrete,
-            which_D=WhichD.D # With the existing helper function, this parameter isn't actually used
+            which_D=WhichD.D, # With the existing helper function, this parameter isn't actually used
+            follower_switch=FollowerSwitch.UseLeadersAndFollowers
         )
 
     def test_MinDiscrete_G_D_Dfollow(self):
@@ -273,7 +276,7 @@ class TestFitnessCalculator(unittest.TestCase):
                 self.assertEqual(e,a)
 
         # Setup the FitnessCalculator with G and D (regular D, not D_follow)
-        fitness_calculator = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=WhichG.MinDiscrete, which_D=WhichD.D)
+        fitness_calculator = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=WhichG.MinDiscrete, which_D=WhichD.D, follower_switch=FollowerSwitch.UseLeadersAndFollowers)
         # G=1.0
         # If we calculate Ds, for the leaders, then Ds=[0.5, 0.5]
         G = fitness_calculator.calculateG(position_history)
@@ -286,7 +289,7 @@ class TestFitnessCalculator(unittest.TestCase):
             self.assertTrue(np.isclose(D, expected_D))
 
         # Setup the fitness calculator to see if we can calculate D_follow
-        fitness_calculator_follower = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=WhichG.MinDiscrete, which_D=WhichD.D)
+        fitness_calculator_follower = FitnessCalculator(poi_colony=poi_colony, boids_colony=boids_colony, which_G=WhichG.MinDiscrete, which_D=WhichD.D, follower_switch=FollowerSwitch.UseLeadersAndFollowers)
         # G=1.0
         # If we're only looking at D_follow for the leaders, then we should see (again) 
         # Ds = [0.5, 0.5]
@@ -299,6 +302,77 @@ class TestFitnessCalculator(unittest.TestCase):
         for D, expected_D in zip(Ds, expected_Ds):
             self.assertTrue(np.isclose(D, expected_D))
         
+    def test_follower_switch(self):
+        # Setup Pois
+        poi_colony = POIColony(
+            # Place two pois vertically stacked
+            positions=np.array([
+                [10, 10],
+                [10, 13]
+            ]),
+            # Observation radius to see them from anywhere
+            observation_radius=100,
+            # 2 agents need to observe each poi
+            coupling=2
+        )
+        # Setup position history
+        # Remember that leaders are the left side, and followers are on the right side
+        position_history = np.array([
+            [[10, 9], [10, 14], [10, 11], [10,12]]
+        ])
+        # [leader, leader, follower, follower]
+        # Followers are in between the pois.
+        # Leaders are on the outside
+
+        # Setup minimal boids colony
+        boids_colony = BoidsColony(
+            init_state=BoidsColonyState(
+                positions=position_history[0],
+                headings=np.array([0,0,0,0]),
+                velocities=np.array([0,0,0,0]),
+                is_leader=np.array([True, True, False, False])
+            ),
+            bounds=StateBounds(
+                map_dimensions=np.array([100,100]),
+                min_velocity=0,
+                max_velocity=0,
+                max_acceleration=0,
+                max_angular_velocity=0,
+                num_leaders=2,
+                num_followers=2
+            ),
+            radius_repulsion=0,
+            radius_orientation=0,
+            radius_attraction=1,
+            repulsion_multiplier=0,
+            orientation_multiplier=0,
+            attraction_multiplier=0,
+            wall_avoidance_multiplier=0,
+            dt=0
+        )
+
+        # Setup the FitnessCalculator with G and D
+        # Set it up first to count leaders and followers
+        fitness_calculator = FitnessCalculator(
+            poi_colony=poi_colony, 
+            boids_colony=boids_colony, 
+            which_G=WhichG.ContinuousObsRadLastStep, 
+            which_D=WhichD.D, 
+            follower_switch=FollowerSwitch.UseLeadersAndFollowers
+        )
+
+        # Calculate G when we count the leaders and followers
+        G = fitness_calculator.calculateG(position_history)
+        expected_G = 1.0
+        self.assertTrue(np.isclose(G,expected_G))
+
+        # Set up the fitness calculator to instead just count followers
+        fitness_calculator.follower_switch=FollowerSwitch.UseFollowersOnly
+
+        # Calculate G with just followers
+        G = fitness_calculator.calculateG(position_history)
+        expected_G = 2./3.
+        self.assertTrue(np.isclose(G, expected_G))
 
 if __name__ == '__main__':
     unittest.main()

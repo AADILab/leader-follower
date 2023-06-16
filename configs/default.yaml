@@ -123,6 +123,7 @@ CCEA:
         FitnessCalculator:
           which_D: G
           which_G: ContinuousObsRadLastStep
+          follower_switch: UseFollowersOnly
         ObservationManager:
           full_observability: true
           num_poi_bins: 4

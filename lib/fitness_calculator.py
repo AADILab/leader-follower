@@ -9,6 +9,12 @@ from lib.boids_colony import BoidsColony, Boid
 from lib.math_helpers import argmax
 from lib.np_helpers import invertInds
 
+class FollowerSwitch(IntEnum):
+    # Only use follower positions when calculating G
+    UseFollowersOnly = 0
+    # Use both leader and follower positions when calculating G
+    UseLeadersAndFollowers = 1
+
 class WhichG(IntEnum):
     # Inverse distance to POIs w. coupling through an episode
     Continuous = 0
@@ -38,9 +44,13 @@ class WhichD(IntEnum):
     D = 1
     # Calculate D of this (leader) agent and its followers
     DFollow = 2
+    # Literally just give the policy a fitness of zero no matter what.
+    # When we compare reward signals against this one, we'll be able to know if a reward signal is "misleading"
+    # A reward signal is probably misleading if a consistent reward of zero results in a better policy
+    Zero = 3
 
 class FitnessCalculator():
-    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str]) -> None:
+    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str], follower_switch: Union[WhichD, str]) -> None:
         self.poi_colony = poi_colony
         self.boids_colony = boids_colony
         
@@ -51,8 +61,15 @@ class FitnessCalculator():
         
         self.which_G = which_G
         self.which_D = which_D
+        self.follower_switch = follower_switch
 
     def calculateG(self, position_history: List[np.ndarray]):
+        # Remove leader trajectories if we are only evaluating based on followers
+        if self.follower_switch == FollowerSwitch.UseFollowersOnly:
+            # Note: follower trajectories are on the right side of the position history
+            # I am now converting position_history to an array here so hopefully this doesn't cause any problems
+            position_history = np.array(position_history)[:, self.boids_colony.bounds.num_leaders:]
+
         if self.which_G == WhichG.Continuous:
             raise NotImplementedError()
         elif self.which_G == WhichG.MinContinuous:
@@ -140,6 +157,10 @@ class FitnessCalculator():
                 D_follow = self.calculateD(G, ids_to_remove, position_history)
                 difference_follower_evaluations.append(D_follow)
             return difference_follower_evaluations
+
+        elif self.which_D == WhichD.Zero:
+            # Literally just return zero. Floating point in case it matters
+            return 0.
             
     def calculateD(self, G: float, ids_to_remove: int, position_history: List[np.ndarray]):
         G_c = self.calculateCounterfactualG(position_history, ids_to_remove)
