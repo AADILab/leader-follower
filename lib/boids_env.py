@@ -187,7 +187,8 @@ class BoidsEnv(ParallelEnv):
         observations = self.getObservations()
 
         # Update POIs
-        self.poi_colony.updatePois(self.boids_colony.state)
+        self.fitness_calculator.updatePOIs()
+        # self.poi_colony.updatePois(self.boids_colony.state, self.fitness_calculator)
 
         # Step forward and check if simulation is done
         self.num_steps += 1

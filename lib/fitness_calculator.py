@@ -6,7 +6,7 @@ import numpy as np
 
 from lib.poi_colony import POIColony, POI
 from lib.boids_colony import BoidsColony, Boid
-from lib.math_helpers import argmax
+from lib.math_helpers import argmax, calculateDistance
 from lib.np_helpers import invertInds
 
 class FollowerSwitch(IntEnum):
@@ -256,6 +256,24 @@ class FitnessCalculator():
             ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
             # Calculate G but with those ids removed. Hence, G_c
             return self.calculateG(counterfactual_position_history[:,ids_to_keep,:])
+    
+    def updatePOIs(self):
+        """Update POIs as observed or not for rendering purposes"""
+        for poi in self.poi_colony.pois:
+            if self.follower_switch == FollowerSwitch.UseLeadersAndFollowers:
+                distances = calculateDistance(poi.position, self.boids_colony.state.positions)
+            else:
+                distances = calculateDistance(poi.position, self.boids_colony.state.positions[self.boids_colony.bounds.num_leaders:])
+            num_observations = np.sum(distances<=self.poi_colony.observation_radius)
+            if num_observations >= self.poi_colony.coupling:
+                poi.observed = True
+                # Legacy code for back when I was using the all or nothing G
+                # # Get ids of swarm members that observed this poi
+                # observer_ids = np.nonzero(distances<=self.observation_radius)[0]
+                # poi.observation_list.append(observer_ids)
+            # Turn the poi back to unobserved if we only care about the last step
+            elif self.which_G == WhichG.ContinuousObsRadLastStep:
+                    poi.observed = False
 
     # def calculateCounterfactualTeamFitness(self, boid_id: int, position_history: List[np.ndarray]):
     #     # Remove the specified boid's trajectory from the position history and calculate the fitness

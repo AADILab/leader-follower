@@ -39,7 +39,7 @@ def main():
     # trial_num = 2229 # one the runs looking at varying coupling, num_stat_runs=20
     # trial_num = 2780 # w. 20 trials is where I start to trick D with followers
     # trial_num = 2598 # w 20 stat runs?? not sure what this trial number was for
-    trial_num = 5114
+    trial_num = 5276
     num_stat_runs = 10
 
     tested_G = True
