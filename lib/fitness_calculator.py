@@ -50,7 +50,7 @@ class WhichD(IntEnum):
     Zero = 3
 
 class FitnessCalculator():
-    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str], follower_switch: Union[WhichD, str]) -> None:
+    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str], follower_switch: Union[FollowerSwitch, str] = FollowerSwitch.UseLeadersAndFollowers) -> None:
         self.poi_colony = poi_colony
         self.boids_colony = boids_colony
         
@@ -58,9 +58,12 @@ class FitnessCalculator():
             which_G = WhichG[which_G]
         if type(which_D) == str:
             which_D = WhichD[which_D]
+        if type(follower_switch) == str:
+            follower_switch = FollowerSwitch[follower_switch]
         
         self.which_G = which_G
         self.which_D = which_D
+        # follower_switch has a default setting for backwards compatability
         self.follower_switch = follower_switch
 
     def calculateG(self, position_history: List[np.ndarray]):
@@ -159,8 +162,8 @@ class FitnessCalculator():
             return difference_follower_evaluations
 
         elif self.which_D == WhichD.Zero:
-            # Literally just return zero. Floating point in case it matters
-            return 0.
+            # Literally just return zeros. Floating point in case it matters
+            return [0. for leader in self.boids_colony.getLeaders()]
             
     def calculateD(self, G: float, ids_to_remove: int, position_history: List[np.ndarray]):
         G_c = self.calculateCounterfactualG(position_history, ids_to_remove)
@@ -226,12 +229,33 @@ class FitnessCalculator():
         return num_observed/self.poi_colony.num_pois                
     
     def calculateCounterfactualG(self, position_history, ids_to_remove):
-        # First just copy the position_history as a np array. Np array makes it easier to slice
-        counterfactual_position_history = np.array(position_history).copy()
-        # Invert ids to remove to which ones we're keeping
-        ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
-        # Calculate G but with those ids removed. Hence, G_c
-        return self.calculateG(counterfactual_position_history[:,ids_to_keep,:])
+        # If we're only counting followers, then it means that when we calculate G,
+        # the leader trajectories will automatically be removed unless we specifically
+        # tell the fitness calculator to not do that
+        if self.follower_switch == FollowerSwitch.UseFollowersOnly:
+            # print("follower switch>")
+            # First just copy the position_history as a np array. Np array makes it easier to slice
+            counterfactual_position_history = np.array(position_history).copy()
+            # Add the leaders to what we need to remove
+            ids_to_remove += list(range(self.boids_colony.bounds.num_leaders))
+            # print("Ids to remove: ", ids_to_remove)
+            # Invert ids to remove to which ones we're keeping
+            ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
+            # Turn the follower switch off. This is so G does not try to remove the leaders again
+            self.follower_switch = FollowerSwitch.UseLeadersAndFollowers
+            # Calculate G but with those ids removed. Hence, G_c
+            G_c = self.calculateG(counterfactual_position_history[:,ids_to_keep,:])
+            # Turn follower switch back on
+            self.follower_switch = FollowerSwitch.UseFollowersOnly
+            # Return counterfactual G
+            return G_c
+        else:
+            # First just copy the position_history as a np array. Np array makes it easier to slice
+            counterfactual_position_history = np.array(position_history).copy()
+            # Invert ids to remove to which ones we're keeping
+            ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
+            # Calculate G but with those ids removed. Hence, G_c
+            return self.calculateG(counterfactual_position_history[:,ids_to_keep,:])
 
     # def calculateCounterfactualTeamFitness(self, boid_id: int, position_history: List[np.ndarray]):
     #     # Remove the specified boid's trajectory from the position history and calculate the fitness

@@ -1,5 +1,5 @@
 """Code for testing different methods in the FitnessCalculator.
-Beware, tests passing just means that the tests are passing. It does mean the methods are completely bug-free
+Beware, tests passing just means that the tests are passing. It does not mean the methods are completely bug-free
 """
 import unittest
 from copy import deepcopy

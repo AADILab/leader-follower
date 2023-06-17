@@ -206,12 +206,16 @@ class BoidsEnv(ParallelEnv):
         # Calculate fitnesses
         if env_done:
             G = self.fitness_calculator.calculateG(self.position_history)
+            Ds = self.fitness_calculator.calculateDs(G=G, position_history=self.position_history)
+            # if np.any(np.array(Ds)!=0):
+            #     print(Ds)
             rewards = {
                 agent: reward
                 for agent, reward
-                in zip(self.agents, self.fitness_calculator.calculateDs(G=G, position_history=self.position_history))
+                in zip(self.agents, Ds)
             }
             rewards["team"] = G
+
         else:
             rewards = {agent: 0.0 for agent in self.agents}
             rewards["team"] = 0.0
