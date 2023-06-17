@@ -89,7 +89,7 @@ CCEA:
   nn_hidden:
   - 9
   num_evaluations: 1
-  num_workers: 15
+  num_workers: 9
   sub_population_size: 15
 load_population: null
 num_generations: 1000
