@@ -89,50 +89,49 @@ if __name__ == '__main__':
     # change it for a new experiment
     config = loadConfig()
 
-    # for i_group in range(ax_length*ax_length):
-    i_group = 24
-    num_groups = i_group+1
+    for i_group in [0,4,9,14,19,24]:
+        num_groups = i_group+1
 
-    # Set up leaders
-    num_leaders = num_groups
-    leader_positions = getLeaderPositions(num_leaders, ax_length)
+        # Set up leaders
+        num_leaders = num_groups
+        leader_positions = getLeaderPositions(num_leaders, ax_length)
 
-    # Set up followers
-    num_followers = num_groups
-    follower_positions = getFollowerPositions(num_followers, ax_length)
+        # Set up followers
+        num_followers = num_groups
+        follower_positions = getFollowerPositions(num_followers, ax_length)
 
-    # Set up pois
-    num_pois = num_groups
-    poi_positions = getPoiPositions(num_pois, ax_length)
+        # Set up pois
+        num_pois = num_groups
+        poi_positions = getPoiPositions(num_pois, ax_length)
 
-    # Set up the configuration           
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = leader_positions
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = num_leaders
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = follower_positions
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = num_followers
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["POISpawner"]["positions"] = poi_positions
+        # Set up the configuration           
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = leader_positions
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = num_leaders
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = follower_positions
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = num_followers
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["POISpawner"]["positions"] = poi_positions
 
-    # runExperiment(config)
-    # import sys; sys.exit()
+        # runExperiment(config)
+        # import sys; sys.exit()
 
-    # Run each combination 10 times
-    for _ in range(num_stat_runs):
-        config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "G"
-        runExperiment(config)
+        # Run each combination 10 times
+        for _ in range(num_stat_runs):
+            config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "G"
+            runExperiment(config)
 
-    for _ in range(num_stat_runs):
-        config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "D"
-        runExperiment(config)
-    
-    for _ in range(num_stat_runs):
-        config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "DFollow"
-        runExperiment(config)
-    
-    for _ in range(num_stat_runs):
-        config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "Zero"
-        runExperiment(config)
+        for _ in range(num_stat_runs):
+            config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "D"
+            runExperiment(config)
+        
+        for _ in range(num_stat_runs):
+            config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "DFollow"
+            runExperiment(config)
+        
+        for _ in range(num_stat_runs):
+            config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "Zero"
+            runExperiment(config)
 
-    # x,y = turnToCoord(i=10, ax_length=5)
+        # x,y = turnToCoord(i=10, ax_length=5)
 
-    # print(x,y)
+        # print(x,y)
 
