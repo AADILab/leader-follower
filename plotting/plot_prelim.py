@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from lib.file_helper import loadConfig, loadTrial
 
-def getStatistics(trials):
-    save_datas = [loadTrial(trial) for trial in trials]
+def getStatistics(trials, computer_name):
+    save_datas = [loadTrial(trial, computer_name) for trial in trials]
 
     # Grab the fitnesses accross the trials
     all_team_fitnesses = []
@@ -39,8 +39,9 @@ def main():
     # trial_num = 2229 # one the runs looking at varying coupling, num_stat_runs=20
     # trial_num = 2780 # w. 20 trials is where I start to trick D with followers
     # trial_num = 2598 # w 20 stat runs?? not sure what this trial number was for
-    trial_num = 5276
+    trial_num = 5320
     num_stat_runs = 10
+    computer_name = "legacy"
 
     tested_G = True
     tested_D = True
@@ -89,25 +90,25 @@ def main():
     # Get statistics for different reward structures
     legend = []
     if tested_G: 
-        avg_G, std_dev_G, upper_dev_G, lower_dev_G, upper_range_G, lower_range_G = getStatistics(trials_G)
+        avg_G, std_dev_G, upper_dev_G, lower_dev_G, upper_range_G, lower_range_G = getStatistics(trials_G, computer_name)
         num_generations_arr = np.arange(avg_G.shape[0])
         plt.plot(num_generations_arr, avg_G, color='tab:blue')
         legend.append("$G$")
 
     if tested_D: 
-        avg_D, std_dev_D, upper_dev_D, lower_dev_D, upper_range_D, lower_range_D = getStatistics(trials_D)
+        avg_D, std_dev_D, upper_dev_D, lower_dev_D, upper_range_D, lower_range_D = getStatistics(trials_D, computer_name)
         num_generations_arr = np.arange(avg_D.shape[0])
         plt.plot(num_generations_arr, avg_D, color='tab:orange')
         legend.append("$D$")
 
     if tested_Dfollow: 
-        avg_Df, std_dev_Df, upper_dev_Df, lower_dev_Df, upper_range_Df, lower_range_Df = getStatistics(trials_Dfollow)
+        avg_Df, std_dev_Df, upper_dev_Df, lower_dev_Df, upper_range_Df, lower_range_Df = getStatistics(trials_Dfollow, computer_name)
         num_generations_arr = np.arange(avg_Df.shape[0])
         plt.plot(num_generations_arr, avg_Df, color="tab:green")
         legend.append(r'$D_{follow}$')
 
     if tested_Zero:
-        avg_Z, std_dev_Z, upper_dev_Z, lower_dev_Z, upper_range_Z, lower_range_Z = getStatistics(trials_Zero)
+        avg_Z, std_dev_Z, upper_dev_Z, lower_dev_Z, upper_range_Z, lower_range_Z = getStatistics(trials_Zero, computer_name)
         num_generations_arr = np.arange(avg_Z.shape[0])
         plt.plot(num_generations_arr, avg_Z, color="tab:pink")
         legend.append("$Zero$")
@@ -153,9 +154,12 @@ def main():
         plot_save_name += " Z"
     if plot_min_max_range:
         plot_save_name += " | full range"
+    else:
+        plot_save_name += " | std err"
+    plot_save_name += " | " + computer_name
     plot_save_name += ".png"
 
-    print(plot_save_name)
+    print("Saving plot as ", plot_save_name)
     plt.savefig(plot_save_name)
 
     plt.show()

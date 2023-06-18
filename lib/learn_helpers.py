@@ -35,7 +35,7 @@ def runExperiment(config: Dict) -> None:
         "best_team_data": best_team_data
     }
 
-    saveTrial(save_data, config)
+    saveTrial(save_data, config, computername=None)
 
     print("Experiment time: ", time() - start, " seconds. Completed ", finished_iterations, " out of ", config["num_generations"], " generations.")
 
