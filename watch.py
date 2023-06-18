@@ -11,11 +11,12 @@ from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 
 PLOT_SCORES = True
 PLAY_ENV = True
-TRIALNAME = getLatestTrialName()
+COMPUTERNAME = "legacy"
+TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
 TRIALNAME = "trial_5266"
 
 # Load in the trial data
-save_data = loadTrial(TRIALNAME)
+save_data = loadTrial(TRIALNAME, COMPUTERNAME)
 scores_list = save_data["scores_list"]
 unfiltered_scores_list = save_data["unfiltered_scores_list"]
 unfiltered_agent_scores_list = save_data["unfiltered_agent_scores_list"]
@@ -27,7 +28,7 @@ best_team_data = save_data["best_team_data"]
 
 # Load in the config for that trial
 config_filename = "config_" + TRIALNAME.split('_')[1] + ".yaml"
-config = loadConfig(config_name=config_filename)
+config = loadConfig(computername=COMPUTERNAME,config_name=config_filename)
 config["CCEA"]["config"]["BoidsEnv"]["render_mode"] = "human"
 leader_colors = config["CCEA"]["config"]["BoidsEnv"]["config"]["Renderer"]["leader_colors"]
 leader_colors = tuple(np.array(leader_colors)/255)
@@ -89,4 +90,4 @@ if PLAY_ENV:
                 sleep(dt - loop_time)
             else:
                 print("Loop " + str(step) + " took longer than refresh rate")
-        print("Team Fitness: ", env.fitness_calculator.getTeamFitness(), " | Agent Fitnesses: ", env.fitness_calculator.calculateDifferenceEvaluations())
+        # print("Team Fitness: ", env.fitness_calculator.getTeamFitness(), " | Agent Fitnesses: ", env.fitness_calculator.calculateDifferenceEvaluations())

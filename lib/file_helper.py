@@ -1,8 +1,8 @@
 from typing import Dict, List, Optional
 import pickle
 from lib.network_lib import NN
-from os import listdir
-from os.path import isfile, join
+from os import listdir, makedirs
+from os.path import isfile, join, exists
 import yaml
 import myaml
 import socket
@@ -27,6 +27,16 @@ def getLatestTrialNum(computername: Optional[str]) -> int:
     if computername is None:
         computername = getHostName()
     trials_dir = join("results", computername,"trials")
+
+    # Make sure the directory for this computer's results exists
+    computer_dir = join("results", computername)
+    print(computer_dir)
+    print(exists(computer_dir))
+    if not exists(computer_dir):
+        makedirs(computer_dir)
+        makedirs(join(computer_dir, "configs"))
+        makedirs(join(computer_dir, "trials"))
+
     filenames = [f for f in listdir(trials_dir) if isfile(join(trials_dir, f)) and f[-4:] == ".pkl" and f[:6] == "trial_"]
     numbers = [int(f[6:-4]) for f in filenames]
     if len(numbers) == 0:
@@ -43,6 +53,8 @@ def getNewTrialName(computername: Optional[str]) -> str:
 
 
 def saveTrial(save_data: Dict, config: Dict, computername: Optional[str], trial_num: Optional[str] = None) -> None:
+    if computername is None:
+        computername = getHostName()
     if trial_num is None:
         trial_name = getNewTrialName(computername)
         trial_num = trial_name.split("_")[1]
@@ -58,8 +70,16 @@ def saveTrial(save_data: Dict, config: Dict, computername: Optional[str], trial_
     with open(join(trial_path, trial_name+".pkl"), "wb") as file:
         pickle.dump(save_data, file)
 
-def loadConfig(config_name: str = "default.yaml"):
-    return myaml.safe_load("configs/" + config_name)
+def loadConfig(computername: Optional[str]=".", config_name: str = "default.yaml"):
+    if computername is None:
+        computername = getHostName()
+
+    if computername == ".":
+        path = "configs"
+    else:
+        path = join("results", computername, "configs")
+    
+    return myaml.safe_load(join(path, config_name))
 
 def setupInitialPopulation(config: Dict):
     if config["load_population"] is not None:
