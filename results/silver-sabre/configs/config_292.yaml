@@ -228,7 +228,7 @@ CCEA:
   - 9
   - 9
   num_evaluations: 1
-  num_workers: 9
+  num_workers: 19
   sub_population_size: 50
 load_population: null
-num_generations: 100
+num_generations: 5
