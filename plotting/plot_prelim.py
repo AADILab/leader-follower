@@ -47,7 +47,7 @@ def main():
     tested_D = True
     tested_Dfollow = True
     tested_Zero = True
-    plot_min_max_range = True
+    plot_min_max_range = False
 
     start_trial_num = trial_num
 
