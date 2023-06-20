@@ -133,7 +133,7 @@ CCEA:
           poi_sensor_type: Density
           swarm_sensor_type: Density
         POIColony:
-          coupling: 1
+          coupling: 2
           observation_radius: 1000
         POISpawner:
           poi_spawn_rule: Set

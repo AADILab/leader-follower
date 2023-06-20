@@ -13,8 +13,8 @@ if __name__ == '__main__':
     config = loadConfig()
     num_stat_runs = 10
 
-    for obs_radius in [1000, 15, 10, 5, 3, 1]:
-        config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["observation_radius"] = obs_radius
+    for coupling in [1,2,3]:
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = coupling
 
         # Run each combination 10 times
         for _ in range(num_stat_runs):

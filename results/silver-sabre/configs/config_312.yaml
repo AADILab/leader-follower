@@ -122,7 +122,7 @@ CCEA:
           wall_avoidance_multiplier: 1
         FitnessCalculator:
           follower_switch: UseFollowersOnly
-          which_D: DFollow
+          which_D: D
           which_G: ContinuousObsRadLastStep
         ObservationManager:
           full_observability: true
