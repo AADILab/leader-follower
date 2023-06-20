@@ -6,7 +6,7 @@ import os
 
 couplings = np.array([1,2,3])
 
-plot_min_max = True
+plot_min_max_range = False
 
 sweep_stats_G, sweep_stats_D, sweep_stats_Df, sweep_stats_Z = get1DSweepStatistics(
     num_batches = 3,
@@ -37,6 +37,13 @@ plt.fill_between(couplings, sweep_stats_D["upper_err_team_fitness_arr"], sweep_s
 plt.fill_between(couplings, sweep_stats_Df["upper_err_team_fitness_arr"], sweep_stats_Df["lower_err_team_fitness_arr"], alpha=0.2, color='tab:green')
 plt.fill_between(couplings, sweep_stats_Z["upper_err_team_fitness_arr"], sweep_stats_Z["lower_err_team_fitness_arr"], alpha=0.2, color='tab:pink')
 
+if plot_min_max_range:
+    plt.fill_between(couplings, sweep_stats_G["upper_range"], sweep_stats_G["lower_range"], alpha=0.2, color='tab:blue')
+    plt.fill_between(couplings, sweep_stats_D["upper_range"], sweep_stats_D["lower_range"], alpha=0.2, color='tab:orange')
+    plt.fill_between(couplings, sweep_stats_Df["upper_range"], sweep_stats_Df["lower_range"], alpha=0.2, color='tab:green')
+    plt.fill_between(couplings, sweep_stats_Z["upper_range"], sweep_stats_Z["lower_range"], alpha=0.2, color='tab:pink')
+
+
 plt.legend(legend)
 plt.xlabel("Coupling Requirement")
 plt.ylabel("Performance")
@@ -44,5 +51,10 @@ plt.ylabel("Performance")
 plt.grid()
 plt.ylim([0.,1.])
 plt.xticks(couplings)
-plt.savefig(os.path.join("figures/coupling_sweep_trials_295_to_414.png"))
+figname = "coupling_sweep_trials_295_to_414"
+if plot_min_max_range:
+    figname += " | full range.png"
+else:
+    figname += " | std err.png"
+plt.savefig(os.path.join("figures", figname))
 plt.show()
