@@ -174,7 +174,7 @@ def get1DSweepStatistics(
         sweep_stats_G = "Not tested"
 
     for batch_id in range(num_batches):
-        last_batch_trial_num = last_trial_num - (num_batches-batch_id-1)*(tested_Zero+tested_Dfollow+tested_D+tested_G)*10
+        last_batch_trial_num = last_trial_num - (num_batches-batch_id-1)*(tested_Zero+tested_Dfollow+tested_D+tested_G)*num_stat_runs
         print(f"Starting batch {batch_id} at trial number {last_batch_trial_num}")
         # Get the stats for this batch
         stats_dict_G, stats_dict_D, stats_dict_Df, stats_dict_Z = getBatchStatistics(

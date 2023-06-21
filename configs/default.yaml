@@ -208,7 +208,7 @@ CCEA:
           - - 66
             - 245
             - 242
-          pixels_per_unit: 8
+          pixels_per_unit: 6
         StateBounds:
           max_acceleration: 5
           max_angular_velocity: 1.570795
@@ -217,7 +217,7 @@ CCEA:
           num_followers: 25
           num_leaders: 25
         map_dimensions:
-          x: 160
+          x: !eval 30+(30*40)+10
           y: 60
       init_seed: 1
       max_steps: 50
@@ -231,4 +231,4 @@ CCEA:
   num_workers: 19
   sub_population_size: 50
 load_population: null
-num_generations: 100
+num_generations: 50
