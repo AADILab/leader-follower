@@ -1,0 +1,11 @@
+This is where I'm putting all the results for my first big experiment that I want to include in my write-up / presentation
+
+This one shows how Dfollow is robust to increasing the complexity of the system in terms of pois, leaders, and followers. Shows scale
+
+Notes for now:
+Trials 415 to 462 are 3 stat runs for G and Df
+100 gens for 1,5,10,15,20,25
+50 gens for 50,100
+
+Running more experiments on graf 15 to round this out with D
+and more gens for bigger numbers
