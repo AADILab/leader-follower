@@ -41,7 +41,7 @@ if __name__ == '__main__':
     config = loadConfig()
 
     config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 5
-    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_fkollowers"] = 5
+    config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 5
     # config["CCEA"]["config"][]
 
     num_stat_runs = 5
@@ -68,6 +68,8 @@ if __name__ == '__main__':
         config["CCEA"]["config"]["BoidsEnv"]["config"]["POISpawner"]["positions"] = poi_positions
         config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = follower_positions
         config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["leader_positions"] = leader_positions
+
+        # runExperiment(config)
 
         # Run each combination for the number of stat runs
         for _ in range(num_stat_runs):
