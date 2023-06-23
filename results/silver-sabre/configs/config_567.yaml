@@ -62,7 +62,7 @@ CCEA:
           wall_avoidance_multiplier: 1
         FitnessCalculator:
           follower_switch: UseFollowersOnly
-          which_D: DFollow
+          which_D: G
           which_G: ContinuousObsRadLastStep
         ObservationManager:
           full_observability: true
@@ -118,7 +118,7 @@ CCEA:
           num_leaders: 5
         map_dimensions:
           x: 100
-          y: 60
+          y: 100
       init_seed: 1
       max_steps: 200
       render_mode: none
@@ -128,7 +128,7 @@ CCEA:
   - 9
   - 9
   num_evaluations: 1
-  num_workers: 9
+  num_workers: 19
   sub_population_size: 50
 load_population: null
-num_generations: 1000
+num_generations: 1500

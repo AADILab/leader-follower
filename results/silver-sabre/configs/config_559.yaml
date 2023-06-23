@@ -3,49 +3,57 @@ CCEA:
     BoidsEnv:
       config:
         BoidSpawner:
-          follower_positions:
-          - - 97.8618342232764
-            - 79.91585642167236
-          - - 46.147936225293186
-            - 78.05291762864555
-          - - 11.827442586893323
-            - 63.99210213275238
-          - - 14.33532874090464
-            - 94.46689170495839
-          - - 52.184832175007166
-            - 41.46619399905236
-          - - 26.455561210462697
-            - 77.42336894342166
-          - - 45.615033221654855
-            - 56.84339488686485
-          - - 1.8789800436355142
-            - 61.76354970758771
-          - - 61.20957227224214
-            - 61.69339968747569
-          - - 94.37480785146242
-            - 68.18202991034835
-          - - 35.9507900573786
-            - 43.703195379934144
-          - - 69.76311959272648
-            - 6.022547162926983
-          - - 66.67667154456677
-            - 67.06378696181594
-          - - 21.03825610738409
-            - 12.892629765485331
-          - - 31.542835092418386
-            - 36.37107709426226
+          follower_positions: !!python/object/apply:numpy.core.multiarray._reconstruct
+            args:
+            - &id001 !!python/name:numpy.ndarray ''
+            - !!python/tuple
+              - 0
+            - !!binary |
+              Yg==
+            state: !!python/tuple
+            - 1
+            - !!python/tuple
+              - 15
+              - 2
+            - &id002 !!python/object/apply:numpy.dtype
+              args:
+              - f8
+              - false
+              - true
+              state: !!python/tuple
+              - 3
+              - <
+              - null
+              - null
+              - null
+              - -1
+              - -1
+              - 0
+            - false
+            - !!binary |
+              gfnkaddQ7z/yITT7tJLpPxjwKbzgiN0/Miy3Uhj66D8wbA+XO0e+P//8U6Y7euQ/qBSZiGZZwj+I
+              0ghPujruPwtzbED7suA/BO/JO9KJ2j/Om32peu7QP62a8rqFxug/wH67KZEx3T+idopknDDiP8Bz
+              fSmiPZM/XkSZhKvD4z83qOPESZbjP8TDi13sveM/xkKcKy8z7j+wv8zNeNHlP9CN52wtAtc/iAI4
+              31T42z+/qWWo/lLmPwBaEX7f1a4/vdCcJidW5T/sAq+M3XXlP8T9utXQ7co/eM8CLKiAwD9S1txk
+              +i/UP1yymYoJR9c/
           heading_rule: FixedStart
-          leader_positions:
-          - - 79.17250380826646
-            - 52.88949197529045
-          - - 56.80445610939323
-            - 92.5596638292661
-          - - 7.103605819788694
-            - 8.712929970154072
-          - - 2.021839744032572
-            - 83.2619845547938
-          - - 77.81567509498505
-            - 87.00121482468191
+          leader_positions: !!python/object/apply:numpy.core.multiarray._reconstruct
+            args:
+            - *id001
+            - !!python/tuple
+              - 0
+            - !!binary |
+              Yg==
+            state: !!python/tuple
+            - 1
+            - !!python/tuple
+              - 5
+              - 2
+            - *id002
+            - false
+            - !!binary |
+              KKk/v89V6T8if+sJtezgPy02kslrLeI/CCVY13ye7T8I88tKay+yP/DSvRQbTrY/4IkiryG0lD97
+              INRf0qTqPx24j/yo5ug/J/h6tyPX6z8=
           position_rule: Set
           spawn_rule: Individual
           start_heading: 3.14159
@@ -78,16 +86,16 @@ CCEA:
         POISpawner:
           poi_spawn_rule: Set
           positions:
-          - - 54.88135039273247
-            - 71.51893663724195
-          - - 60.276337607164386
-            - 54.48831829968969
-          - - 42.36547993389047
-            - 64.58941130666561
-          - - 43.75872112626925
-            - 89.17730007820798
-          - - 96.36627605010293
-            - 38.34415188257777
+          - - 10
+            - 10
+          - - 10
+            - 20
+          - - 10
+            - 30
+          - - 10
+            - 40
+          - - 10
+            - 50
         Renderer:
           leader_colors:
           - - 250
@@ -118,7 +126,7 @@ CCEA:
           num_leaders: 5
         map_dimensions:
           x: 100
-          y: 60
+          y: 100
       init_seed: 1
       max_steps: 200
       render_mode: none
@@ -128,7 +136,7 @@ CCEA:
   - 9
   - 9
   num_evaluations: 1
-  num_workers: 9
+  num_workers: 19
   sub_population_size: 50
 load_population: null
-num_generations: 1000
+num_generations: 1

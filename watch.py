@@ -13,7 +13,7 @@ PLOT_SCORES = True
 PLAY_ENV = True
 COMPUTERNAME = None
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
-TRIALNAME = "trial_543"
+# TRIALNAME = "trial_552"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME, COMPUTERNAME)
