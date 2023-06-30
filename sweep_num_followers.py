@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     num_followers_per_leader_list = [1,2,3,4,5,6,7,8]
     distance_from_leader = 2.5
-    xy_offset = np.sqrt((distance_from_leader**2)/2)
+    xy_offset = float(np.sqrt((distance_from_leader**2)/2))
 
     config["CCEA"]["config"]["BoidsEnv"]["config"]["POISpawner"]["positions"] = poi_positions
     config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"] = 5
@@ -85,6 +85,10 @@ if __name__ == '__main__':
         config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = follower_positions
         config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = len(follower_positions)
         config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = num_followers_per_leader
+
+        print(type(follower_positions[0][0]))
+
+        # import sys; sys.exit()
 
         # import sys; sys.exit()
         # Run each combination for the number of stat runs
