@@ -82,16 +82,15 @@ if __name__ == '__main__':
                 elif follower_id == 7:
                     follower_positions.append([leader_position[0]-distance_from_leader, leader_position[1]])
 
-        print(follower_positions)
-
         config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = follower_positions
         config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = len(follower_positions)
         config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = num_followers_per_leader
 
-        import sys; sys.exit()
+        # import sys; sys.exit()
         # Run each combination for the number of stat runs
         for _ in range(num_stat_runs):
             config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "G"
+            print(config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"])
             runExperiment(config)
 
         for _ in range(num_stat_runs):
