@@ -80,7 +80,7 @@ def getPoiPositions(num_pois, ax_length):
 if __name__ == '__main__':
     # 5x5 grid
     ax_length = 5
-    num_stat_runs = 10
+    num_stat_runs = 3
 
 
 
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # change it for a new experiment
     config = loadConfig()
 
-    for i_group in [0,4,9,14,19,24]:
+    for i_group in [0,4,9,14,19,24,49,99]:
         num_groups = i_group+1
 
         # Set up leaders
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         # runExperiment(config)
         # import sys; sys.exit()
 
-        # Run each combination 10 times
+        # Run each combination n times
         for _ in range(num_stat_runs):
             config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "G"
             runExperiment(config)
@@ -127,9 +127,9 @@ if __name__ == '__main__':
             config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "DFollow"
             runExperiment(config)
         
-        for _ in range(num_stat_runs):
-            config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "Zero"
-            runExperiment(config)
+        # for _ in range(num_stat_runs):
+        #     config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "Zero"
+        #     runExperiment(config)
 
         # x,y = turnToCoord(i=10, ax_length=5)
 
