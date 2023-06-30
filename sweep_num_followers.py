@@ -51,7 +51,7 @@ if __name__ == '__main__':
     leader_positions[:,0] += 20
     leader_positions = leader_positions.tolist()
 
-    num_followers_per_leader_list = [1,2,3,4]
+    num_followers_per_leader_list = [1,2,3,4,5,6,7,8]
     distance_from_leader = 2.5
     xy_offset = np.sqrt((distance_from_leader**2)/2)
 
@@ -82,10 +82,13 @@ if __name__ == '__main__':
                 elif follower_id == 7:
                     follower_positions.append([leader_position[0]-distance_from_leader, leader_position[1]])
 
+        print(follower_positions)
+
         config["CCEA"]["config"]["BoidsEnv"]["config"]["BoidSpawner"]["follower_positions"] = follower_positions
         config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = len(follower_positions)
-        config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = len(follower_positions)
+        config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = num_followers_per_leader
 
+        import sys; sys.exit()
         # Run each combination for the number of stat runs
         for _ in range(num_stat_runs):
             config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "G"
