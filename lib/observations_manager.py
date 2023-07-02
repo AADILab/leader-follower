@@ -121,6 +121,9 @@ class ObservationManager():
                 if relative_angle == np.pi: relative_angle = -np.pi
                 # Determine which bin this position belongs to
                 bin_number = int( (relative_angle+np.pi)/bin_size )
+                # Fix the issue where if the relative angle is exactly pi, the object gets binned to 1+ highest valid bin index
+                if bin_number == num_bins:
+                    bin_number -= 1
                 # Bin the position properly
                 bins[bin_number].append(item)
         return bins
