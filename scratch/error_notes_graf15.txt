@@ -1,0 +1,48 @@
+I need to look into how binning works. It should not be possible to get a list index out of range error
+
+Still, I should write some unit tests and just look into this to see if I can figure out what went wrong
+
+This is also interesting because this specifically happened on the first trial to use 3 followers per leader... maybe there was something about
+how I placed the followers around the leader that caused this???
+
+Experiment time:  5683.614404201508  seconds. Completed  1000  out of  1000  generations.
+<class 'float'>
+[[28.23223304703363, 11.767766952966369], [31.76776695296637, 11.767766952966369], [28.23223304703363, 8.232233047033631], [28.23223304703363, 31.76776695296637], [31.76776695296637, 31.76776695296637], [28.23223304703363, 28.23223304703363], [28.23223304703363, 51.76776695296637], [31.76776695296637, 51.76776695296637], [28.23223304703363, 48.23223304703363], [28.23223304703363, 71.76776695296637], [31.76776695296637, 71.76776695296637], [28.23223304703363, 68.23223304703363], [28.23223304703363, 91.76776695296637], [31.76776695296637, 91.76776695296637], [28.23223304703363, 88.23223304703363]]
+ 33%|████████████████████████████████▌                                                                 | 332/1000 [39:02<1:17:52,  6.99s/it]Error on EvaluationWorker 3! Exiting program. Error: list index out of range
+Full Traceback:
+Traceback (most recent call last):
+  File "/home/gonzaeve/boids/leader-follower/lib/ccea_lib.py", line 102, in __call__
+    team_data.fitness, team_data.difference_evaluations = self.evaluateTeam(team_data, False)
+  File "/home/gonzaeve/boids/leader-follower/lib/ccea_lib.py", line 149, in evaluateTeam
+    observations, rewards, dones, _ = self.env.step(actions)
+  File "/home/gonzaeve/boids/leader-follower/lib/boids_env.py", line 187, in step
+    observations = self.getObservations()
+  File "/home/gonzaeve/boids/leader-follower/lib/boids_env.py", line 152, in getObservations
+    all_observations = self.observation_manager.getAllObservations()
+  File "/home/gonzaeve/boids/leader-follower/lib/observations_manager.py", line 166, in getAllObservations
+    observations.append(self.getObservation(leader))
+  File "/home/gonzaeve/boids/leader-follower/lib/observations_manager.py", line 160, in getObservation
+    swarm_observation = self.getSwarmObservation(boid)
+  File "/home/gonzaeve/boids/leader-follower/lib/observations_manager.py", line 153, in getSwarmObservation
+    bins = self.generateSwarmBins(boid)
+  File "/home/gonzaeve/boids/leader-follower/lib/observations_manager.py", line 144, in generateSwarmBins
+    return self.generateBins(boid, self.num_swarm_bins, self.boids_colony.getObservableBoids(boid))
+  File "/home/gonzaeve/boids/leader-follower/lib/observations_manager.py", line 125, in generateBins
+    bins[bin_number].append(item)
+IndexError: list index out of range
+
+Shutting down EvaluationWorker 3
+Shutting down EvaluationWorker 7
+ 33%|████████████████████████████████▌                                                                 | 332/1000 [39:05<1:18:38,  7.06s/it]
+Traceback (most recent call last):
+  File "/home/gonzaeve/boids/leader-follower/sweep_num_followers.py", line 98, in <module>
+    runExperiment(config)
+  File "/home/gonzaeve/boids/leader-follower/lib/learn_helpers.py", line 16, in runExperiment
+    learner.train(num_generations=config["num_generations"])
+  File "/home/gonzaeve/boids/leader-follower/lib/ccea_lib.py", line 462, in train
+    self.step()
+  File "/home/gonzaeve/boids/leader-follower/lib/ccea_lib.py", line 428, in step
+    self.evaluatePopulation()
+  File "/home/gonzaeve/boids/leader-follower/lib/ccea_lib.py", line 368, in evaluatePopulation
+    for agent_id, genome_data in enumerate(evaluated_team_data.team):
+AttributeError: 'NoneType' object has no attribute 'team'
