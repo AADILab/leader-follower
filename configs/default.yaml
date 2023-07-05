@@ -231,4 +231,4 @@ CCEA:
   num_workers: 9
   sub_population_size: 50
 load_population: null
-num_generations: 1000
+num_generations: 5
