@@ -57,7 +57,8 @@ class BoidsColony():
         # min_velocity: float, max_velocity: float,
         # max_acceleration: float,
         # max_angular_velocity: float,
-        dt: float
+        dt: float,
+        num_followers_influenced: int = 0
         ) -> None:
 
         self.state = init_state
@@ -91,6 +92,8 @@ class BoidsColony():
         # self.max_acceleration = max_acceleration
         # self.max_angular_velocity = max_angular_velocity
         self.dt = dt
+
+        self.num_followers_influenced = num_followers_influenced
 
     def reset(self, reset_state: BoidsColonyState) -> None:
         self.state.__dict__.update(reset_state.__dict__)
@@ -246,10 +249,12 @@ class BoidsColony():
         # print("after: ", self.state.positions[0])
 
     def updateLeaderInfluence(self):
+        self.num_followers_influenced = 0
         for follower in self.getFollowers():
             observable_boids = self.getObservableBoids(follower)
             for boid in observable_boids:
                 if boid.isLeader():
+                    self.num_followers_influenced += 1
                     follower.leader_influence[boid.id]+=1
 
     def step(self, leader_desired_velocities: Optional[NDArray[np.float64]] = None, leader_desired_delta_headings: Optional[NDArray[np.float64]] = None) -> None:

@@ -266,19 +266,14 @@ class FitnessCalculator():
             # Calculate G but with those ids removed. Hence, G_c
             return self.calculateG(counterfactual_position_history[:,ids_to_keep,:])
     
-    def calculateFs(self, position_history: List[np.ndarray]):
+    def calculateFs(self, potential_values):
         if self.which_F == WhichF.G:
             #Just return 0 for each leader in the case of no PBRS
             return [0 for leader in self.boids_colony.getLeaders()]
     
         elif self.which_F == WhichF.FCouple:
-            pass
-            # # Assign followers to each leader
-            # all_assigned_followers = [[] for _ in range(self.boids_colony.bounds.num_leaders)]
-            # for follower in self.boids_colony.getFollowers():
-            #     # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
-            #     all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
-
+    
+            return self.calculate_coupling_potential(self.boids_colony.num_followers_influenced, potential_values)
             # difference_follower_evaluations = []
             # for leader in self.boids_colony.getLeaders():
             #     # Figure out which trajectories we're actually removing
@@ -288,10 +283,13 @@ class FitnessCalculator():
             #     difference_follower_evaluations.append(D_follow)
             # return difference_follower_evaluations
     
-    def calculate(self, position_history: List[np.ndarray]):
-
-        pass
-    
+    def calculate_coupling_potential(self, num_followers_influenced, potential_values):
+        potential_values.append(num_followers_influenced)
+        if(len(potential_values) == 1):
+            return num_followers_influenced
+        else:
+            return num_followers_influenced - potential_values[-2]
+        
     def updatePOIs(self):
         """Update POIs as observed or not for rendering purposes"""
         for poi in self.poi_colony.pois:

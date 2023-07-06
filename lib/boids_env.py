@@ -92,6 +92,9 @@ class BoidsEnv(ParallelEnv):
         # Each element is a np array of positions 
         self.position_history = [self.boids_colony.state.positions.copy()]
 
+        # An array of potential value histories
+        self.potential_values = []
+
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
     @functools.lru_cache(maxsize=None)
@@ -208,6 +211,7 @@ class BoidsEnv(ParallelEnv):
         if env_done:
             G = self.fitness_calculator.calculateG(self.position_history)
             Ds = self.fitness_calculator.calculateDs(G=G, position_history=self.position_history)
+            Fs = self.fitness_calculator.calculateFs(self.potential_values)
             # if np.any(np.array(Ds)!=0):
             #     print(Ds)
             rewards = {
@@ -215,7 +219,7 @@ class BoidsEnv(ParallelEnv):
                 for agent, reward
                 in zip(self.agents, Ds)
             }
-            rewards["team"] = G
+            rewards["team"] = G + Fs
 
         else:
             rewards = {agent: 0.0 for agent in self.agents}

@@ -11,9 +11,9 @@ from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 
 PLOT_SCORES = True
 PLAY_ENV = True
-COMPUTERNAME = "graf200-17"
+COMPUTERNAME = "10-249-214-110.wireless.oregonstate.edu"
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
-TRIALNAME = "trial_0"
+#TRIALNAME = "trial_0"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME, COMPUTERNAME)
