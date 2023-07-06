@@ -124,6 +124,7 @@ CCEA:
           follower_switch: UseFollowersOnly
           which_D: G
           which_G: ContinuousObsRadLastStep
+          which_P: G
         ObservationManager:
           full_observability: true
           num_poi_bins: 4

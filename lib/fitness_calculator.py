@@ -49,8 +49,14 @@ class WhichD(IntEnum):
     # A reward signal is probably misleading if a consistent reward of zero results in a better policy
     Zero = 3
 
+class WhichF(IntEnum):
+    # Don't use a potential function. Just give 0
+    G = 0
+    # Use a potential function for leaders grabbing followers
+    FCouple = 1
+
 class FitnessCalculator():
-    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str], follower_switch: Union[FollowerSwitch, str] = FollowerSwitch.UseLeadersAndFollowers) -> None:
+    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str], which_F: Union[WhichF, str], follower_switch: Union[FollowerSwitch, str] = FollowerSwitch.UseLeadersAndFollowers) -> None:
         self.poi_colony = poi_colony
         self.boids_colony = boids_colony
         
@@ -60,12 +66,15 @@ class FitnessCalculator():
             which_D = WhichD[which_D]
         if type(follower_switch) == str:
             follower_switch = FollowerSwitch[follower_switch]
+        if type(which_F) == str:
+            which_F = WhichF[which_F]
         
         self.which_G = which_G
         self.which_D = which_D
+        self.which_F = which_F
         # follower_switch has a default setting for backwards compatability
         self.follower_switch = follower_switch
-
+        
     def calculateG(self, position_history: List[np.ndarray]):
         # Remove leader trajectories if we are only evaluating based on followers
         if self.follower_switch == FollowerSwitch.UseFollowersOnly:
@@ -256,6 +265,32 @@ class FitnessCalculator():
             ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
             # Calculate G but with those ids removed. Hence, G_c
             return self.calculateG(counterfactual_position_history[:,ids_to_keep,:])
+    
+    def calculateFs(self, position_history: List[np.ndarray]):
+        if self.which_F == WhichF.G:
+            #Just return 0 for each leader in the case of no PBRS
+            return [0 for leader in self.boids_colony.getLeaders()]
+    
+        elif self.which_F == WhichF.FCouple:
+            pass
+            # # Assign followers to each leader
+            # all_assigned_followers = [[] for _ in range(self.boids_colony.bounds.num_leaders)]
+            # for follower in self.boids_colony.getFollowers():
+            #     # Get the id of the max number in the influence list (this is the id of the leader that influenced this follower the most)
+            #     all_assigned_followers[argmax(follower.leader_influence)].append(follower.id)
+
+            # difference_follower_evaluations = []
+            # for leader in self.boids_colony.getLeaders():
+            #     # Figure out which trajectories we're actually removing
+            #     ids_to_remove = [leader.id]+all_assigned_followers[leader.id]
+            #     # Calculate Dfollow
+            #     D_follow = self.calculateD(G, ids_to_remove, position_history)
+            #     difference_follower_evaluations.append(D_follow)
+            # return difference_follower_evaluations
+    
+    def calculate(self, position_history: List[np.ndarray]):
+
+        pass
     
     def updatePOIs(self):
         """Update POIs as observed or not for rendering purposes"""
