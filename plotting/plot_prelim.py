@@ -39,9 +39,9 @@ def main():
     # trial_num = 2229 # one the runs looking at varying coupling, num_stat_runs=20
     # trial_num = 2780 # w. 20 trials is where I start to trick D with followers
     # trial_num = 2598 # w 20 stat runs?? not sure what this trial number was for
-    trial_num = 384
-    num_stat_runs = 3
-    computer_name = "graf200-15"
+    trial_num = 630
+    num_stat_runs = 5
+    computer_name = "silver-sabre"
 
     tested_G = True
     tested_D = True
@@ -85,7 +85,7 @@ def main():
 
     plt.figure(0)
 
-    plt.ylim([0,1.0])
+    # plt.ylim([0,1.0])
 
     # Get statistics for different reward structures
     legend = []
