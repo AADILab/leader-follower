@@ -12,8 +12,6 @@ CCEA:
           leader_positions:
           - - 60
             - 30
-          - - 50
-            - 30
           position_rule: Set
           spawn_rule: Individual
           start_heading: 3.14159
@@ -22,6 +20,7 @@ CCEA:
         BoidsColony:
           attraction_multiplier: 2
           dt: 0.2
+          num_followers_influenced: 0
           orientation_multiplier: 2
           radius_attraction: 5
           radius_orientation: 3
@@ -31,8 +30,8 @@ CCEA:
         FitnessCalculator:
           follower_switch: UseFollowersOnly
           which_D: G
+          which_F: G
           which_G: ContinuousObsRadLastStep
-          which_F: FCouple
         ObservationManager:
           full_observability: true
           num_poi_bins: 4
@@ -61,7 +60,7 @@ CCEA:
           max_velocity: 10
           min_velocity: 0
           num_followers: 2
-          num_leaders: 2
+          num_leaders: 1
         map_dimensions:
           x: 160
           y: 60
@@ -77,4 +76,4 @@ CCEA:
   num_workers: 3
   sub_population_size: 50
 load_population: null
-num_generations: 5
+num_generations: 50

@@ -269,7 +269,7 @@ class FitnessCalculator():
     def calculateFs(self, potential_values):
         if self.which_F == WhichF.G:
             #Just return 0 for each leader in the case of no PBRS
-            return [0 for leader in self.boids_colony.getLeaders()]
+            return 0
     
         elif self.which_F == WhichF.FCouple:
     
@@ -288,7 +288,7 @@ class FitnessCalculator():
         if(len(potential_values) == 1):
             return num_followers_influenced
         else:
-            return num_followers_influenced - potential_values[-2]
+            return 0.2*(num_followers_influenced - potential_values[-2])
         
     def updatePOIs(self):
         """Update POIs as observed or not for rendering purposes"""

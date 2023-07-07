@@ -58,7 +58,7 @@ class BoidsColony():
         # max_acceleration: float,
         # max_angular_velocity: float,
         dt: float,
-        num_followers_influenced: int = 0
+        #num_followers_influenced: int = 0
         ) -> None:
 
         self.state = init_state
@@ -93,7 +93,7 @@ class BoidsColony():
         # self.max_angular_velocity = max_angular_velocity
         self.dt = dt
 
-        self.num_followers_influenced = num_followers_influenced
+        self.num_followers_influenced = 0
 
     def reset(self, reset_state: BoidsColonyState) -> None:
         self.state.__dict__.update(reset_state.__dict__)
