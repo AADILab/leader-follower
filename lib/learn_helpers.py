@@ -1,11 +1,11 @@
 from lib.ccea_lib import CCEA
 from time import time
 import sys
-from typing import Dict
+from typing import Dict, Optional
 import numpy as np
 from lib.file_helper import saveTrial, loadConfig, setupInitialPopulation
 
-def runExperiment(config: Dict) -> None:
+def runExperiment(config: Dict, computername: Optional[str] = None, trial_num: Optional[str] = None, save_trial_only: bool=False) -> None:
     # Start clock
     start = time()
 
@@ -35,7 +35,12 @@ def runExperiment(config: Dict) -> None:
         "best_team_data": best_team_data
     }
 
-    saveTrial(save_data, config, computername=None)
+    # saveTrial saves both the save data and the config
+    # Let's set it up to just save the trial if specified
+    # Also let's propogate computer name and the trial number down to here as well
+    # Without breaking any existing software infrastructure
+
+    saveTrial(save_data, config, computername=computername, trial_num=trial_num, save_trial_only=save_trial_only)
 
     print("Experiment time: ", time() - start, " seconds. Completed ", finished_iterations, " out of ", config["num_generations"], " generations.")
 
