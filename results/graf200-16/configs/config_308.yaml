@@ -1,0 +1,384 @@
+CCEA:
+  config:
+    BoidsEnv:
+      config:
+        BoidSpawner:
+          follower_positions:
+          - - 20
+            - 10
+          - - 20
+            - 20
+          - - 20
+            - 30
+          - - 20
+            - 40
+          - - 20
+            - 50
+          - - 50
+            - 10
+          - - 50
+            - 20
+          - - 50
+            - 30
+          - - 50
+            - 40
+          - - 50
+            - 50
+          - - 80
+            - 10
+          - - 80
+            - 20
+          - - 80
+            - 30
+          - - 80
+            - 40
+          - - 80
+            - 50
+          - - 110
+            - 10
+          - - 110
+            - 20
+          - - 110
+            - 30
+          - - 110
+            - 40
+          - - 110
+            - 50
+          - - 140
+            - 10
+          - - 140
+            - 20
+          - - 140
+            - 30
+          - - 140
+            - 40
+          - - 140
+            - 50
+          - - 170
+            - 10
+          - - 170
+            - 20
+          - - 170
+            - 30
+          - - 170
+            - 40
+          - - 170
+            - 50
+          - - 200
+            - 10
+          - - 200
+            - 20
+          - - 200
+            - 30
+          - - 200
+            - 40
+          - - 200
+            - 50
+          - - 230
+            - 10
+          - - 230
+            - 20
+          - - 230
+            - 30
+          - - 230
+            - 40
+          - - 230
+            - 50
+          - - 260
+            - 10
+          - - 260
+            - 20
+          - - 260
+            - 30
+          - - 260
+            - 40
+          - - 260
+            - 50
+          - - 290
+            - 10
+          - - 290
+            - 20
+          - - 290
+            - 30
+          - - 290
+            - 40
+          - - 290
+            - 50
+          heading_rule: FixedStart
+          leader_positions:
+          - - 30
+            - 10
+          - - 30
+            - 20
+          - - 30
+            - 30
+          - - 30
+            - 40
+          - - 30
+            - 50
+          - - 60
+            - 10
+          - - 60
+            - 20
+          - - 60
+            - 30
+          - - 60
+            - 40
+          - - 60
+            - 50
+          - - 90
+            - 10
+          - - 90
+            - 20
+          - - 90
+            - 30
+          - - 90
+            - 40
+          - - 90
+            - 50
+          - - 120
+            - 10
+          - - 120
+            - 20
+          - - 120
+            - 30
+          - - 120
+            - 40
+          - - 120
+            - 50
+          - - 150
+            - 10
+          - - 150
+            - 20
+          - - 150
+            - 30
+          - - 150
+            - 40
+          - - 150
+            - 50
+          - - 180
+            - 10
+          - - 180
+            - 20
+          - - 180
+            - 30
+          - - 180
+            - 40
+          - - 180
+            - 50
+          - - 210
+            - 10
+          - - 210
+            - 20
+          - - 210
+            - 30
+          - - 210
+            - 40
+          - - 210
+            - 50
+          - - 240
+            - 10
+          - - 240
+            - 20
+          - - 240
+            - 30
+          - - 240
+            - 40
+          - - 240
+            - 50
+          - - 270
+            - 10
+          - - 270
+            - 20
+          - - 270
+            - 30
+          - - 270
+            - 40
+          - - 270
+            - 50
+          - - 300
+            - 10
+          - - 300
+            - 20
+          - - 300
+            - 30
+          - - 300
+            - 40
+          - - 300
+            - 50
+          position_rule: Set
+          spawn_rule: Individual
+          start_heading: 3.14159
+          velocity_fraction: 0.0
+          velocity_rule: FixedStart
+        BoidsColony:
+          attraction_multiplier: 2
+          dt: 0.2
+          orientation_multiplier: 2
+          radius_attraction: 5
+          radius_orientation: 3
+          radius_repulsion: 2
+          repulsion_multiplier: 2
+          wall_avoidance_multiplier: 1
+        FitnessCalculator:
+          follower_switch: UseFollowersOnly
+          which_D: DFollow
+          which_G: ContinuousObsRadLastStep
+        ObservationManager:
+          full_observability: true
+          num_poi_bins: 4
+          num_swarm_bins: 4
+          observation_radius: null
+          observation_rule: Individual
+          poi_sensor_type: Density
+          swarm_sensor_type: Density
+        POIColony:
+          coupling: 1
+          observation_radius: 1000
+        POISpawner:
+          poi_spawn_rule: Set
+          positions:
+          - - 10
+            - 10
+          - - 10
+            - 20
+          - - 10
+            - 30
+          - - 10
+            - 40
+          - - 10
+            - 50
+          - - 40
+            - 10
+          - - 40
+            - 20
+          - - 40
+            - 30
+          - - 40
+            - 40
+          - - 40
+            - 50
+          - - 70
+            - 10
+          - - 70
+            - 20
+          - - 70
+            - 30
+          - - 70
+            - 40
+          - - 70
+            - 50
+          - - 100
+            - 10
+          - - 100
+            - 20
+          - - 100
+            - 30
+          - - 100
+            - 40
+          - - 100
+            - 50
+          - - 130
+            - 10
+          - - 130
+            - 20
+          - - 130
+            - 30
+          - - 130
+            - 40
+          - - 130
+            - 50
+          - - 160
+            - 10
+          - - 160
+            - 20
+          - - 160
+            - 30
+          - - 160
+            - 40
+          - - 160
+            - 50
+          - - 190
+            - 10
+          - - 190
+            - 20
+          - - 190
+            - 30
+          - - 190
+            - 40
+          - - 190
+            - 50
+          - - 220
+            - 10
+          - - 220
+            - 20
+          - - 220
+            - 30
+          - - 220
+            - 40
+          - - 220
+            - 50
+          - - 250
+            - 10
+          - - 250
+            - 20
+          - - 250
+            - 30
+          - - 250
+            - 40
+          - - 250
+            - 50
+          - - 280
+            - 10
+          - - 280
+            - 20
+          - - 280
+            - 30
+          - - 280
+            - 40
+          - - 280
+            - 50
+        Renderer:
+          leader_colors:
+          - - 250
+            - 120
+            - 0
+          - - 120
+            - 0
+            - 250
+          - - 250
+            - 250
+            - 0
+          - - 0
+            - 200
+            - 0
+          - - 120
+            - 0
+            - 120
+          - - 66
+            - 245
+            - 242
+          pixels_per_unit: 5
+        StateBounds:
+          max_acceleration: 5
+          max_angular_velocity: 1.570795
+          max_velocity: 10
+          min_velocity: 0
+          num_followers: 50
+          num_leaders: 50
+        map_dimensions:
+          x: 640
+          y: 60
+      init_seed: 1
+      max_steps: 50
+      render_mode: none
+  mutation_probability: 0.25
+  mutation_rate: 0.1
+  nn_hidden:
+  - 9
+  - 9
+  num_evaluations: 1
+  num_workers: 9
+  sub_population_size: 50
+load_population: null
+num_generations: 1000
