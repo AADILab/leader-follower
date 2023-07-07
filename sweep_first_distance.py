@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # 40x5 grid (but I'm only using 1x5)
     ax_length_x = 40
     ax_length_y = 5
-    num_stat_runs = 5
+    num_stat_runs = 1
 
     poi_positions = getPoiPositions(5, ax_length_x, ax_length_y)
 
