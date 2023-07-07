@@ -123,6 +123,7 @@ class FitnessCalculator():
             distances = self.calculateDistances(poi, agent_positions)
             # Coupling determines how many distances we use here
             distances_sorted = np.sort(distances)
+            distances_sorted[distances_sorted < 1] = 1
             # Make sure to only calculate a score if the coupling requirement is met
             # AND if all the distances were within the observation radius of that poi
             if len(distances_sorted) >= self.poi_colony.coupling \
