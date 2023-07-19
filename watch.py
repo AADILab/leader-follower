@@ -9,11 +9,11 @@ from lib.network_lib import createNNfromWeights
 from lib.ccea_lib import computeAction
 from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 
-PLOT_SCORES = True
+PLOT_SCORES = False
 PLAY_ENV = True
-COMPUTERNAME = "silver-sabre"
+COMPUTERNAME = "graf200-15"
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
-TRIALNAME = "trial_691"
+TRIALNAME = "trial_429"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME, COMPUTERNAME)
