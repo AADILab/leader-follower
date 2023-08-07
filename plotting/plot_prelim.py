@@ -46,15 +46,15 @@ def main():
     # trial_num = 2229 # one the runs looking at varying coupling, num_stat_runs=20
     # trial_num = 2780 # w. 20 trials is where I start to trick D with followers
     # trial_num = 2598 # w 20 stat runs?? not sure what this trial number was for
-    trial_num = 45
-    num_stat_runs = 3
-    computer_name = "aadi-z640"
+    trial_num = 746
+    num_stat_runs = 20
+    computer_name = "experiment_6b"
 
-    tested_G = True
-    tested_D = True
+    tested_G = False
+    tested_D = False
     tested_Dfollow = True
     tested_Zero = False
-    plot_min_max_range = False
+    plot_min_max_range = True
 
     start_trial_num = trial_num
 
@@ -93,7 +93,7 @@ def main():
     plt.figure(0)
 
     plt.ylim([0,1.01])
-    plt.xlim([0,500])
+    plt.xlim([0,50])
 
     # Get statistics for different reward structures
     legend = []

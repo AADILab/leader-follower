@@ -9,11 +9,12 @@ from lib.network_lib import createNNfromWeights
 from lib.ccea_lib import computeAction
 from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 
-PLOT_SCORES = False
-PLAY_ENV = True
-COMPUTERNAME = "graf200-15"
+PLOT_BEST_SCORES = True
+PLOT_AVERAGE_SCORES = False
+PLAY_ENV = False
+COMPUTERNAME = "experiment_6b"
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
-TRIALNAME = "trial_429"
+TRIALNAME = "trial_733"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME, COMPUTERNAME)
@@ -33,14 +34,14 @@ config["CCEA"]["config"]["BoidsEnv"]["render_mode"] = "human"
 leader_colors = config["CCEA"]["config"]["BoidsEnv"]["config"]["Renderer"]["leader_colors"]
 leader_colors = tuple(np.array(leader_colors)/255)
 
-if PLOT_SCORES:
+if PLOT_BEST_SCORES:
     plt.plot(scores_list, color="green", linestyle="--")
     plt.plot(unfiltered_scores_list, color="green")
     for ind, unfiltered_agent_scores in enumerate(unfiltered_agent_scores_list):
         plt.plot(unfiltered_agent_scores, color=tuple(leader_colors[ind%len(leader_colors)]))
     plt.xlabel("Generation")
     plt.ylabel("Fitness Score")
-    # plt.ylim([0.0,1.2])
+    plt.ylim([0.0,1.01])
     plt.title("Best Performance")
     legend = ["Best Team Filtered", "Best Team Unfiltered"]
     for i in range(len(unfiltered_agent_scores_list)):
@@ -50,7 +51,7 @@ if PLOT_SCORES:
 
 
 
-if PLOT_SCORES:
+if PLOT_AVERAGE_SCORES:
     plt.plot(average_fitness_list_unfiltered, color="green")
     for ind, unfiltered_agent_scores in enumerate(average_agent_fitness_lists_unfiltered):
         plt.plot(unfiltered_agent_scores, color=tuple(leader_colors[ind%len(leader_colors)]))
