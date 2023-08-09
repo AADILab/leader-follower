@@ -66,6 +66,8 @@ class TeamData(SortByFitness):
         self.difference_evaluations = []
         self.evaluation_seed = evaluation_seed
         self.all_evaluation_seeds = []
+        # Joint trajectory includes leaders and followers
+        self.joint_trajectory = None
 
 
 def computeAction(net, observation, env):
@@ -99,7 +101,7 @@ class EvaluationWorker:
 
                 try:
                     start_evaluate_team_time = time.time()
-                    team_data.fitness, team_data.difference_evaluations = self.evaluateTeam(team_data, False)
+                    team_data.fitness, team_data.difference_evaluations, team_data.joint_trajectory = self.evaluateTeam(team_data, False)
                     stop_evaluate_team_time = time.time()
                     interval_evaluate_team_time = stop_evaluate_team_time - start_evaluate_team_time
 
@@ -124,7 +126,7 @@ class EvaluationWorker:
         for genome_data, net in zip(team_data.team, self.team_policies):
             net.setWeights(genome_data.genome)
 
-    def evaluateTeam(self, team_data: TeamData, draw: bool = False) -> tuple[Any, list[Any]]:
+    def evaluateTeam(self, team_data: TeamData, draw: bool = False) -> tuple[Any, list[Any], list[np.ndarray]]:
         """Load team into boids environment and calculate a fitness score."""
         self.setupTeamPolicies(team_data)
 
@@ -156,7 +158,7 @@ class EvaluationWorker:
 
         team_fitness = np.average(fitnesses[:, 0])
         agent_fitnesses = [np.average(fitnesses[:, num_agent + 1]) for num_agent in range(self.env.num_agents)]
-        return team_fitness, agent_fitnesses
+        return team_fitness, agent_fitnesses, self.env.position_history
 
 
 class CCEA:
@@ -188,6 +190,9 @@ class CCEA:
         self.best_team_data = None
         self.current_best_team_data = None
         self.genome_uid = 0
+
+        self.teams_in_evaluation = []
+        self.populations_through_generations = []
 
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
@@ -367,6 +372,10 @@ class CCEA:
         for evaluated_team_data in self.teams:
             for agent_id, genome_data in enumerate(evaluated_team_data.team):
                 genome_data.fitness = evaluated_team_data.difference_evaluations[agent_id]
+                # Save the trajectory that was taken by this particular policy in its team evaluation
+                # This makes an assumption about how the joint trajectory is organized
+                # Leader trajectories are all on the left-hand side of the array, followers on the right
+                genome_data.trajectory = np.array(evaluated_team_data.joint_trajectory)[:, agent_id]
 
         # This array is helpful for debugging and ensuring that difference evaluations
         # are assigned correctly to each policy
@@ -379,6 +388,10 @@ class CCEA:
             for agent_id, genome_data in enumerate(evaluated_team_data.team):
                 self.population[agent_id][genome_data.id].fitness = evaluated_team_data.difference_evaluations[agent_id]
                 covered[agent_id][genome_data.id] += 1
+
+        # Save all the team data during evaluation
+        self.teams_in_evaluation.append(deepcopy(self.teams))
+        self.populations_through_generations.append(deepcopy(self.population))
 
         # Save the team with the highest fitness. Both a filtered one and the current best
         self.teams.sort(reverse=True)
@@ -433,7 +446,8 @@ class CCEA:
     def getFinalMetrics(self):
         return self.best_fitness_list, self.best_fitness_list_unfiltered, self.best_agent_fitness_lists_unfiltered, \
                self.average_fitness_list_unfiltered, self.average_agent_fitness_lists_unfiltered, \
-               self.population, self.iterations, self.best_team_data
+               self.population, self.iterations, self.best_team_data, \
+               self.teams_in_evaluation, self.populations_through_generations
 
     def saveFitnesses(self):
         # Save bests
@@ -454,12 +468,14 @@ class CCEA:
         # Evaluate the initial random policies
         # todo check if seed is set before here
         self.evaluatePopulation()
+        # evaluatePopulation() is saving all of the policy/team/trajectory data
 
         # Save fitnesses for initial random policies as generation 0
         self.saveFitnesses()
         
         for _ in tqdm(range(num_generations)):
             self.step()
+            # step() calls evaluatePopulation() so this saves all of the policy/team/trajectory data at each timestep
 
             # Track fitness over time
             self.saveFitnesses()
