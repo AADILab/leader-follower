@@ -4,7 +4,7 @@ import numpy as np
 # Sample data - List of paths, where each path is a list of (x, y) tuples
 paths = [
     [(0, 0), (1, 1), (2, 0), (1, -1)],
-    [(0, 1), (1, 0), (2, 1), (3, 2)],
+    [(0, 1), (1, 0)],
     [(0, -1), (1, -2), (2, -1), (3, 0)]
 ]
 

@@ -6,6 +6,7 @@ import seaborn as sns
 import seaborn.objects as so
 from pandas import DataFrame
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import pygame
 import numpy as np
 import pprint
@@ -68,6 +69,12 @@ def rgb_to_hex(rgb_values: List[int]) -> str:
         hex_code += second_hex
     return hex_code
 
+def scaleRGB(rgb_values: List[int]):
+    scaled_values = []
+    for value in rgb_values:
+        scaled_values.append(float(value)/255.)
+    return tuple(scaled_values)
+
 if PLOT_BEST_SCORES:
     plt.plot(scores_list, color="green", linestyle="--")
     plt.plot(unfiltered_scores_list, color="green")
@@ -126,6 +133,128 @@ if PLAY_ENV:
         # print("Team Fitness: ", env.fitness_calculator.getTeamFitness(), " | Agent Fitnesses: ", env.fitness_calculator.calculateDifferenceEvaluations())
 
 if PLOT_TRAJECTORIES:
+    # Aggregate trajectories so that each one is a list of (x,y) tuples
+
+    # First get the joint trajectory for this particular generation
+    # Each element is a snapshot of all agent positions at a particular point in time
+    joint_trajectory = np.array(teams_in_evaluations[PLOT_TRAJECTORIES_GENERATION][PLOT_TRAJECTORIES_TEAM_ID].joint_trajectory).tolist()
+    
+    # I need the joint trajectory as a list of trajectories where each trajectory is a list of (x,y) tuples for a particular agent
+    num_trajectories = len(joint_trajectory[0])
+    list_of_trajectories = [[] for _ in range(num_trajectories)]
+    for positions in joint_trajectory:
+        for position, trajectory in zip(positions, list_of_trajectories):
+            trajectory.append(tuple(position))
+
+    # Now I need to set up variables for the plot
+
+    # Get map dimensions for figuring the x and y limits of the graph
+    map_dimensions = config["CCEA"]["config"]["BoidsEnv"]["config"]["map_dimensions"]
+    map_dim_x = map_dimensions["x"]
+    map_dim_y = map_dimensions["y"]
+
+    # Use map dimensions to figure out correctly proportioned graph size
+    # Keep x dimension the same and adjust the y dimension accordingly
+    fig_x = 5.
+    fig_y = fig_x * float(map_dim_y)/float(map_dim_x)
+
+    # Get the number of leaders and followers
+    num_leaders = config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"]
+    num_followers = config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"]
+
+    # Set up the leader colors for coloring the trajectories
+    leader_colors_rgb_raw = config["CCEA"]["config"]["BoidsEnv"]["config"]["Renderer"]["leader_colors"]
+    leader_colors_scaled = [scaleRGB(color) for color in leader_colors_rgb_raw]
+    leader_colors = []
+    for leader_ind in range(num_leaders):
+        leader_colors.append(leader_colors_scaled[leader_ind%num_leaders])
+
+    # Set up follower color
+    follower_color = scaleRGB([0, 120, 250])
+    # Set up colors of agents for all trajectories
+    agent_colors = leader_colors + [follower_color]*num_followers
+
+    # Set up the plot
+    fig = plt.figure(figsize=(fig_x, fig_y))
+    ax = fig.add_subplot(1,1,1)
+
+    # I reverse it so that the leader trajectories are plotted on top
+    for trajectory, agent_color in reversed(list(zip(list_of_trajectories, agent_colors))):
+        xs, ys = zip(*trajectory)
+        ax.plot(xs, ys, color=agent_color)
+
+    # Set up poi colors
+    # For now just use the observed color because I don't yet save 
+    # if a poi has been observed or not, so to determine that we would have to do a rollout or 
+    # call some code to compute that
+    poi_observed_color = scaleRGB([0, 150, 0])
+    poi_unobserved_color = scaleRGB([255, 0, 0])
+
+    # Get the POI positions for the configuration
+    # Later on this should plot the poi observation radius also
+    poi_positions = config["CCEA"]["config"]["BoidsEnv"]["config"]["POISpawner"]["positions"]
+    num_pois = len(poi_positions)
+    poi_colors = [poi_observed_color]*num_pois
+    for poi_position, poi_color in zip(poi_positions, poi_colors):
+        ax.plot(poi_position[0], poi_position[1], marker=".", color=poi_color)
+
+    # Add axes labels and a title
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_title('Joint Trajectory')
+
+    # Limits according to map dimensions from config
+    ax.set_xlim([0, map_dim_x])
+    ax.set_ylim([0, map_dim_y])
+
+    # Custom legend
+    leader_handles = [
+        Line2D([0], [0], color=leader_color, lw=1) for leader_color in leader_colors
+    ]
+    leader_labels = ["Leader "+str(i+1) for i in range(num_leaders)]
+
+    follower_handle = Line2D([0], [0], color=follower_color, lw=1)
+    follower_label = "Follower"
+
+    poi_handle = Line2D([0], [0], color=poi_observed_color, lw=0, marker=".")
+    poi_label = "POI"
+
+    handles = leader_handles + [follower_handle] + [poi_handle]
+    labels = leader_labels + [follower_label] + [poi_label]
+
+    ax.legend(handles, labels)
+
+    # Add a grid and make it look pretty
+    ax.grid()
+    ax.tick_params(
+        axis='both',
+        which='both',
+        top = False,
+        bottom = False,
+        left = False,
+        right = False
+    )
+    # Give plot a gray background like ggplot.
+    ax.set_facecolor('#EBEBEB')
+    # Remove border around plot.
+    [ax.spines[side].set_visible(False) for side in ax.spines]
+    # Style the grid.
+    ax.grid(which='major', color='white', linewidth=1.2)
+    ax.grid(which='minor', color='white', linewidth=0.6)
+
+    # Show the minor ticks and grid.
+    # ax.minorticks_on()
+    # Now hide the minor ticks (but leave the gridlines).
+    # ax.tick_params(which='minor', bottom=False, left=False)
+
+    plt.show()
+
+
+
+    pp.pprint(list_of_trajectories[0])
+    # pass
+
+if False:
     # Set up variables for seaborn plotting
     labels = ['t','x', 'y', 'name', 'leader', 'poi', 'observed', 'Label']
     data = []
