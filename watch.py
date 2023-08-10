@@ -1,12 +1,14 @@
 from time import time, sleep
 from sys import exit
 from typing import List
+import math
 
 import seaborn as sns
 import seaborn.objects as so
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.axes import Axes
 import pygame
 import numpy as np
 import pprint
@@ -21,9 +23,12 @@ PLOT_BEST_SCORES = False
 PLOT_AVERAGE_SCORES = False
 PLAY_ENV = False
 PLOT_TRAJECTORIES = True
+PLOT_SEABORN = False
 # Long term: None for PLOT_TRAJECTORIES_GENERATION will automatically plot the trajectories for the final generation
-PLOT_TRAJECTORIES_GENERATION = 50
-PLOT_TRAJECTORIES_TEAM_ID = 6
+PLOT_TRAJECTORIES_GENERATION = 0
+# Long term: None for PLOT_TRAJECTORIES_TEAM_ID will automatically plot all of the trajectories for a generation
+# on one big plot with a subplot for each joint-trajectory
+PLOT_TRAJECTORIES_TEAM_ID = None
 COMPUTERNAME = "experiment_6c"
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
 TRIALNAME = "trial_20"
@@ -104,7 +109,6 @@ if PLOT_AVERAGE_SCORES:
     plt.legend(legend)
     plt.show()
 
-
 if PLAY_ENV:
     shutdown = False
     env = BoidsEnv(**config["CCEA"]["config"]["BoidsEnv"])
@@ -132,12 +136,11 @@ if PLAY_ENV:
                 print("Loop " + str(step) + " took longer than refresh rate")
         # print("Team Fitness: ", env.fitness_calculator.getTeamFitness(), " | Agent Fitnesses: ", env.fitness_calculator.calculateDifferenceEvaluations())
 
-if PLOT_TRAJECTORIES:
-    # Aggregate trajectories so that each one is a list of (x,y) tuples
-
+def plotJointTrajectorySubplot(ax: Axes, generation: int, team_id: int):
     # First get the joint trajectory for this particular generation
     # Each element is a snapshot of all agent positions at a particular point in time
-    joint_trajectory = np.array(teams_in_evaluations[PLOT_TRAJECTORIES_GENERATION][PLOT_TRAJECTORIES_TEAM_ID].joint_trajectory).tolist()
+    # teams_in_evaluations is a global variable thanks to how python does things
+    joint_trajectory = np.array(teams_in_evaluations[generation][team_id].joint_trajectory).tolist()
     
     # I need the joint trajectory as a list of trajectories where each trajectory is a list of (x,y) tuples for a particular agent
     num_trajectories = len(joint_trajectory[0])
@@ -155,8 +158,8 @@ if PLOT_TRAJECTORIES:
 
     # Use map dimensions to figure out correctly proportioned graph size
     # Keep x dimension the same and adjust the y dimension accordingly
-    fig_x = 5.
-    fig_y = fig_x * float(map_dim_y)/float(map_dim_x)
+    # fig_x = 5.
+    # fig_y = fig_x * float(map_dim_y)/float(map_dim_x)
 
     # Get the number of leaders and followers
     num_leaders = config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"]
@@ -174,10 +177,6 @@ if PLOT_TRAJECTORIES:
     # Set up colors of agents for all trajectories
     agent_colors = leader_colors + [follower_color]*num_followers
 
-    # Set up the plot
-    fig = plt.figure(figsize=(fig_x, fig_y))
-    ax = fig.add_subplot(1,1,1)
-
     # I reverse it so that the leader trajectories are plotted on top
     for trajectory, agent_color in reversed(list(zip(list_of_trajectories, agent_colors))):
         xs, ys = zip(*trajectory)
@@ -188,7 +187,7 @@ if PLOT_TRAJECTORIES:
     # if a poi has been observed or not, so to determine that we would have to do a rollout or 
     # call some code to compute that
     poi_observed_color = scaleRGB([0, 150, 0])
-    poi_unobserved_color = scaleRGB([255, 0, 0])
+    # poi_unobserved_color = scaleRGB([255, 0, 0])
 
     # Get the POI positions for the configuration
     # Later on this should plot the poi observation radius also
@@ -247,14 +246,38 @@ if PLOT_TRAJECTORIES:
     # Now hide the minor ticks (but leave the gridlines).
     # ax.tick_params(which='minor', bottom=False, left=False)
 
-    plt.show()
+if PLOT_TRAJECTORIES:
+    # If no team id is specified, then plot all of the joint trajectories for this generation
+    if PLOT_TRAJECTORIES_TEAM_ID is None:
+        # Figure out the grid size to place all of the plots in
+        # Reference: https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
+        num_teams = config["CCEA"]["sub_population_size"]
+        grid_len = int(np.ceil(np.sqrt(num_teams)))
+        fig, axs = plt.subplots(grid_len, grid_len)
+        for team_id, ax in zip(np.arange(num_teams), axs.flat):
+            print(team_id)
+            plotJointTrajectorySubplot(ax=ax, generation=PLOT_TRAJECTORIES_GENERATION, team_id=team_id)
+        plt.show()
+        pass
+    # If team id is specified, then just plot that one joint trajectory
+    else:
+        # Get map dimensions for figuring the x and y limits of the graph
+        map_dimensions = config["CCEA"]["config"]["BoidsEnv"]["config"]["map_dimensions"]
+        map_dim_x = map_dimensions["x"]
+        map_dim_y = map_dimensions["y"]
 
+        # Use map dimensions to figure out correctly proportioned graph size
+        # Keep x dimension the same and adjust the y dimension accordingly
+        fig_x = 5.
+        fig_y = fig_x * float(map_dim_y)/float(map_dim_x)
 
+        # Set up the plot
+        fig = plt.figure(figsize=(fig_x, fig_y))
+        ax = fig.add_subplot(1,1,1)
+        plotJointTrajectorySubplot(ax=ax, generation=PLOT_TRAJECTORIES_GENERATION, team_id=PLOT_TRAJECTORIES_TEAM_ID)
+        plt.show()
 
-    pp.pprint(list_of_trajectories[0])
-    # pass
-
-if False:
+if PLOT_SEABORN:
     # Set up variables for seaborn plotting
     labels = ['t','x', 'y', 'name', 'leader', 'poi', 'observed', 'Label']
     data = []
