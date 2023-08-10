@@ -22,13 +22,13 @@ from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 PLOT_BEST_SCORES = False
 PLOT_AVERAGE_SCORES = False
 PLAY_ENV = False
-PLOT_TRAJECTORIES = True
+PLOT_TRAJECTORIES = False
 PLOT_SEABORN = False
 # Long term: None for PLOT_TRAJECTORIES_GENERATION will automatically plot the trajectories for the final generation
-PLOT_TRAJECTORIES_GENERATION = 0
+PLOT_TRAJECTORIES_GENERATION = 50
 # Long term: None for PLOT_TRAJECTORIES_TEAM_ID will automatically plot all of the trajectories for a generation
 # on one big plot with a subplot for each joint-trajectory
-PLOT_TRAJECTORIES_TEAM_ID = None
+PLOT_TRAJECTORIES_TEAM_ID = 37
 COMPUTERNAME = "experiment_6c"
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
 TRIALNAME = "trial_20"
@@ -136,7 +136,7 @@ if PLAY_ENV:
                 print("Loop " + str(step) + " took longer than refresh rate")
         # print("Team Fitness: ", env.fitness_calculator.getTeamFitness(), " | Agent Fitnesses: ", env.fitness_calculator.calculateDifferenceEvaluations())
 
-def plotJointTrajectorySubplot(ax: Axes, generation: int, team_id: int):
+def plotJointTrajectorySubplot(ax: Axes, generation: int, team_id: int, individual_plot: bool = True):
     # First get the joint trajectory for this particular generation
     # Each element is a snapshot of all agent positions at a particular point in time
     # teams_in_evaluations is a global variable thanks to how python does things
@@ -198,9 +198,10 @@ def plotJointTrajectorySubplot(ax: Axes, generation: int, team_id: int):
         ax.plot(poi_position[0], poi_position[1], marker=".", color=poi_color)
 
     # Add axes labels and a title
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_title('Joint Trajectory')
+    if individual_plot:
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_title('Joint Trajectory')
 
     # Limits according to map dimensions from config
     ax.set_xlim([0, map_dim_x])
@@ -221,7 +222,8 @@ def plotJointTrajectorySubplot(ax: Axes, generation: int, team_id: int):
     handles = leader_handles + [follower_handle] + [poi_handle]
     labels = leader_labels + [follower_label] + [poi_label]
 
-    ax.legend(handles, labels)
+    if individual_plot:
+        ax.legend(handles, labels)
 
     # Add a grid and make it look pretty
     ax.grid()
@@ -241,10 +243,21 @@ def plotJointTrajectorySubplot(ax: Axes, generation: int, team_id: int):
     ax.grid(which='major', color='white', linewidth=1.2)
     ax.grid(which='minor', color='white', linewidth=0.6)
 
+    # Set up the ticks for the grid
+    xticks = np.linspace(0, int(map_dim_x - (map_dim_x%10)), int(map_dim_x/10.)+1)
+    yticks = np.linspace(0, int(map_dim_y - (map_dim_y%10)), int(map_dim_y/10.)+1)
+
+    # Remove labels for individual ticks if option is specified
+    if not individual_plot:
+        ax.set_xticks(ticks=xticks, labels=[])
+        ax.set_yticks(ticks=yticks, labels=[])
+
     # Show the minor ticks and grid.
     # ax.minorticks_on()
     # Now hide the minor ticks (but leave the gridlines).
     # ax.tick_params(which='minor', bottom=False, left=False)
+
+    ax.set_aspect('equal')
 
 if PLOT_TRAJECTORIES:
     # If no team id is specified, then plot all of the joint trajectories for this generation
@@ -253,10 +266,32 @@ if PLOT_TRAJECTORIES:
         # Reference: https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
         num_teams = config["CCEA"]["sub_population_size"]
         grid_len = int(np.ceil(np.sqrt(num_teams)))
-        fig, axs = plt.subplots(grid_len, grid_len)
+        fig, axs = plt.subplots(nrows=grid_len, ncols=grid_len, figsize=(10,10), tight_layout=True)
         for team_id, ax in zip(np.arange(num_teams), axs.flat):
-            print(team_id)
-            plotJointTrajectorySubplot(ax=ax, generation=PLOT_TRAJECTORIES_GENERATION, team_id=team_id)
+            plotJointTrajectorySubplot(ax=ax, generation=PLOT_TRAJECTORIES_GENERATION, team_id=team_id, individual_plot=False)
+            # ax.set_xlabel(str(team_id))
+            # Custom legend that acts as a label for what team this plot is from
+            fake_handle = Line2D([0], [0], color='white', lw=0)
+            fake_label = str(team_id)
+            ax.legend([fake_handle], [fake_label])
+            fig.suptitle("Generation "+str(PLOT_TRAJECTORIES_GENERATION))
+        
+        for ax in axs.flat[team_id+1:]:
+            ax.tick_params(
+                axis='both',
+                which='both',
+                top = False,
+                bottom = False,
+                left = False,
+                right = False
+            )
+            ax.set_xticks(ticks=[], labels=[])
+            ax.set_yticks(ticks=[], labels=[])
+            # Remove border around plot.
+            [ax.spines[side].set_visible(False) for side in ax.spines]
+
+        fig.subplots_adjust(wspace=0, hspace=0)
+
         plt.show()
         pass
     # If team id is specified, then just plot that one joint trajectory
