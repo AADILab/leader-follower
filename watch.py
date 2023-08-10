@@ -9,6 +9,7 @@ from pandas import DataFrame
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.axes import Axes
+import matplotlib.patches as mpatches
 import pygame
 import numpy as np
 import pprint
@@ -22,13 +23,13 @@ from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 PLOT_BEST_SCORES = False
 PLOT_AVERAGE_SCORES = False
 PLAY_ENV = False
-PLOT_TRAJECTORIES = False
+PLOT_TRAJECTORIES = True
 PLOT_SEABORN = False
 # Long term: None for PLOT_TRAJECTORIES_GENERATION will automatically plot the trajectories for the final generation
-PLOT_TRAJECTORIES_GENERATION = 50
+PLOT_TRAJECTORIES_GENERATION = 39
 # Long term: None for PLOT_TRAJECTORIES_TEAM_ID will automatically plot all of the trajectories for a generation
 # on one big plot with a subplot for each joint-trajectory
-PLOT_TRAJECTORIES_TEAM_ID = 37
+PLOT_TRAJECTORIES_TEAM_ID = 45
 COMPUTERNAME = "experiment_6c"
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
 TRIALNAME = "trial_20"
@@ -266,14 +267,33 @@ if PLOT_TRAJECTORIES:
         # Reference: https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
         num_teams = config["CCEA"]["sub_population_size"]
         grid_len = int(np.ceil(np.sqrt(num_teams)))
-        fig, axs = plt.subplots(nrows=grid_len, ncols=grid_len, figsize=(10,10), tight_layout=True)
+        fig, axs = plt.subplots(nrows=grid_len, ncols=grid_len, figsize=(15,15), tight_layout=True)
         for team_id, ax in zip(np.arange(num_teams), axs.flat):
             plotJointTrajectorySubplot(ax=ax, generation=PLOT_TRAJECTORIES_GENERATION, team_id=team_id, individual_plot=False)
-            # ax.set_xlabel(str(team_id))
+            # Objects for a custom legend that just lets me display important metadata
+            class AnyObject:
+                pass
+            class AnyObjectHandler:
+                def legend_artist(self, legend, orig_handle, fontsize, handlebox):
+                    x0, y0 = handlebox.xdescent, handlebox.ydescent
+                    width, height = handlebox.width, handlebox.height
+                    patch = mpatches.Rectangle([x0, y0], 0, 0, facecolor='red',
+                                            edgecolor='black', hatch='xx', lw=0,
+                                            transform=handlebox.get_transform())
+                    handlebox.add_artist(patch)
+                    return patch
+                
+            # Extract the fitness for this particular team
+            team_fitness = teams_in_evaluations[PLOT_TRAJECTORIES_GENERATION][team_id].fitness
+
+            # Format that fitness into a nice str
+            fitness_str = f"{team_fitness:.3f}"
+
             # Custom legend that acts as a label for what team this plot is from
-            fake_handle = Line2D([0], [0], color='white', lw=0)
-            fake_label = str(team_id)
-            ax.legend([fake_handle], [fake_label])
+            # fake_handle = Line2D([0], [0], color='white', lw=0)
+            fake_handle = AnyObject()
+            fake_label = str(team_id) + " | " + fitness_str
+            ax.legend([fake_handle], [fake_label], loc='upper right', handler_map={AnyObject: AnyObjectHandler()}, handlelength=-1)
             fig.suptitle("Generation "+str(PLOT_TRAJECTORIES_GENERATION))
         
         for ax in axs.flat[team_id+1:]:
