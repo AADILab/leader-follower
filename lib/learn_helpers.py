@@ -1,11 +1,11 @@
 from lib.ccea_lib import CCEA
 from time import time
 import sys
-from typing import Dict, Optional
+from typing import Dict
 import numpy as np
 from lib.file_helper import saveTrial, loadConfig, setupInitialPopulation
 
-def runExperiment(config: Dict, computername: Optional[str] = None, trial_num: Optional[str] = None, save_trial_only: bool=False) -> None:
+def runExperiment(config: Dict) -> None:
     # Start clock
     start = time()
 
@@ -21,8 +21,7 @@ def runExperiment(config: Dict, computername: Optional[str] = None, trial_num: O
 
     best_fitness_list, best_fitness_list_unfiltered, best_agent_fitness_lists_unfiltered,\
         average_fitness_list_unfiltered, average_agent_fitness_lists_unfiltered,\
-        final_population, finished_iterations, best_team_data, \
-        teams_in_evaluations, populations_through_generations = learner.getFinalMetrics()
+        final_population, finished_iterations, best_team_data = learner.getFinalMetrics()
 
     # Save data
     save_data = {
@@ -33,17 +32,10 @@ def runExperiment(config: Dict, computername: Optional[str] = None, trial_num: O
         "average_agent_fitness_lists_unfiltered": average_agent_fitness_lists_unfiltered,
         "final_population": final_population,
         "finished_iterations": finished_iterations,
-        "best_team_data": best_team_data,
-        "teams_in_evaluations": teams_in_evaluations,
-        "populations_through_generations": populations_through_generations
+        "best_team_data": best_team_data
     }
 
-    # saveTrial saves both the save data and the config
-    # Let's set it up to just save the trial if specified
-    # Also let's propogate computer name and the trial number down to here as well
-    # Without breaking any existing software infrastructure
-
-    saveTrial(save_data, config, computername=computername, trial_num=trial_num, save_trial_only=save_trial_only)
+    saveTrial(save_data, config, computername=None)
 
     print("Experiment time: ", time() - start, " seconds. Completed ", finished_iterations, " out of ", config["num_generations"], " generations.")
 

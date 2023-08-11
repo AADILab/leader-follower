@@ -56,8 +56,10 @@ CCEA:
           coupling: 3
           observation_radius: 5
         FitnessCalculator:
-          which_G: ContinuousObsRad
           which_D: G
+          which_F: FCouple
+          which_G: ContinuousObsRadLastStep
+          follower_switch: UseFollowersOnly
         POISpawner:
           poi_spawn_rule: Set
           positions:

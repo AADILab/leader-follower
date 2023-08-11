@@ -44,7 +44,7 @@ if __name__ == '__main__':
     config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_followers"] = 5
     # config["CCEA"]["config"][]
 
-    # num_stat_runs = 3
+    num_stat_runs = 5
     distances = [10,20,30,40]
     num_steps = [50,100,150,200]
 

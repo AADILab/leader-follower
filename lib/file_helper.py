@@ -8,7 +8,9 @@ import myaml
 import socket
 
 def getHostName():
-    return socket.gethostname()
+    #return socket.gethostname()
+    #return "2couple_drip_1000gen"
+    return "bug-testing"
 
 def loadTrial(trialname: str, computername: Optional[str]) -> Dict:
     # By default load the trial from this computer's save directory
@@ -30,8 +32,8 @@ def getLatestTrialNum(computername: Optional[str]) -> int:
 
     # Make sure the directory for this computer's results exists
     computer_dir = join("results", computername)
-    # print(computer_dir)
-    # print(exists(computer_dir))
+    print(computer_dir)
+    print(exists(computer_dir))
     if not exists(computer_dir):
         makedirs(computer_dir)
         makedirs(join(computer_dir, "configs"))
@@ -52,7 +54,7 @@ def getNewTrialName(computername: Optional[str]) -> str:
     return "trial_" + str(int(getLatestTrialNum(computername)) + 1)
 
 
-def saveTrial(save_data: Dict, config: Dict, computername: Optional[str], trial_num: Optional[str] = None, save_trial_only: bool = False) -> None:
+def saveTrial(save_data: Dict, config: Dict, computername: Optional[str], trial_num: Optional[str] = None) -> None:
     if computername is None:
         computername = getHostName()
     if trial_num is None:
@@ -64,29 +66,11 @@ def saveTrial(save_data: Dict, config: Dict, computername: Optional[str], trial_
     config_path = join("results", computername, "configs")
     trial_path = join("results", computername, "trials")
 
-    # If save_trial_only is false, then we should save the config as well as the trial
-    # If save trial_only is true, then we should skip this step and just save the trial
-    if not save_trial_only:
-        with open(join(config_path, "config_"+trial_num+".yaml"), "w") as file:
-            yaml.dump(config, file)
+    with open(join(config_path, "config_"+trial_num+".yaml"), "w") as file:
+        yaml.dump(config, file)
     
     with open(join(trial_path, trial_name+".pkl"), "wb") as file:
         pickle.dump(save_data, file)
-
-def saveConfig(config: Dict, computername: Optional[str], trial_num: Optional[str] = None) -> None:
-    if computername is None:
-        computername = getHostName()
-    if trial_num is None:
-        raise Exception("trial_num needs to be set for saveConfig")
-        # trial_name = getNewTrialName(computername)
-        # trial_num = trial_name.split("_")[1]
-    else:
-        trial_name = "trial_" + trial_num
-
-    config_path = join("results", computername, "configs")
-
-    with open(join(config_path, "config_"+trial_num+".yaml"), "w") as file:
-        yaml.dump(config, file)
 
 def loadConfig(computername: Optional[str]=".", config_name: str = "default.yaml"):
     if computername is None:

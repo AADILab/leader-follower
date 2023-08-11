@@ -92,6 +92,10 @@ class BoidsEnv(ParallelEnv):
         # Each element is a np array of positions 
         self.position_history = [self.boids_colony.state.positions.copy()]
 
+        # An array of potential value histories
+        self.potential_values = []
+        self.subtracted_potentials = []
+
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
     @functools.lru_cache(maxsize=None)
@@ -146,6 +150,9 @@ class BoidsEnv(ParallelEnv):
         self.poi_colony.reset(positions=self.poi_spawner.getSpawnPositions())
         observations = self.getObservations()
         self.position_history = [self.boids_colony.state.positions.copy()]
+        #resetting potential values?
+        self.potential_values = []
+        self.subtracted_potentials = []
         return observations
 
     def getObservations(self):
@@ -208,16 +215,29 @@ class BoidsEnv(ParallelEnv):
         if env_done:
             G = self.fitness_calculator.calculateG(self.position_history)
             Ds = self.fitness_calculator.calculateDs(G=G, position_history=self.position_history)
-            # if np.any(np.array(Ds)!=0):
-            #     print(Ds)
+            Fs = self.fitness_calculator.calculateFs(self.position_history, self.potential_values)
+            self.subtracted_potentials.append(Fs[1])
+
+            total_F = np.sum(np.array(self.subtracted_potentials), axis=0)
+            #print("Total F " + str(total_F))
+            Ds = (np.array(Ds) + total_F).tolist()
+            #print("total D " + str(Ds))
+
+            
             rewards = {
                 agent: reward
                 for agent, reward
                 in zip(self.agents, Ds)
             }
+            
             rewards["team"] = G
 
         else:
+            Fs = self.fitness_calculator.calculateFs(self.position_history, self.potential_values)
+
+            #print("potential array: " + str(self.potential_values))
+            self.subtracted_potentials.append(Fs[1])
+            #print("subtracted potentials: " + str(self.subtracted_potentials))
             rewards = {agent: 0.0 for agent in self.agents}
             rewards["team"] = 0.0
 

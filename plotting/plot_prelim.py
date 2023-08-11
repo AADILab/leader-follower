@@ -2,13 +2,6 @@ import sys; sys.path.append("/home/gonzaeve/boids/leader-follower")
 import numpy as np
 import matplotlib.pyplot as plt
 from lib.file_helper import loadConfig, loadTrial
-import matplotlib
-font = {
-        # 'family' : 'Helvetica',
-        # 'weight' : 'bold',
-        'size'   : 15}
-
-matplotlib.rc('font', **font)
 
 def getStatistics(trials, computer_name):
     save_datas = [loadTrial(trial, computer_name) for trial in trials]
@@ -46,15 +39,15 @@ def main():
     # trial_num = 2229 # one the runs looking at varying coupling, num_stat_runs=20
     # trial_num = 2780 # w. 20 trials is where I start to trick D with followers
     # trial_num = 2598 # w 20 stat runs?? not sure what this trial number was for
-    trial_num = 746
-    num_stat_runs = 20
-    computer_name = "experiment_6b"
+    trial_num = 384
+    num_stat_runs = 3
+    computer_name = "graf200-15"
 
-    tested_G = False
-    tested_D = False
+    tested_G = True
+    tested_D = True
     tested_Dfollow = True
     tested_Zero = False
-    plot_min_max_range = True
+    plot_min_max_range = False
 
     start_trial_num = trial_num
 
@@ -92,8 +85,7 @@ def main():
 
     plt.figure(0)
 
-    plt.ylim([0,1.01])
-    plt.xlim([0,50])
+    plt.ylim([0,1.0])
 
     # Get statistics for different reward structures
     legend = []
@@ -113,7 +105,7 @@ def main():
         avg_Df, std_dev_Df, upper_dev_Df, lower_dev_Df, upper_range_Df, lower_range_Df = getStatistics(trials_Dfollow, computer_name)
         num_generations_arr = np.arange(avg_Df.shape[0])
         plt.plot(num_generations_arr, avg_Df, color="tab:green")
-        legend.append(r'$D^I$')
+        legend.append(r'$D_{follow}$')
 
     if tested_Zero:
         avg_Z, std_dev_Z, upper_dev_Z, lower_dev_Z, upper_range_Z, lower_range_Z = getStatistics(trials_Zero, computer_name)
@@ -146,7 +138,7 @@ def main():
     # plt.legend(["$G$", "$D$", r'$D_{follow}$'])
 
     plt.xlabel("Number of Generations")
-    plt.ylabel("Performance")
+    plt.ylabel("Average Team Fitness")
     # plt.title("Reward Shaping with Informative G")
 
     # plt.xlim([0,150])

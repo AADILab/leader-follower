@@ -4,6 +4,7 @@ import time
 from sys import exit
 
 import numpy as np
+from tqdm import tqdm
 
 from lib.file_helper import loadConfig
 from lib.learn_helpers import runExperiment
@@ -14,7 +15,7 @@ if __name__ == '__main__':
     # runExperiment(loadConfig())
     # sys.exit()
     # Right now this is using Dfollow
-    for _ in range(20):
+    for _ in tqdm(range(20)):
         # First run the experiment where we have 2 Follow per leader.
         #   4 leaders. 4 pois with 3 coupling. Learn with G.
         # config = loadConfig()
@@ -25,19 +26,28 @@ if __name__ == '__main__':
 
         # Second run the experiment where we have 2 Follow per leader.
         #   4 leaders. 4 pois with 3 coupling. Learn with Dswarm
-        config = loadConfig(config_name="alpha/corners.yaml")
+        config = loadConfig()
         # config["CCEA"]["use_difference_evaluations"] = True
-        # config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 1
         # config["num_generations"] = 500
-        runExperiment(config, computername="experiment_6c")
-
-    # for _ in range(3):
-    #     config = loadConfig()
-    #     config["CCEA"]["use_difference_evaluations"] = False
-    #     runExperiment(config)
-
-
+        runExperiment(config)
     exit()
+    # for _ in range(10):
+    #     # First run the experiment where we have 2 Follow per leader.
+    #     #   4 leaders. 4 pois with 3 coupling. Learn with G.
+    #     # config = loadConfig()
+    #     # runExperiment(config)
+
+    #     # new_seed = int(hash(os.getpid() + time.time()) % (2**31))
+    #     # np.random.seed(new_seed)
+
+    #     # Second run the experiment where we have 2 Follow per leader.
+    #     #   4 leaders. 4 pois with 3 coupling. Learn with Dswarm
+    #     config = loadConfig()
+    #     config["CCEA"]["config"]["BoidsEnv"]["config"]["FitnessCalculator"]["which_D"] = "G"
+    #     # config["CCEA"]["use_difference_evaluations"] = True
+    #     # config["num_generations"] = 500
+    #     runExperiment(config)
+    # exit()
 
     team_size = 15
     num_learners = np.arange(team_size) + 1
