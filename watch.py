@@ -1,6 +1,6 @@
 from time import time, sleep
 from sys import exit
-from typing import List
+from typing import List, Optional
 import math
 
 import seaborn as sns
@@ -21,18 +21,25 @@ from lib.ccea_lib import computeAction
 from lib.file_helper import getLatestTrialName, loadTrial, loadConfig
 
 PLOT_BEST_SCORES = False
+
 PLOT_AVERAGE_SCORES = False
-PLAY_ENV = False
-PLOT_TRAJECTORIES = True
+
+PLOT_FINAL_EVALUATION_TEAMS = False
+
+PLAY_ENV = True
+
+PLOT_TRAJECTORIES = False
 PLOT_SEABORN = False
 # Long term: None for PLOT_TRAJECTORIES_GENERATION will automatically plot the trajectories for the final generation
-PLOT_TRAJECTORIES_GENERATION = 39
-# Long term: None for PLOT_TRAJECTORIES_TEAM_ID will automatically plot all of the trajectories for a generation
+PLOT_TRAJECTORIES_GENERATION = 500
+# None for PLOT_TRAJECTORIES_TEAM_ID will automatically plot all of the trajectories for a generation
 # on one big plot with a subplot for each joint-trajectory
-PLOT_TRAJECTORIES_TEAM_ID = 45
-COMPUTERNAME = "experiment_6c"
+# "Eval" for PLOT_TRAJECTORIES_TEAM_ID will plot the trajectories for the final evaluation team
+PLOT_TRAJECTORIES_TEAM_ID = "Eval"
+
+COMPUTERNAME = "playground"
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
-TRIALNAME = "trial_20"
+# TRIALNAME =  None
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME, COMPUTERNAME)
@@ -46,6 +53,7 @@ finished_iterations = save_data["finished_iterations"]
 best_team_data = save_data["best_team_data"]
 teams_in_evaluations = save_data["teams_in_evaluations"]
 populations_through_generations = save_data["populations_through_generations"]
+final_evaluation_teams = save_data["final_evaluation_teams"]
 
 # Load in the config for that trial
 config_filename = "config_" + TRIALNAME.split('_')[1] + ".yaml"
@@ -110,6 +118,29 @@ if PLOT_AVERAGE_SCORES:
     plt.legend(legend)
     plt.show()
 
+if PLOT_FINAL_EVALUATION_TEAMS:
+    # Get the fitnesses of the best teams
+    final_evaluation_teams_fitnesses = [team_data.fitness for team_data in final_evaluation_teams]
+    # Get the agent-specific scores for agents on each team
+    num_leaders = config["CCEA"]["config"]["BoidsEnv"]["config"]["StateBounds"]["num_leaders"]
+    agent_fitnesses = [[] for _ in range(num_leaders)]
+    for team_data in final_evaluation_teams:
+        for genome_id, genome_data in enumerate(team_data.team):
+            agent_fitnesses[genome_id].append(genome_data.fitness)
+
+    plt.plot(final_evaluation_teams_fitnesses , color="green")
+    for ind, agent_specific_scores in enumerate(agent_fitnesses):
+        plt.plot(agent_specific_scores, color=tuple(leader_colors[ind%len(leader_colors)]))
+    plt.xlabel("Generation")
+    plt.ylabel("Fitness Score")
+    plt.ylim([0.0,1.01])
+    plt.title("Final Evaluation Teams")
+    legend = ["Team Performance"]
+    for i in range(len(agent_fitnesses)):
+        legend.append("Agent "+str(i+1))
+    plt.legend(legend)
+    plt.show()
+
 if PLAY_ENV:
     shutdown = False
     env = BoidsEnv(**config["CCEA"]["config"]["BoidsEnv"])
@@ -137,11 +168,17 @@ if PLAY_ENV:
                 print("Loop " + str(step) + " took longer than refresh rate")
         # print("Team Fitness: ", env.fitness_calculator.getTeamFitness(), " | Agent Fitnesses: ", env.fitness_calculator.calculateDifferenceEvaluations())
 
-def plotJointTrajectorySubplot(ax: Axes, generation: int, team_id: int, individual_plot: bool = True):
-    # First get the joint trajectory for this particular generation
-    # Each element is a snapshot of all agent positions at a particular point in time
-    # teams_in_evaluations is a global variable thanks to how python does things
-    joint_trajectory = np.array(teams_in_evaluations[generation][team_id].joint_trajectory).tolist()
+def plotJointTrajectorySubplot(ax: Axes, generation: Optional[int], team_id: int | str, individual_plot: bool = True):
+    if generation is None:
+        generation = config["num_generations"]
+    if team_id == "Eval":
+        # Get the joint trajectory of the evaluation team
+        joint_trajectory = np.array(final_evaluation_teams[generation].joint_trajectory).tolist()
+    else:
+        # First get the joint trajectory for this particular generation
+        # Each element is a snapshot of all agent positions at a particular point in time
+        # teams_in_evaluations is a global variable thanks to how python does things
+        joint_trajectory = np.array(teams_in_evaluations[generation][team_id].joint_trajectory).tolist()
     
     # I need the joint trajectory as a list of trajectories where each trajectory is a list of (x,y) tuples for a particular agent
     num_trajectories = len(joint_trajectory[0])

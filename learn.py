@@ -14,7 +14,7 @@ if __name__ == '__main__':
     # runExperiment(loadConfig())
     # sys.exit()
     # Right now this is using Dfollow
-    for _ in range(20):
+    for _ in range(1):
         # First run the experiment where we have 2 Follow per leader.
         #   4 leaders. 4 pois with 3 coupling. Learn with G.
         # config = loadConfig()
@@ -29,7 +29,7 @@ if __name__ == '__main__':
         # config["CCEA"]["use_difference_evaluations"] = True
         # config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 1
         # config["num_generations"] = 500
-        runExperiment(config, computername="experiment_6c")
+        runExperiment(config, computername="playground")
 
     # for _ in range(3):
     #     config = loadConfig()
