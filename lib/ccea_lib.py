@@ -58,7 +58,7 @@ class GenomeData(SortByFitness):
 
 class TeamData(SortByFitness):
     def __init__(self, team: List[GenomeData], id: int, fitness: Optional[float] = None,
-                 evaluation_seed: Optional[int] = None) -> None:
+                 evaluation_seed: int = 0) -> None:
         super().__init__()
         self.team = team
         self.id = id
@@ -191,8 +191,10 @@ class CCEA:
         self.current_best_team_data = None
         self.genome_uid = 0
 
+        # Variables for saving data throughout training
         self.teams_in_evaluation = []
         self.populations_through_generations = []
+        self.final_evaluation_teams = []
 
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
@@ -389,6 +391,36 @@ class CCEA:
                 self.population[agent_id][genome_data.id].fitness = evaluated_team_data.difference_evaluations[agent_id]
                 covered[agent_id][genome_data.id] += 1
 
+        # Run one more team evaluation using the highest scoring policy from each sub population on the same team
+        # Get the highest scoring policy from each subpopulation
+        highest_scoring_genome_datas = []
+        for sub_population in self.population:
+            # GenomeData has a builtin for sorting by fitness
+            # This should give us the GenomeData with the highest fitness
+            best_genome_data_ind = sub_population.index(max(sub_population))
+            best_genome_data = sub_population[best_genome_data_ind]
+            highest_scoring_genome_datas.append(best_genome_data)
+
+        # print(best_genome_data)
+        # import sys; sys.exit()
+        # Use these genomes to create a team
+        evaluation_team_data_in = TeamData(team=highest_scoring_genome_datas, id=self.sub_population_size)
+        # Put this team data into the queue for evaluation
+        self.work_queue.put(evaluation_team_data_in)
+        # Seperate team_data_in and team_data_out. I think this might be pass by value rather than pointer
+        # from looking at how I did this earlier
+        evaluation_recieved = False
+        while not evaluation_recieved and not self.stop_event.is_set():
+            try:
+                # Grab the evaluated team
+                evaluation_team_data_out = self.fitness_queue.get(timeout=timeout)
+                # Save that we received it to break this loop
+                evaluation_recieved = True
+            except queue.Empty:
+                pass
+        # Save the evaluated team data
+        self.final_evaluation_teams.append(deepcopy(evaluation_team_data_out))
+
         # Save all the team data during evaluation
         self.teams_in_evaluation.append(deepcopy(self.teams))
         self.populations_through_generations.append(deepcopy(self.population))
@@ -447,7 +479,7 @@ class CCEA:
         return self.best_fitness_list, self.best_fitness_list_unfiltered, self.best_agent_fitness_lists_unfiltered, \
                self.average_fitness_list_unfiltered, self.average_agent_fitness_lists_unfiltered, \
                self.population, self.iterations, self.best_team_data, \
-               self.teams_in_evaluation, self.populations_through_generations
+               self.teams_in_evaluation, self.populations_through_generations, self.final_evaluation_teams
 
     def saveFitnesses(self):
         # Save bests
