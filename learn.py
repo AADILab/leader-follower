@@ -25,11 +25,11 @@ if __name__ == '__main__':
 
         # Second run the experiment where we have 2 Follow per leader.
         #   4 leaders. 4 pois with 3 coupling. Learn with Dswarm
-        config = loadConfig(config_name="alpha/corners.yaml")
+        config = loadConfig(config_name="default.yaml")
         # config["CCEA"]["use_difference_evaluations"] = True
         # config["CCEA"]["config"]["BoidsEnv"]["config"]["POIColony"]["coupling"] = 1
         # config["num_generations"] = 500
-        runExperiment(config, computername="playground")
+        runExperiment(config, computernasme="bug-testing")
 
     # for _ in range(3):
     #     config = loadConfig()

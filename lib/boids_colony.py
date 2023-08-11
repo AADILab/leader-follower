@@ -92,6 +92,8 @@ class BoidsColony():
         # self.max_angular_velocity = max_angular_velocity
         self.dt = dt
 
+        self.num_followers_influenced = 0
+
     def reset(self, reset_state: BoidsColonyState) -> None:
         self.state.__dict__.update(reset_state.__dict__)
         #  = reset_state
@@ -245,12 +247,35 @@ class BoidsColony():
         self.state.positions[:,1][self.state.positions[:,1]>self.bounds.map_dimensions[1]] = self.bounds.map_dimensions[1]
         # print("after: ", self.state.positions[0])
 
+    def getCurrentObservableBoids(self, boid: Boid, return_distances: bool = False) -> BoidArray:
+        """Get all boids observable by this boid"""
+        #print(self.state.positions)
+        #distances = calculateDistance(self.state.positions[-1], boid.position)
+        distances = calculateDistance(self.state.positions, boid.position)
+        observable_bool = distances <= self.radius_attraction
+        observable_bool[boid.id] = False
+        if return_distances:
+            return self.boids[observable_bool], distances[observable_bool]
+        return self.boids[observable_bool]
+
     def updateLeaderInfluence(self):
+        self.num_followers_influenced = [set() for _ in range(self.bounds.num_leaders)]
+
+        is_influenced = set()
         for follower in self.getFollowers():
             observable_boids = self.getObservableBoids(follower)
+            curr_observable_boids = self.getCurrentObservableBoids(follower)
             for boid in observable_boids:
                 if boid.isLeader():
                     follower.leader_influence[boid.id]+=1
+            
+            for boid in curr_observable_boids:
+                if boid.isLeader():
+                    if follower.id not in is_influenced:
+                        #right now, not accounting for multiple leaders influencing a follower (only 1 gets credit)
+                        is_influenced.add(follower.id)
+                        self.num_followers_influenced[boid.id].add(follower.id)
+                        #appending the follower id to the influence array at the leader.id index
 
     def step(self, leader_desired_velocities: Optional[NDArray[np.float64]] = None, leader_desired_delta_headings: Optional[NDArray[np.float64]] = None) -> None:
         """Step forward the boid colony with the input leader actions"""
