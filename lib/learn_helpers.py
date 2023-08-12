@@ -3,14 +3,14 @@ from time import time
 import sys
 from typing import Dict, Optional
 import numpy as np
-from lib.file_helper import saveTrial, loadConfig, setupInitialPopulation
+from lib.file_helper import saveTrial, loadConfig, setupInitialPopulation, generateTrialPath
 
 def runExperiment(config: Dict, computername: Optional[str] = None, trial_num: Optional[str] = None, save_trial_only: bool=False) -> None:
     # Start clock
     start = time()
 
     # Setup learner
-    learner = CCEA(**config["CCEA"], init_population=setupInitialPopulation(config))
+    learner = CCEA(**config["CCEA"], init_population=setupInitialPopulation(config), trial_path=generateTrialPath(computername, trial_num))
 
     try:
         learner.train(num_generations=config["num_generations"])

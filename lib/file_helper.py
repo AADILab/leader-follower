@@ -52,14 +52,26 @@ def getNewTrialName(computername: Optional[str]) -> str:
     return "trial_" + str(int(getLatestTrialNum(computername)) + 1)
 
 
-def saveTrial(save_data: Dict, config: Dict, computername: Optional[str], trial_num: Optional[str] = None, save_trial_only: bool = False) -> None:
-    if computername is None:
-        computername = getHostName()
+def generateTrialName(computername: str, trial_num: Optional[str]):
     if trial_num is None:
         trial_name = getNewTrialName(computername)
         trial_num = trial_name.split("_")[1]
     else:
         trial_name = "trial_" + trial_num
+    return trial_name
+
+def generateTrialPath(computername: Optional[str], trial_num:Optional[str]):
+    if computername is None:
+        computername = getHostName()
+    trial_name = generateTrialName(computername, trial_num)
+    trial_path = join("results", computername, "trials", trial_name)
+    return trial_path
+
+def saveTrial(save_data: Dict, config: Dict, computername: Optional[str], trial_num: Optional[str] = None, save_trial_only: bool = False) -> None:
+    if computername is None:
+        computername = getHostName()
+    
+    trial_name = generateTrialName(computername=computername, trial_num=trial_num)
 
     config_path = join("results", computername, "configs")
     trial_path = join("results", computername, "trials")
