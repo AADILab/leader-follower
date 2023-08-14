@@ -199,6 +199,8 @@ class CCEA:
         self.populations_through_generations = []
         self.final_evaluation_teams = []
         self.trial_path = trial_path
+        # Num followers is a helpful variable for saving trajectories
+        self.num_followers = config["BoidsEnv"]["config"]["StateBounds"]["num_followers"]
 
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
@@ -476,64 +478,109 @@ class CCEA:
 
         # Make directory for population
         population_dir = os.path.join(generation_dir, "population")
-        os.makedirs(population_dir)
+        # os.makedirs(population_dir)
 
         for leader_ind, subpopulation in enumerate(self.population):
             leader_name = "leader_"+str(leader_ind)
             leader_subpop_dir = os.path.join(population_dir, leader_name)
-            os.makedirs(leader_subpop_dir)
+            # os.makedirs(leader_subpop_dir)
             for genome_data in subpopulation:
                 # Save the weights (list of np arrays) as npz file
                 policy_filename = "policy_" + str(genome_data.id) + ".npz"
                 npz_file_dir = os.path.join(leader_subpop_dir, policy_filename)
                 # Turn into a dictionary for saving more easily as npz
                 weights_dict = {"layer_"+str(ind) : weight_matrix for ind, weight_matrix in enumerate(genome_data.genome)}
-                np.savez_compressed(npz_file_dir, *weights_dict)
+                # np.savez_compressed(npz_file_dir, *weights_dict)
 
     def saveTrainingTeams(self, generation_dir: str):
         """Save the scores for the agents and teams. Save the id of which policy each agent used"""
         training_teams_dir = os.path.join(generation_dir, "training_teams")
         os.makedirs(training_teams_dir)
+
+        # Save the fitnesses
+        all_agent_fitnesses = []
+        all_team_fitnesses = []
+        all_agent_ids = []
+
         for team_data in self.teams:
             # Get the directory for this team
-            team_dir = os.path.join(training_teams_dir, "team_"+str(team_data.id))
+            # team_dir = os.path.join(training_teams_dir, "team_"+str(team_data.id))
             # Make that directory
-            os.makedirs(team_dir)
+            # os.makedirs(team_dir)
 
             # Get out the fitness of the team and individual agents
             team_fitness = team_data.fitness
             agent_fitnesses = team_data.difference_evaluations
             # Get out the id of which policy was used for each agent
             policy_ids = [genome_data.id for genome_data in team_data.team]
-            # Put this all into a data frame so we can save it as a csv
-            fitness_data = {}
-            for leader_id in range(len(team_data.team)):
-                fitness_data[str(leader_id)] = [policy_ids[leader_id], agent_fitnesses[leader_id]]
-            fitness_data["G"] = [0, team_fitness]
 
-            # Custom defined index
-            index = ["policy_id", "fitness"]
+            all_team_fitnesses.append(team_fitness)
+            all_agent_fitnesses.append(agent_fitnesses)
+            all_agent_ids.append(policy_ids)
+        
+        npz_file_dir = os.path.join(training_teams_dir, "fitnesses.npz")
+        npz_dict = {
+            "team_fitness" : np.array(all_team_fitnesses).astype(np.float16),
+            "agent_fitness" : np.array(all_agent_fitnesses).astype(np.float16),
+            "policy_ids" : np.array(all_agent_ids).astype(np.uint16)
+        }
 
-            # Put everything in a dataframe
-            df = pd.DataFrame(data=fitness_data, index=index)
-            df.columns.name = "leader_id"
-            
-            # Get name of csv file
-            csv_dir = os.path.join(team_dir, "fitnesses.csv")
+        np.savez_compressed(npz_file_dir, *npz_dict)
 
-            # Save that as a csv
-            df.to_csv(path_or_buf=csv_dir)
+        # Save the joint trajectories
+        traj_dict = {}
+        for team_data in self.teams:
+            # # Put this all into a data frame so we can save it as a csv
+            # fitness_data = {}
+            # for leader_id in range(len(team_data.team)):
+            #     fitness_data["leader_"+str(leader_id)] = [str(int(policy_ids[leader_id])), f"{agent_fitnesses[leader_id]:.3f}"]
+            # fitness_data["G"] = ["0", f"{team_fitness:.3f}"]
 
-            # # Get the joint trajectory that this team took
-            # joint_trajectory = np.array(team_data.joint_trajectory)
-            
+            # # Custom defined index
+            # index = ["policy_id", "fitness"]
+
+            # # Put everything in a dataframe
+            # df_train_fitness = pd.DataFrame(data=fitness_data, index=index)
+
+            # # This columns name line doesn't seem to actually do anything
+            # # Need to figure out why
+            # df_train_fitness.columns.name = "leader_id"
+
+            # # Get name of csv file
+            # csv_dir = os.path.join(team_dir, "fitnesses.csv")
+
+            # # Save that as a csv
+            # # df_train_fitness.to_csv(path_or_buf=csv_dir)
+
+            # Get the joint trajectory that this team took
+            joint_trajectory = np.array(team_data.joint_trajectory).astype(np.float16)
+            traj_dict["team_"+str(team_data.id)] = joint_trajectory
+
+            # # Create position headers for labelling
             # position_headers = []
             # for leader_id in range(self.num_agents):
-            
+            #     position_headers.append("leader_"+str(leader_id)+"_x")
+            #     position_headers.append("leader_"+str(leader_id)+"_y")
+            # for follower_id in range(self.num_followers):
+            #     position_headers.append("follower_"+str(follower_id)+"_x")
+            #     position_headers.append("follower_"+str(follower_id)+"_y")
 
-            # for positions 
+            # # Put the joint trajectory into the right format
+            # all_flat_positions = []
+            # for positions in joint_trajectory:
+            #     flat_positions = list(positions.flatten())
+            #     positions_str = [f"{pos:.3f}" for pos in flat_positions]
+            #     all_flat_positions.append(positions_str)
 
-            
+            # # Put the joint trajectories into a dataframe
+            # df_traj = pd.DataFrame(data=all_flat_positions, index=np.arange(len(all_flat_positions)))
+            # df_traj.columns = position_headers
+
+            # # Save the file
+            # np.save(file=os.path.join(team_dir, "joint_trajectory"), arr=np.array(joint_trajectory.astype(np.float16)))
+
+        traj_dir = os.path.join(training_teams_dir, "joint_trajectories.npz")
+        np.savez_compressed(traj_dir, *traj_dict)
 
     def saveEvaluationTeam(self):
         pass
