@@ -419,13 +419,13 @@ class CCEA:
         while not evaluation_recieved and not self.stop_event.is_set():
             try:
                 # Grab the evaluated team
-                evaluation_team_data_out = self.fitness_queue.get(timeout=timeout)
+                self.evaluation_team = self.fitness_queue.get(timeout=timeout)
                 # Save that we received it to break this loop
                 evaluation_recieved = True
             except queue.Empty:
                 pass
         # Save the evaluated team data
-        self.final_evaluation_teams.append(deepcopy(evaluation_team_data_out))
+        self.final_evaluation_teams.append(deepcopy(self.evaluation_team))
 
         # Save all the team data during evaluation
         self.teams_in_evaluation.append(deepcopy(self.teams))
@@ -478,19 +478,19 @@ class CCEA:
 
         # Make directory for population
         population_dir = os.path.join(generation_dir, "population")
-        # os.makedirs(population_dir)
+        os.makedirs(population_dir)
 
         for leader_ind, subpopulation in enumerate(self.population):
             leader_name = "leader_"+str(leader_ind)
             leader_subpop_dir = os.path.join(population_dir, leader_name)
-            # os.makedirs(leader_subpop_dir)
+            os.makedirs(leader_subpop_dir)
             for genome_data in subpopulation:
                 # Save the weights (list of np arrays) as npz file
                 policy_filename = "policy_" + str(genome_data.id) + ".npz"
                 npz_file_dir = os.path.join(leader_subpop_dir, policy_filename)
                 # Turn into a dictionary for saving more easily as npz
                 weights_dict = {"layer_"+str(ind) : weight_matrix for ind, weight_matrix in enumerate(genome_data.genome)}
-                # np.savez_compressed(npz_file_dir, *weights_dict)
+                np.savez_compressed(npz_file_dir, *weights_dict)
 
     def saveTrainingTeams(self, generation_dir: str):
         """Save the scores for the agents and teams. Save the id of which policy each agent used"""
@@ -503,11 +503,6 @@ class CCEA:
         all_agent_ids = []
 
         for team_data in self.teams:
-            # Get the directory for this team
-            # team_dir = os.path.join(training_teams_dir, "team_"+str(team_data.id))
-            # Make that directory
-            # os.makedirs(team_dir)
-
             # Get out the fitness of the team and individual agents
             team_fitness = team_data.fitness
             agent_fitnesses = team_data.difference_evaluations
@@ -530,60 +525,36 @@ class CCEA:
         # Save the joint trajectories
         traj_dict = {}
         for team_data in self.teams:
-            # # Put this all into a data frame so we can save it as a csv
-            # fitness_data = {}
-            # for leader_id in range(len(team_data.team)):
-            #     fitness_data["leader_"+str(leader_id)] = [str(int(policy_ids[leader_id])), f"{agent_fitnesses[leader_id]:.3f}"]
-            # fitness_data["G"] = ["0", f"{team_fitness:.3f}"]
-
-            # # Custom defined index
-            # index = ["policy_id", "fitness"]
-
-            # # Put everything in a dataframe
-            # df_train_fitness = pd.DataFrame(data=fitness_data, index=index)
-
-            # # This columns name line doesn't seem to actually do anything
-            # # Need to figure out why
-            # df_train_fitness.columns.name = "leader_id"
-
-            # # Get name of csv file
-            # csv_dir = os.path.join(team_dir, "fitnesses.csv")
-
-            # # Save that as a csv
-            # # df_train_fitness.to_csv(path_or_buf=csv_dir)
-
             # Get the joint trajectory that this team took
             joint_trajectory = np.array(team_data.joint_trajectory).astype(np.float16)
             traj_dict["team_"+str(team_data.id)] = joint_trajectory
 
-            # # Create position headers for labelling
-            # position_headers = []
-            # for leader_id in range(self.num_agents):
-            #     position_headers.append("leader_"+str(leader_id)+"_x")
-            #     position_headers.append("leader_"+str(leader_id)+"_y")
-            # for follower_id in range(self.num_followers):
-            #     position_headers.append("follower_"+str(follower_id)+"_x")
-            #     position_headers.append("follower_"+str(follower_id)+"_y")
-
-            # # Put the joint trajectory into the right format
-            # all_flat_positions = []
-            # for positions in joint_trajectory:
-            #     flat_positions = list(positions.flatten())
-            #     positions_str = [f"{pos:.3f}" for pos in flat_positions]
-            #     all_flat_positions.append(positions_str)
-
-            # # Put the joint trajectories into a dataframe
-            # df_traj = pd.DataFrame(data=all_flat_positions, index=np.arange(len(all_flat_positions)))
-            # df_traj.columns = position_headers
-
-            # # Save the file
-            # np.save(file=os.path.join(team_dir, "joint_trajectory"), arr=np.array(joint_trajectory.astype(np.float16)))
-
         traj_dir = os.path.join(training_teams_dir, "joint_trajectories.npz")
         np.savez_compressed(traj_dir, *traj_dict)
 
-    def saveEvaluationTeam(self):
-        pass
+    def saveEvaluationTeam(self, generation_dir: str):
+        # Make directory
+        evaluation_team_dir = os.path.join(generation_dir, "evaluation_team")
+        os.makedirs(evaluation_team_dir)
+        # Save the fitnesses
+        team_fitness = self.evaluation_team.fitness
+        agent_fitnesses = self.evaluation_team.difference_evaluations
+        policy_ids = [genome_data.id for genome_data in self.evaluation_team.team]
+
+        npz_dict = {
+            "team_fitness": np.array([team_fitness]).astype(np.float16),
+            "agent_fitness" : np.array(agent_fitnesses).astype(np.float16),
+            "policy_ids" : np.array(policy_ids).astype(np.uint16)
+        }
+
+        npz_file_dir = os.path.join(evaluation_team_dir, "fitnesses.npz")
+        np.savez_compressed(npz_file_dir, *npz_dict)
+
+        # Only saving a single numpy array, but the compression with npz should help keep 
+        # the file size down
+        joint_trajectory = np.array(self.evaluation_team.joint_trajectory).astype(np.float16)
+        jt_file_dir = os.path.join(evaluation_team_dir, "joint_trajectory.npz")
+        np.savez_compressed(jt_file_dir, {"joint_trajectory": joint_trajectory})
 
     def saveGeneration(self):
         """ Save all of the data associated with this generation """
@@ -599,7 +570,7 @@ class CCEA:
         self.saveTrainingTeams(generation_dir)
 
         # Save the evaluation team
-        self.saveEvaluationTeam()
+        self.saveEvaluationTeam(generation_dir)
 
         return None
 
