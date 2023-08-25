@@ -201,6 +201,8 @@ class CCEA:
         self.trial_path = trial_path
         # Num followers is a helpful variable for saving trajectories
         self.num_followers = config["BoidsEnv"]["config"]["StateBounds"]["num_followers"]
+        # Setup trial path so we have a place to save data to
+        os.makedirs(trial_path)
 
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
@@ -470,6 +472,66 @@ class CCEA:
         # Replace population with newly selected population for next generation
         self.population = new_population
 
+    def addPopulationDict(self, generation_dict: dict):
+        """
+        Create a dict with all policies from all subpopulations
+        Each leader has all its policies saved
+        All of these will go into one big npz file with other saved data
+        keys have | to indiciate a subdirectory structure, though this is just in the name
+        """
+
+        for leader_ind, subpopulation in enumerate(self.population):
+            leader_name = "leader_"+str(leader_ind)
+            leader_dir = "population|"+leader_name
+
+            for genome_data in subpopulation:
+                # Save the weights
+                policy_name = "policy_"+str(genome_data.id)
+                policy_dir = leader_dir+"|"+policy_name
+
+                # Turn weights into dictionary
+                for layer_ind, weight_matrix in enumerate(genome_data.genome):
+                    layer_name = "layer"+str(layer_ind)
+                    layer_key = policy_dir+"|"+layer_name
+                    generation_dict[layer_key] = weight_matrix
+
+        return None
+    
+    def addTrainingTeamsDict(self, generation_dict: dict):
+        """Save the scores for the agents and teams. Save the id of which policy each agent used"""
+        # training_teams_dir = os.path.join(generation_dir, "training_teams")
+        # os.makedirs(training_teams_dir)
+
+        for team_num, team_data in enumerate(self.teams):
+            team_name = "team_"+str(team_num)
+            team_dir = "training_teams|"+team_name
+            self.addTeamDict(generation_dict=generation_dict, team_dir=team_dir, team_data=team_data)
+
+        return None
+    
+    def addEvaluationTeamDict(self, generation_dict: dict):
+        """Save the scores for the agents and the evaluation team. Save the id of which policy each agent used"""
+        evaluation_team_dir = "evaluation_team"
+        self.addTeamDict(generation_dict=generation_dict, team_dir=evaluation_team_dir, team_data=self.evaluation_team)
+    
+        return None
+
+    def addTeamDict(self, generation_dict: dict, team_dir: str, team_data: TeamData):
+        """Adds team information to the specified dictionary prepending the key with the specified team_dir"""
+
+        team_fitness = team_data.fitness
+        agent_fitnesses = team_data.difference_evaluations
+        policy_ids = [genome_data.id for genome_data in team_data.team]
+
+        generation_dict[team_dir+"|team_fitness"] = np.array([team_fitness]).astype(np.float16),
+        generation_dict[team_dir+"|agent_fitnesses"] = np.array(agent_fitnesses).astype(np.float16),
+        generation_dict[team_dir+"|policy_ids"] = np.array(policy_ids).astype(np.uint16)
+
+        joint_trajectory = np.array(team_data.joint_trajectory).astype(np.float16)
+        generation_dict[team_dir+"|joint_trajectory"] = joint_trajectory
+
+        return None
+
     def savePopulation(self, generation_dir: str):
         """ Save all policies from all subpopulations.
         Each leader has all its policies saved.
@@ -502,41 +564,6 @@ class CCEA:
             os.makedirs(train_team_dir)
             self.saveTeam(team_dir=train_team_dir, team_data=team_data)
 
-        # # Save the fitnesses
-        # all_agent_fitnesses = []
-        # all_team_fitnesses = []
-        # all_agent_ids = []
-
-        # for team_data in self.teams:
-        #     # Get out the fitness of the team and individual agents
-        #     team_fitness = team_data.fitness
-        #     agent_fitnesses = team_data.difference_evaluations
-        #     # Get out the id of which policy was used for each agent
-        #     policy_ids = [genome_data.id for genome_data in team_data.team]
-
-        #     all_team_fitnesses.append(team_fitness)
-        #     all_agent_fitnesses.append(agent_fitnesses)
-        #     all_agent_ids.append(policy_ids)
-        
-        # npz_file_dir = os.path.join(training_teams_dir, "fitnesses.npz")
-        # npz_dict = {
-        #     "team_fitness" : np.array(all_team_fitnesses).astype(np.float16),
-        #     "agent_fitness" : np.array(all_agent_fitnesses).astype(np.float16),
-        #     "policy_ids" : np.array(all_agent_ids).astype(np.uint16)
-        # }
-
-        # np.savez_compressed(npz_file_dir, **npz_dict)
-
-        # # Save the joint trajectories
-        # traj_dict = {}
-        # for team_data in self.teams:
-        #     # Get the joint trajectory that this team took
-        #     joint_trajectory = np.array(team_data.joint_trajectory).astype(np.float16)
-        #     traj_dict["team_"+str(team_data.id)] = joint_trajectory
-
-        # traj_dir = os.path.join(training_teams_dir, "joint_trajectories.npz")
-        # np.savez_compressed(traj_dir, **traj_dict)
-
     def saveTeam(self, team_dir: str, team_data: TeamData):
         # Save the fitnesses
         team_fitness = team_data.fitness
@@ -564,23 +591,25 @@ class CCEA:
         evaluation_team_dir = os.path.join(generation_dir, "evaluation_team")
         os.makedirs(evaluation_team_dir)
         self.saveTeam(team_dir=evaluation_team_dir, team_data=self.evaluation_team)
-
         
     def saveGeneration(self):
         """ Save all of the data associated with this generation """
-        # Make directory for this generation
-        generation_name = "generation_"+str(self.iterations)
-        generation_dir = os.path.join(self.trial_path, generation_name)
-        os.makedirs(generation_dir)
+        # Make npz filename for this generation
+        generation_name = "generation_"+str(self.iterations)+".npz"
+        generation_npz = os.path.join(self.trial_path, generation_name)
 
-        # Save the population
-        self.savePopulation(generation_dir)
+        generation_dict = {}
+        self.addPopulationDict(generation_dict=generation_dict)
+        self.addTrainingTeamsDict(generation_dict=generation_dict)
+        self.addEvaluationTeamDict(generation_dict=generation_dict)
+        
+        np.savez_compressed(generation_npz, **generation_dict)
 
-        # Save the training teams
-        self.saveTrainingTeams(generation_dir)
+        generation_dir = os.path.join(self.trial_path, "generation_"+str(self.iterations))
+        self.saveEvaluationTeam(generation_dir=generation_dir)
+        self.saveTrainingTeams(generation_dir=generation_dir)
+        self.savePopulation(generation_dir=generation_dir)
 
-        # Save the evaluation team
-        self.saveEvaluationTeam(generation_dir)
 
         return None
 
