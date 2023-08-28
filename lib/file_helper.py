@@ -7,6 +7,7 @@ import yaml
 import myaml
 import socket
 import numpy as np
+import tqdm
 
 def getHostName():
     return socket.gethostname()
@@ -41,7 +42,90 @@ def generateTeamDict(team_dir: str):
 
     return team_dict
 
-def loadTrialData(trialname: str, computername: Optional[str]):
+def loadTrialData(trialname: str, computername: Optional[str], load_populations=True, load_evaluation_teams=True, load_training_teams=True):
+    if computername is None:
+        computername = getHostName()
+
+    trial_path = join("results", computername, "trials", trialname)
+
+    # Set up list of generation npz files so we can traverse them 
+    files_list = listdir(path=trial_path)
+    generations_list = [file for file in files_list if file[:11]=="generation_"]
+    unsorted_generation_npz_dirs = [join(trial_path, generation_file) for generation_file in generations_list]
+    gen_nums = [int(gen[11:-4]) for gen in generations_list]
+    generation_npz_dirs = [dir for _, dir in sorted(zip(gen_nums, unsorted_generation_npz_dirs))]
+
+    # Go through each generation and store relevant information
+    trial_data = []
+    for generation_npz in tqdm.tqdm(generation_npz_dirs):
+        generation_dict = {}
+
+        loaded_npz = np.load(generation_npz)
+
+        if load_evaluation_teams:
+            # Get the evaluation team information first
+            generation_dict["evaluation_team"] = {
+                "team_fitness" : loaded_npz["evaluation_team|team_fitness"][0],
+                "agent_fitnesses" : loaded_npz["evaluation_team|agent_fitnesses"],
+                "policy_ids" : loaded_npz["evaluation_team|policy_ids"],
+                "joint_trajectory" : loaded_npz["evaluation_team|joint_trajectory"]
+            }
+
+        if load_training_teams:
+            # Get all of the training team information
+
+            # Figure out the files in the npz
+            npy_files = loaded_npz.files
+            # Filter out files that are only related to the training teams
+            training_teams_files = [file for file in npy_files if file[:14] == "training_teams"]
+            
+            # Get the team names
+            team_names = set([file.split("|")[1] for file in training_teams_files])
+            # Now go through each team and get the appropriate information
+            generation_dict["training_teams"] = {}
+            for team_name in team_names:
+                generation_dict["training_teams"][team_name] = {
+                    "team_fitness" : loaded_npz["training_teams|"+team_name+"|team_fitness"][0],
+                    "agent_fitnesses" : loaded_npz["training_teams|"+team_name+"|agent_fitnesses"],
+                    "policy_ids" : loaded_npz["training_teams|"+team_name+"|policy_ids"],
+                    "joint_trajectory" : loaded_npz["training_teams|"+team_name+"|joint_trajectory"]
+                }
+
+        if load_populations:
+            # Go through all the agent populations
+            
+            # Figure out how many leaders there are
+            population_files = [file for file in npy_files if file[:10] == "population"]
+            leader_names = set([file.split("|")[1] for file in population_files])
+
+            # Go through the leaders and add their policies
+            generation_dict["population"] = {}
+
+            for leader_name in leader_names:
+                generation_dict["population"][leader_name] = {}
+
+                # Figure out how many policies this leader has in its population
+                policy_files = [file for file in population_files if file.split("|")[1] == leader_name]
+                policy_names = set([file.split("|")[2] for file in policy_files])
+
+                # Figure out how many layers each policy had
+                # Assume the layers for each policy are the same number and size
+                # These are the layer files for just the 0th policy for leader 0
+                layer_files = [file for file in policy_files if file.split("|")[3][:5] == "layer"]
+                layer_names = set([file.split("|")[3] for file in layer_files])
+
+                # Save those policies
+                for policy_name in policy_names:
+                    generation_dict["population"][leader_name][policy_name] = {}
+                    for layer_name in layer_names:
+                        generation_dict["population"][leader_name][policy_name][layer_name] = loaded_npz["population|"+leader_name+"|"+policy_name+"|"+layer_name]
+        
+        trial_data.append(generation_dict)
+    
+    return trial_data
+
+
+def loadTrialDataMultiFile(trialname: str, computername: Optional[str]):
     if computername is None:
         computername = getHostName()
     
@@ -94,37 +178,9 @@ def loadTrialData(trialname: str, computername: Optional[str]):
     
     return trial_data
 
-
-# ,
-#             "population": {
-#                 leader_name: [np.load()] for (leader_name, leader_pop_dir) in zip(leader_names, leader_pop_dirs)
-#             }
-    # generations = ["generation"]
-    # save_data = []
-    
-
-    # else:
-    #     trial_path = join("results", computername, "trials", trialname)
-    #     # TODO: Figure out how to go through all of the results files and go through directory
-    #     [
-    #         "evaluation_team": {
-    #             "fitnesses": ,  # array of fitnesses 
-    #             "joint_trajectory": ,  # joint trajectory as npy array
-    #         }
-    #         "population": {
-    #             "leader_0": ,
-    #             "leader_1": ,
-    #         }
-    #         "training_teams": {
-    #             "fitnesses": ,
-    #             "joint_trajectories" ,
-    #         }
-    #     ]
-
 def loadPopulation(trialname: str, computername: Optional[str]) -> List[NN]:
     f = loadTrial(trialname, computername)
     return f["final_population"]
-
 
 def getLatestTrialNum(computername: Optional[str]) -> int:
     if computername is None:
@@ -146,14 +202,11 @@ def getLatestTrialNum(computername: Optional[str]) -> int:
         return -1
     return str(max(numbers))
 
-
 def getLatestTrialName(computername: Optional[str]) -> str:
     return "trial_" + getLatestTrialNum(computername)
 
-
 def getNewTrialName(computername: Optional[str]) -> str:
     return "trial_" + str(int(getLatestTrialNum(computername)) + 1)
-
 
 def generateTrialName(computername: str, trial_num: Optional[str]):
     if trial_num is None:
@@ -219,6 +272,17 @@ def loadConfig(computername: Optional[str]=".", config_name: str = "default.yaml
         path = join("results", computername, "configs")
     
     return myaml.safe_load(join(path, config_name))
+
+def loadConfigData(trialname: str, computername: Optional[str]) -> Dict:
+    if computername is None:
+        computername = getHostName()
+    trial_path = join("results", computername, "trials", trialname)
+
+    # Get the config file
+    config_dir = join(trial_path, "config.yaml")
+
+    # Load it in as a yaml file
+    return myaml.safe_load(config_dir)
 
 def setupInitialPopulation(config: Dict):
     if config["load_population"] is not None:

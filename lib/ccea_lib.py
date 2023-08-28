@@ -591,7 +591,7 @@ class CCEA:
         evaluation_team_dir = os.path.join(generation_dir, "evaluation_team")
         os.makedirs(evaluation_team_dir)
         self.saveTeam(team_dir=evaluation_team_dir, team_data=self.evaluation_team)
-        
+
     def saveGeneration(self):
         """ Save all of the data associated with this generation """
         # Make npz filename for this generation
@@ -605,11 +605,10 @@ class CCEA:
         
         np.savez_compressed(generation_npz, **generation_dict)
 
-        generation_dir = os.path.join(self.trial_path, "generation_"+str(self.iterations))
-        self.saveEvaluationTeam(generation_dir=generation_dir)
-        self.saveTrainingTeams(generation_dir=generation_dir)
-        self.savePopulation(generation_dir=generation_dir)
-
+        # generation_dir = os.path.join(self.trial_path, "generation_"+str(self.iterations))
+        # self.saveEvaluationTeam(generation_dir=generation_dir)
+        # self.saveTrainingTeams(generation_dir=generation_dir)
+        # self.savePopulation(generation_dir=generation_dir)
 
         return None
 

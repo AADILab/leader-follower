@@ -10,7 +10,7 @@ def getEvalFitnesses(trial_data: dict):
 
     for generation_data in trial_data:
         team_fitnesses.append(generation_data["evaluation_team"]["team_fitness"])
-        agent_fitnesses.append(generation_data["agent_fitness"])
+        agent_fitnesses.append(generation_data["evaluation_team"]["agent_fitnesses"])
     
     return np.array(team_fitnesses), np.array(agent_fitnesses)
 
@@ -21,4 +21,3 @@ def getEvalFitnesses(trial_data: dict):
 #     agent_fitnesses = []
 
 #     for generation_data in trial_data:
-        
