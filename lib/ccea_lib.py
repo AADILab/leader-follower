@@ -202,7 +202,7 @@ class CCEA:
         # Num followers is a helpful variable for saving trajectories
         self.num_followers = config["BoidsEnv"]["config"]["StateBounds"]["num_followers"]
         # Setup trial path so we have a place to save data to
-        os.makedirs(trial_path)
+        if not os.path.exists(trial_path): os.makedirs(trial_path)
 
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
