@@ -39,7 +39,8 @@ PLOT_TRAJECTORIES_TEAM_ID = "Eval"
 
 COMPUTERNAME = "playground"
 TRIALNAME = getLatestTrialName(computername=COMPUTERNAME)
-# TRIALNAME =  None
+
+TRIALNAME =  "trial_4"
 
 # Load in the trial data
 save_data = loadTrial(TRIALNAME, COMPUTERNAME)

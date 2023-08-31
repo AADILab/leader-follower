@@ -51,7 +51,6 @@ CCEA:
         FitnessCalculator:
           which_G: ContinuousObsRadLastStep
           which_D: DFollow
-          follower_switch: UseFollowersOnly
         POISpawner:
           positions:
             - [20, 40]
