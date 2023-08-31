@@ -49,8 +49,30 @@ class WhichD(IntEnum):
     # A reward signal is probably misleading if a consistent reward of zero results in a better policy
     Zero = 3
 
+class WhichF(IntEnum):
+    # Don't use a potential function. Just give 0
+    G = 0
+    # Use a potential function for leaders grabbing followers
+    FCouple = 1
+
+    FCPoi = 2
+
+    FDistance = 3
+
+    FCoupleD = 4
+
+class PotentialType(IntEnum):
+    #use global potential values
+    Global = 0
+    #use agent specific potential values
+    Agent = 1
+
+class UseDrip(IntEnum):
+    Drip = 0
+    Regular = 1
+
 class FitnessCalculator():
-    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str], follower_switch: Union[FollowerSwitch, str] = FollowerSwitch.UseLeadersAndFollowers) -> None:
+    def __init__(self, poi_colony: POIColony, boids_colony: BoidsColony, which_G: Union[WhichG, str], which_D: Union[WhichD, str], which_F: Union[WhichF, str] = WhichF.G, potential_type: Union[PotentialType, str] = PotentialType.Global, use_drip: Union[UseDrip, str] = UseDrip.Regular, follower_switch: Union[FollowerSwitch, str] = FollowerSwitch.UseLeadersAndFollowers) -> None:
         self.poi_colony = poi_colony
         self.boids_colony = boids_colony
         
@@ -60,11 +82,23 @@ class FitnessCalculator():
             which_D = WhichD[which_D]
         if type(follower_switch) == str:
             follower_switch = FollowerSwitch[follower_switch]
+        if type(which_F) == str:
+            which_F = WhichF[which_F]
+        if type(potential_type) == str:
+            potential_type = PotentialType[potential_type]
+        if type(use_drip) == str:
+            use_drip = UseDrip[use_drip]
+            # if(use_drip == UseDrip.Split):
+            #     #Have to make potential type Global for DRiP
+            #     potential_type = PotentialType["Global"]
         
         self.which_G = which_G
         self.which_D = which_D
+        self.which_F = which_F
         # follower_switch has a default setting for backwards compatability
         self.follower_switch = follower_switch
+        self.potential_type = potential_type
+        self.use_drip = use_drip
 
     def calculateG(self, position_history: List[np.ndarray]):
         # Remove leader trajectories if we are only evaluating based on followers
@@ -257,6 +291,184 @@ class FitnessCalculator():
             ids_to_keep = invertInds(counterfactual_position_history.shape[1], ids_to_remove)
             # Calculate G but with those ids removed. Hence, G_c
             return self.calculateG(counterfactual_position_history[:,ids_to_keep,:])
+    
+    def calculateFDifferences(self, position_history, potential_values):
+        if self.which_F == WhichF.G:
+            #should never run this because DRiP means this won't be used, but just in case
+            current_potentials = 0 #if self.potential_type == PotentialType.Global else [0 for i in range(self.boids_colony.bounds.num_leaders)]
+
+            return current_potentials
+
+        potential_differences = []
+
+        #need to get the global F value to subtract by to get agent-specific
+        if(self.which_F == WhichF.FCouple):
+            global_f = self.calculate_coupling_potential()
+        elif(self.which_F == WhichF.FDistance):
+            global_f = self.calculate_distance_potential(position_history)
+        elif(self.which_F == WhichF.FCoupleD):
+            global_f = self.calculate_coupled_distance_potential(position_history)
+
+        for leader in self.boids_colony.getLeaders():
+            #replacing the influence list with no followers for this leader
+            new_influence_list = self.boids_colony.num_followers_influenced[:]
+            new_influence_list[leader.id] = set()
+
+            if(self.which_F == WhichF.FCouple):
+                counterfactual_f = self.calculate_coupling_potential(new_influence_list)
+            elif(self.which_F == WhichF.FDistance):
+                counterfactual_f = self.calculate_distance_potential(position_history, new_influence_list)
+            elif(self.which_F == WhichF.FCoupleD):
+                counterfactual_f = self.calculate_coupled_distance_potential(position_history, new_influence_list)
+            
+            potential_differences.append(global_f - counterfactual_f)
+        
+        return potential_differences
+    
+    def calculateFs(self, position_history, potential_values):
+        
+        if(self.use_drip == UseDrip.Drip):
+            potential_values.append(self.calculateFDifferences(position_history, potential_values))
+            if(len(potential_values) > 1):
+                return potential_values[-1], (np.array(potential_values[-1]) - np.array(potential_values[-2])).tolist()
+            else:
+                return potential_values[-1], potential_values[-1]
+
+        if self.which_F == WhichF.G:
+            #Just return 0 for each leader in the case of no PBRS
+            #return [0] if self.potential_type == PotentialType.Global else [0 for i in range(self.boids_colony.bounds.num_leaders)]
+            current_potentials = 0 if self.potential_type == PotentialType.Global else [0 for i in range(self.boids_colony.bounds.num_leaders)]
+            potential_values.append(current_potentials)
+
+            return current_potentials, current_potentials
+    
+        elif self.which_F == WhichF.FCouple:
+            
+            potential_values.append(self.calculate_coupling_potential())
+
+            if(self.potential_type == PotentialType.Global):
+                if(len(potential_values) == 1):
+                    return potential_values[-1], potential_values[-1]
+                else:
+                    return potential_values[-1], potential_values[-1] - potential_values[-2]
+            else:
+                if(len(potential_values) == 1):
+                    return potential_values[-1], potential_values[-1]
+                else:
+                    return potential_values[-1], (np.array(potential_values[-1]) - np.array(potential_values[-2])).tolist()
+        elif self.which_F == WhichF.FDistance:
+            potential_values.append(self.calculate_distance_potential(position_history))
+
+            if(self.potential_type == PotentialType.Global):
+                if(len(potential_values) == 1):
+                    return potential_values[-1], potential_values[-1]
+                else:
+                    return potential_values[-1], potential_values[-1] - potential_values[-2]
+            else:
+                if(len(potential_values) == 1):
+                    return potential_values[-1], potential_values[-1]
+                else:
+                    return potential_values[-1], (np.array(potential_values[-1]) - np.array(potential_values[-2])).tolist()
+        elif self.which_F == WhichF.FCoupleD:
+            potential_values.append(self.calculate_coupled_distance_potential(position_history))
+
+            if(self.potential_type == PotentialType.Global):
+                if(len(potential_values) == 1):
+                    return potential_values[-1], potential_values[-1]
+                else:
+                    return potential_values[-1], potential_values[-1] - potential_values[-2]
+            else:
+                if(len(potential_values) == 1):
+                    return potential_values[-1], potential_values[-1]
+                else:
+                    return potential_values[-1], (np.array(potential_values[-1]) - np.array(potential_values[-2])).tolist()
+        
+    def calculate_coupling_potential(self, influence_list = None):
+        # potential_values.append(num_followers_influenced)
+
+        if(influence_list is None):
+            num_followers_influenced = self.boids_colony.num_followers_influenced
+        else:
+            num_followers_influenced = influence_list
+        
+        
+        current_potentials = []
+        #going through to not give more reward than the max coupling 
+        for i, val in enumerate(num_followers_influenced):
+            if(len(val) > self.poi_colony.coupling):
+                current_potentials.append(self.poi_colony.coupling)
+            else:
+                current_potentials.append(len(val))
+        
+        if(self.potential_type == PotentialType.Agent):
+            #keeps potentials agent specific
+            return current_potentials
+        else:
+            #takes the sum of coupling to become agent specific
+            return sum(current_potentials)
+    
+    def calculate_poi_potential(self, position_history, potential_values):
+        position_history = np.array(position_history)[:, :self.boids_colony.bounds.num_leaders]
+        agent_positions = position_history[-1]
+        for poi in self.poi_colony.pois: 
+            distances = self.calculateDistances(poi, agent_positions)
+            distances_sorted = np.sort(distances)
+            #distances_sorted[distances_sorted < 1] = 1
+
+            #rewarding a leader for getting to the POI (only reward the one that is closest to this POI)
+            if(distances_sorted[0] <= self.poi_colony.observation_radius):
+                potential_values[-1][np.argmin(distances)] += 0.1
+
+            # if(np.all(distances_sorted[:self.poi_colony.coupling]<=self.poi_colony.observation_radius)):
+            #     potential_values[-1].append(1)
+            #     return
+            
+    def calculate_coupled_distance_potential(self, position_history, influence_list = None):
+        if(influence_list is not None):
+            couple_val = self.calculate_coupling_potential(influence_list)
+            distance_val = self.calculate_distance_potential(position_history, influence_list)
+        else:
+            couple_val = self.calculate_coupling_potential()
+            distance_val = self.calculate_distance_potential(position_history)
+
+        if(self.potential_type == PotentialType.Global):
+            return couple_val + distance_val
+        else:
+            return (np.array(couple_val) + np.array(distance_val)).tolist()
+    
+    def calculate_distance_potential(self, position_history, influence_list = None):
+        if(influence_list is None):
+            num_followers_influenced = self.boids_colony.num_followers_influenced
+        else:
+            num_followers_influenced = influence_list
+
+        current_potentials = [0 for i in range(self.boids_colony.bounds.num_leaders)]
+
+        position_history = np.array(position_history)[:, self.boids_colony.bounds.num_leaders:]
+        agent_positions = position_history[-1]
+        for poi in self.poi_colony.pois: 
+            distances = self.calculateDistances(poi, agent_positions)
+            #distances_sorted = np.sort(distances)
+            distances_sorted = np.argsort(distances)
+
+            for index in distances_sorted:
+                if(distances[index] > self.poi_colony.observation_radius):
+                    break #move to next POI
+
+                for m, k in enumerate(num_followers_influenced):
+                    #indices are off by num_leaders because of positon_history on line 357
+
+                    #only give the distance potential if the leader is near the follower
+                    if((index + self.boids_colony.bounds.num_leaders) in k):
+                        #print((1 / self.poi_colony.coupling))
+                        current_potentials[m] += (1 / self.poi_colony.coupling)
+        
+        if(self.potential_type == PotentialType.Agent):
+            #keeps potentials agent specific
+            return current_potentials
+        else:
+            #takes the sum of coupling to become agent specific
+            return sum(current_potentials)
     
     def updatePOIs(self):
         """Update POIs as observed or not for rendering purposes"""
