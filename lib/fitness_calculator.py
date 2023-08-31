@@ -461,7 +461,7 @@ class FitnessCalculator():
                     #only give the distance potential if the leader is near the follower
                     if((index + self.boids_colony.bounds.num_leaders) in k):
                         #print((1 / self.poi_colony.coupling))
-                        current_potentials[m] += (1 / self.poi_colony.coupling)
+                        current_potentials[m] += (1 / (self.poi_colony.coupling * self.poi_colony.num_pois))
         
         if(self.potential_type == PotentialType.Agent):
             #keeps potentials agent specific
