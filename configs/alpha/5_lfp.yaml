@@ -1,0 +1,99 @@
+CCEA:
+  config:
+    BoidsEnv:
+      config:
+        BoidSpawner:
+          spawn_rule: Individual
+          position_rule: Set
+          velocity_rule: FixedStart
+          heading_rule: FixedStart
+          velocity_fraction: 0.0
+          start_heading: !eval 3.14159/2
+          leader_positions: # 5 leaders
+          - [ 10, 10.0 ]
+          - [ 30, 10.0 ]
+          - [ 50, 10.0 ]
+          - [ 70, 10.0 ]
+          - [ 90, 10.0 ]
+          follower_positions: # 5 followers. One per leader
+          - [ 10, 7.5 ]
+          - [ 30, 7.5 ]
+          - [ 50, 7.5 ]
+          - [ 70, 7.5 ]
+          - [ 90, 7.5 ]
+        BoidsColony:
+          dt: !eval 1/5
+          radius_attraction: !eval 5
+          radius_orientation: !eval 3
+          radius_repulsion: !eval   2
+          attraction_multiplier: 1
+          orientation_multiplier: 1
+          repulsion_multiplier: 1
+          wall_avoidance_multiplier: 0
+        ObservationManager:
+          num_poi_bins: 4
+          num_swarm_bins: 4
+          observation_rule: Individual
+          poi_sensor_type: Density
+          swarm_sensor_type: Density
+          observation_radius: ~
+          full_observability: true
+        POIColony:
+          coupling: 1
+          observation_radius: 1000
+        FitnessCalculator:
+          which_G: ContinuousObsRadLastStep
+          which_D: DFollow
+          follower_switch: UseFollowersOnly
+        POISpawner:
+          positions:
+          - [ 22.072444038667935 ,37.54095809056431 ]
+          - [ 84.3850135281382 ,22.030230491024454 ]
+          - [ 9.767756406278028 ,38.49481385980307 ]
+          - [ 57.39625150448024 ,32.80987817075419 ]
+          - [ 51.030393454601885 ,23.229225628127914 ]
+          poi_spawn_rule: Set
+        Renderer:
+          leader_colors:
+          - - 250
+            - 120
+            - 0
+          - - 120
+            - 0
+            - 250
+          - - 250
+            - 250
+            - 0
+          - - 0
+            - 200
+            - 0
+          - - 120
+            - 0
+            - 120
+          - - 66
+            - 245
+            - 242
+          pixels_per_unit: 10
+        StateBounds:
+          max_acceleration: 5
+          max_angular_velocity: 1.570795
+          max_velocity: 10
+          min_velocity: 0
+          num_followers: 5
+          num_leaders: 5
+        map_dimensions:
+          x: 150
+          y: 150
+      init_seed: 1
+      max_steps: !eval 5*10
+      render_mode: none
+  mutation_probability: 0.5
+  mutation_rate: 0.1
+  nn_hidden:
+  - 10
+  - 10
+  num_evaluations: 1
+  num_workers: 19
+  sub_population_size: 50
+load_population: null
+num_generations: 1

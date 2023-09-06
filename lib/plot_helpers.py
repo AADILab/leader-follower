@@ -84,9 +84,12 @@ def plotBatchPerformance(trial_datas_G: Optional[dict], trial_datas_D: Optional[
     else:
         plot_save_name += " | std err"
     plot_save_name += " | " + computername
-    plot_save_name += ".png"
+    png_plot_save_name = plot_save_name + ".png"
+    svg_plot_save_name = plot_save_name + ".svg"
 
-    print("Saving plot as ", plot_save_name)
-    plt.savefig(plot_save_name)
+    print("Saving plot as ", png_plot_save_name)
+    print("Saving plot as ", svg_plot_save_name)
+    plt.savefig(png_plot_save_name)
+    plt.savefig(svg_plot_save_name)
 
     plt.show()
