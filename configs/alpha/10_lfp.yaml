@@ -1,0 +1,114 @@
+CCEA:
+  config:
+    BoidsEnv:
+      config:
+        BoidSpawner:
+          spawn_rule: Individual
+          position_rule: Set
+          velocity_rule: FixedStart
+          heading_rule: FixedStart
+          velocity_fraction: 0.0
+          start_heading: !eval 3.14159/2
+          leader_positions: # 10 leaders
+          - [ 10, 10.0 ]
+          - [ 25, 10.0 ]
+          - [ 40, 10.0 ]
+          - [ 55, 10.0 ]
+          - [ 70, 10.0 ]
+          - [ 85, 10.0 ]
+          - [ 100, 10.0 ]
+          - [ 115, 10.0 ]
+          - [ 130, 10.0 ]
+          - [ 145, 10.0 ]
+          follower_positions: # 10 followers. One per leader
+          - [ 10, 7.5 ]
+          - [ 25, 7.5 ]
+          - [ 40, 7.5 ]
+          - [ 55, 7.5 ]
+          - [ 70, 7.5 ]
+          - [ 85, 7.5 ]
+          - [ 100, 7.5 ]
+          - [ 115, 7.5 ]
+          - [ 130, 7.5 ]
+          - [ 145, 7.5 ]
+        BoidsColony:
+          dt: !eval 1/5
+          radius_attraction: !eval 5
+          radius_orientation: !eval 3
+          radius_repulsion: !eval   2
+          attraction_multiplier: 1
+          orientation_multiplier: 1
+          repulsion_multiplier: 1
+          wall_avoidance_multiplier: 0
+        ObservationManager:
+          num_poi_bins: 4
+          num_swarm_bins: 4
+          observation_rule: Individual
+          poi_sensor_type: Density
+          swarm_sensor_type: Density
+          observation_radius: ~
+          full_observability: true
+        POIColony:
+          coupling: 1
+          observation_radius: 1000
+        FitnessCalculator:
+          which_G: ContinuousObsRadLastStep
+          which_D: DFollow
+          follower_switch: UseFollowersOnly
+        POISpawner:
+          positions:
+          - [ 7.724756062760272 ,132.83685912068893 ]
+          - [ 44.2745428705435 ,41.173901741338945 ]
+          - [ 92.46691197985926 ,124.63787111659865 ]
+          - [ 101.42430809976551 ,126.21513887007731 ]
+          - [ 15.999187025076846 ,95.75462995205699 ]
+          - [ 82.27367541367668 ,140.24622335767953 ]
+          - [ 111.77900792372567 ,39.93472561878485 ]
+          - [ 55.8035083390353 ,67.92097861940505 ]
+          - [ 91.48726553997838 ,94.30714590850651 ]
+          - [ 114.05326040001553 ,113.26000155757447 ]
+          poi_spawn_rule: Set
+        Renderer:
+          leader_colors:
+          - - 250
+            - 120
+            - 0
+          - - 120
+            - 0
+            - 250
+          - - 250
+            - 250
+            - 0
+          - - 0
+            - 200
+            - 0
+          - - 120
+            - 0
+            - 120
+          - - 66
+            - 245
+            - 242
+          pixels_per_unit: 10
+        StateBounds:
+          max_acceleration: 5
+          max_angular_velocity: 1.570795
+          max_velocity: 10
+          min_velocity: 0
+          num_followers: 10
+          num_leaders: 10
+        map_dimensions:
+          x: 150
+          y: 150
+      init_seed: 1
+      max_steps: !eval 5*10
+      render_mode: none
+  mutation_probability: 0.5
+  mutation_rate: 0.1
+  nn_hidden:
+  - 10
+  - 10
+  num_evaluations: 1
+  num_workers: 19
+  sub_population_size: 50
+load_population: null
+num_generations: 1
