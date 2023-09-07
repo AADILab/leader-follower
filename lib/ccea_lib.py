@@ -198,11 +198,13 @@ class CCEA:
         self.teams_in_evaluation = []
         self.populations_through_generations = []
         self.final_evaluation_teams = []
+
         self.trial_path = trial_path
         # Num followers is a helpful variable for saving trajectories
         self.num_followers = config["BoidsEnv"]["config"]["StateBounds"]["num_followers"]
         # Setup trial path so we have a place to save data to
         if not os.path.exists(trial_path): os.makedirs(trial_path)
+
 
         # Setup nn variables
         self.nn_inputs = config["BoidsEnv"]["config"]["ObservationManager"]["num_poi_bins"] + \
@@ -421,13 +423,14 @@ class CCEA:
         while not evaluation_recieved and not self.stop_event.is_set():
             try:
                 # Grab the evaluated team
-                self.evaluation_team = self.fitness_queue.get(timeout=timeout)
+                evaluation_team_data_out = self.fitness_queue.get(timeout=timeout)
                 # Save that we received it to break this loop
                 evaluation_recieved = True
             except queue.Empty:
                 pass
         # Save the evaluated team data
-        self.final_evaluation_teams.append(deepcopy(self.evaluation_team))
+
+        self.final_evaluation_teams.append(deepcopy(evaluation_team_data_out))
 
         # Save all the team data during evaluation
         self.teams_in_evaluation.append(deepcopy(self.teams))
@@ -622,7 +625,7 @@ class CCEA:
 
         # Increase iterations counter
         self.iterations += 1
-
+be59714
         # Save the generation
         # This needs to be called after we increase the iterations counter
         # Otherwise on the first call to step(), saveGeneration() will try to overwrite 

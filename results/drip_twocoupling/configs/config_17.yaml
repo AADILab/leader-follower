@@ -33,12 +33,12 @@ CCEA:
           repulsion_multiplier: 2
           wall_avoidance_multiplier: 1
         FitnessCalculator:
-          which_D: DFollow
-          which_F: FCouple
-          which_G: ContinuousObsRadLastStep
           follower_switch: UseFollowersOnly
           potential_type: Global
           use_drip: Drip
+          which_D: DFollow
+          which_F: FCoupleD
+          which_G: ContinuousObsRadLastStep
         ObservationManager:
           full_observability: true
           num_poi_bins: 4
@@ -97,7 +97,7 @@ CCEA:
   - 9
   - 9
   num_evaluations: 1
-  num_workers: 2
+  num_workers: 18
   sub_population_size: 50
 load_population: null
-num_generations: 100
+num_generations: 500
