@@ -3,6 +3,7 @@
 # Specify config number to end at
 
 import argparse
+import sys; sys.path.append("/home/gonzaeve/boids/leader-follower")
 
 from lib.file_helper import loadConfig, loadConfigData
 from lib.learn_helpers import runExperiment
