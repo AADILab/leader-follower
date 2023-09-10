@@ -6,10 +6,10 @@ from copy import deepcopy
 
 import numpy as np
 
-from lib.poi_colony import POIColony
-from lib.boids_colony import BoidsColony
-from lib.colony_helpers import BoidsColonyState, StateBounds
-from lib.fitness_calculator import FitnessCalculator, WhichG, WhichD, FollowerSwitch
+from leaderfollower.poi_colony import POIColony
+from leaderfollower.boids_colony import BoidsColony
+from leaderfollower.colony_helpers import BoidsColonyState, StateBounds
+from leaderfollower.fitness_calculator import FitnessCalculator, WhichG, WhichD, FollowerSwitch
 
 class TestFitnessCalculator(unittest.TestCase):
     def helperTeamFitness(self, poi_colony, boids_colony, position_history, expected_G, expected_G_cs, expected_Ds, which_G, which_D, follower_switch):

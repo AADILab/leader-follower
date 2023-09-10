@@ -1,5 +1,5 @@
-from lib.learn_helpers import loadConfig
-from lib.boids_env import BoidsEnv
+from leaderfollower.learn_helpers import loadConfig
+from leaderfollower.boids_env import BoidsEnv
 import time
 import numpy as np
 

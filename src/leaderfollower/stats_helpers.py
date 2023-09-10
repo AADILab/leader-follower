@@ -1,7 +1,7 @@
 from typing import Optional, List
 import numpy as np
 import matplotlib.pyplot as plt
-from lib.file_helper import loadConfig, loadTrial
+from leaderfollower.file_helper import loadConfig, loadTrial
 
 def getStatistics(
         trials: List[str], 

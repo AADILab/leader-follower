@@ -1,4 +1,4 @@
-from lib.env_lib import parallel_env, ROCK
+from leaderfollower.env_lib import parallel_env, ROCK
 
 def policy(observation, agent):
     return ROCK

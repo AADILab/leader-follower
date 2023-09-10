@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from lib.np_helpers import invertInds
+from leaderfollower.np_helpers import invertInds
 
 class TestNPHelpers(unittest.TestCase):
     def test_invertInds(self):

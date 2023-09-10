@@ -6,14 +6,14 @@ from gym.spaces import Box
 from pettingzoo import ParallelEnv
 import numpy as np
 
-from lib.colony_helpers import StateBounds
-from lib.boid_spawner import BoidSpawner
-from lib.boids_colony import BoidsColony
-from lib.poi_spawner import POISpawner
-from lib.poi_colony import POIColony
-from lib.fitness_calculator import FitnessCalculator
-from lib.observations_manager import ObservationManager
-from lib.renderer import Renderer
+from leaderfollower.colony_helpers import StateBounds
+from leaderfollower.boid_spawner import BoidSpawner
+from leaderfollower.boids_colony import BoidsColony
+from leaderfollower.poi_spawner import POISpawner
+from leaderfollower.poi_colony import POIColony
+from leaderfollower.fitness_calculator import FitnessCalculator
+from leaderfollower.observations_manager import ObservationManager
+from leaderfollower.renderer import Renderer
 
 
 class RenderMode(IntEnum):

@@ -2,9 +2,9 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 
-from lib.math_helpers import calculateDistance
-from lib.colony_helpers import BoidsColonyState
-# from lib.fitness_calculator import FitnessCalculator, FolslowerSwitch
+from leaderfollower.math_helpers import calculateDistance
+from leaderfollower.colony_helpers import BoidsColonyState
+# from leaderfollower.fitness_calculator import FitnessCalculator, FolslowerSwitch
 
 class POI():
     def __init__(self, positions: NDArray[np.float64], id: int) -> None:
