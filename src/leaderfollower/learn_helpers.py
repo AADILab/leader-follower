@@ -22,10 +22,10 @@ def runExperiment(config: Dict, computername: Optional[str] = None, trial_num: O
 
     learner.stop_event.set()
 
-    best_fitness_list, best_fitness_list_unfiltered, best_agent_fitness_lists_unfiltered,\
-        average_fitness_list_unfiltered, average_agent_fitness_lists_unfiltered,\
-        final_population, finished_iterations, best_team_data, \
-        teams_in_evaluations, populations_through_generations, final_evaluation_teams = learner.getFinalMetrics()
+    # best_fitness_list, best_fitness_list_unfiltered, best_agent_fitness_lists_unfiltered,\
+    #     average_fitness_list_unfiltered, average_agent_fitness_lists_unfiltered,\
+    #     final_population, finished_iterations, best_team_data, \
+    #     teams_in_evaluations, populations_through_generations, final_evaluation_teams = learner.getFinalMetrics()
 
     # Save data
     # save_data = {
@@ -50,5 +50,7 @@ def runExperiment(config: Dict, computername: Optional[str] = None, trial_num: O
     saveConfig(config=config, computername=computername, trial_num=trial_num, folder_save=True)
     # saveTrial(save_data, config, computername=computername, trial_num=trial_num, save_trial_only=save_trial_only)
 
-    print("Experiment time: ", time() - start, " seconds. Completed ", finished_iterations, " out of ", config["num_generations"], " generations.")
+    # print("Experiment time: ", time() - start, " seconds. Completed ", finished_iterations, " out of ", config["num_generations"], " generations.")
+
+    print("Experiment time: ", time() - start, " seconds. Completed ", learner.iterations, " out of ", config["num_generations"], " generations.")
 
