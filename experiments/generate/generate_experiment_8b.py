@@ -1,4 +1,4 @@
-from lib.file_helper import loadConfigDir, saveConfig
+from leaderfollower.file_helper import loadConfigDir, saveConfig
 
 from pprint import PrettyPrinter
 pp = PrettyPrinter(indent=4)

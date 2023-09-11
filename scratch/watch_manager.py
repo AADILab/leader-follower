@@ -1,5 +1,5 @@
-from lib.boids_manager import BoidsManager
-from lib.renderer import Renderer
+from leaderfollower.boids_manager import BoidsManager
+from leaderfollower.renderer import Renderer
 
 import numpy as np
 from time import sleep

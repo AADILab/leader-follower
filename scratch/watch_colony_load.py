@@ -3,15 +3,15 @@ from time import sleep
 
 import myaml
 
-from lib.boids_colony import BoidsColony
-from lib.env_renderer import Renderer
-from lib.colony_helpers import StateBounds
-from lib.boid_spawner import BoidSpawner, BoidSpawnRule, HeadingRule, PositionRule, VelocityRule
-from lib.fitness_calculator import FitnessCalculator
-from lib.poi_colony import POIColony, POI
-from lib.poi_spawner import POISpawner, POISpawnRule
-from lib.env_observations import ObservationManager, ObservationRule, SensorType
-from lib.math_helpers import calculateDeltaHeading, calculateDistance
+from leaderfollower.boids_colony import BoidsColony
+from leaderfollower.env_renderer import Renderer
+from leaderfollower.colony_helpers import StateBounds
+from leaderfollower.boid_spawner import BoidSpawner, BoidSpawnRule, HeadingRule, PositionRule, VelocityRule
+from leaderfollower.fitness_calculator import FitnessCalculator
+from leaderfollower.poi_colony import POIColony, POI
+from leaderfollower.poi_spawner import POISpawner, POISpawnRule
+from leaderfollower.env_observations import ObservationManager, ObservationRule, SensorType
+from leaderfollower.math_helpers import calculateDeltaHeading, calculateDistance
 
 config = myaml.safe_load("configs/default.yaml")
 

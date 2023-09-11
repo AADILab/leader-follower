@@ -11,8 +11,8 @@ import numpy as np
 from tqdm import tqdm
 import pandas as pd
 
-from lib.boids_env import BoidsEnv
-from lib.network_lib import NN
+from leaderfollower.boids_env import BoidsEnv
+from leaderfollower.network_lib import NN
 
 # Genome encodes weights of a network as list of numpy arrays
 Genome = List[np.array]

@@ -4,8 +4,8 @@ from typing import List, Tuple, Optional
 import numpy as np
 from numpy.typing import NDArray
 
-from lib.colony_helpers import BoidsColonyState, StateBounds
-from lib.math_helpers import calculateDeltaHeading, calculateDistance
+from leaderfollower.colony_helpers import BoidsColonyState, StateBounds
+from leaderfollower.math_helpers import calculateDeltaHeading, calculateDistance
 
 class Boid():
     def __init__(self,

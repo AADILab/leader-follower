@@ -4,7 +4,7 @@ from typing import Optional, List, Union
 import numpy as np
 from numpy.typing import NDArray
 
-from lib.math_helpers import randomPositions
+from leaderfollower.math_helpers import randomPositions
 
 
 class POISpawnRule(IntEnum):

@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 import numpy as np
 from numpy.typing import NDArray
 
-from lib.colony_helpers import BoidsColonyState, StateBounds
+from leaderfollower.colony_helpers import BoidsColonyState, StateBounds
 
 class BoidSpawnRule(IntEnum):
     Individual = 0 # Defer to individual rules for position, velocity, heading

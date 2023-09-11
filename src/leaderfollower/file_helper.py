@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 import pickle
-from lib.network_lib import NN
-from lib.data_helpers import getTrialNames
+from leaderfollower.network_lib import NN
+from leaderfollower.data_helpers import getTrialNames
 from os import listdir, makedirs
 from os.path import isfile, join, exists
 import yaml

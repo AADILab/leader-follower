@@ -1,7 +1,7 @@
 import sys
 
 import pygame; sys.path.append("/home/egonzalez/leaders")
-from lib.boids_env import env, parallel_env
+from leaderfollower.boids_env import env, parallel_env
 import myaml
 import numpy as np
 

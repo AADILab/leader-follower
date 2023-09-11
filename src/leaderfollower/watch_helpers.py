@@ -2,9 +2,9 @@ from typing import Dict
 
 import pygame
 
-from lib.boids_env import BoidsEnv
-from lib.ccea_lib import CCEA, TeamData, computeAction
-from lib.network_lib import NN, createNNfromWeights
+from leaderfollower.boids_env import BoidsEnv
+from leaderfollower.ccea_lib import CCEA, TeamData, computeAction
+from leaderfollower.network_lib import NN, createNNfromWeights
 from time import time, sleep
 
 def watchConfig(config: Dict):

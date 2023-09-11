@@ -2,7 +2,7 @@ from time import time
 import numpy as np
 
 import sys; sys.path.append("/home/egonzalez/leaders")
-from lib.map_utils import Map
+from leaderfollower.map_utils import Map
 
 # Map should be faster at retrieving nearby boids in the map. Let's compare against numpy's built-in boolean functions
 # First setup the map and the boid positions

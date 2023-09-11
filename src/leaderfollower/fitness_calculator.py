@@ -4,10 +4,10 @@ from enum import IntEnum
 
 import numpy as np
 
-from lib.poi_colony import POIColony, POI
-from lib.boids_colony import BoidsColony, Boid
-from lib.math_helpers import argmax, calculateDistance
-from lib.np_helpers import invertInds
+from leaderfollower.poi_colony import POIColony, POI
+from leaderfollower.boids_colony import BoidsColony, Boid
+from leaderfollower.math_helpers import argmax, calculateDistance
+from leaderfollower.np_helpers import invertInds
 
 class FollowerSwitch(IntEnum):
     # Only use follower positions when calculating G

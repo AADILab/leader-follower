@@ -1,9 +1,9 @@
-from lib.ccea_lib import CCEA
+from leaderfollower.ccea_lib import CCEA
 from time import time
 import sys
 from typing import Dict, Optional
 import numpy as np
-from lib.file_helper import saveTrial, loadConfig, setupInitialPopulation, generateTrialPath, saveConfig, getLatestTrialNum
+from leaderfollower.file_helper import saveTrial, loadConfig, setupInitialPopulation, generateTrialPath, saveConfig, getLatestTrialNum
 
 def runExperiment(config: Dict, computername: Optional[str] = None, trial_num: Optional[str] = None, save_trial_only: bool=False) -> None:
     # Start clock

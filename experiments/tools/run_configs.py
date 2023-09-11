@@ -5,8 +5,8 @@
 import argparse
 import sys; sys.path.append("/home/gonzaeve/boids/leader-follower")
 
-from lib.file_helper import loadConfig, loadConfigData
-from lib.learn_helpers import runExperiment
+from leaderfollower.file_helper import loadConfig, loadConfigData
+from leaderfollower.learn_helpers import runExperiment
 
 from guppy import hpy
 

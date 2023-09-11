@@ -5,9 +5,9 @@ from numpy.typing import NDArray
 import pygame
 import pygame.gfxdraw
 
-from lib.boids_colony import BoidsColony, Boid
-from lib.poi_colony import POIColony, POI
-from lib.observations_manager import ObservationManager, SensorType
+from leaderfollower.boids_colony import BoidsColony, Boid
+from leaderfollower.poi_colony import POIColony, POI
+from leaderfollower.observations_manager import ObservationManager, SensorType
 
 class Renderer():
     def __init__(self, boids_colony: BoidsColony, poi_colony: POIColony, observation_manager: ObservationManager, pixels_per_unit: int, leader_colors: List[Tuple[int]]) -> None:

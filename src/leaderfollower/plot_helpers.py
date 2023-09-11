@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from lib.data_helpers import getEvalStatistics, getBestStatistics
+from leaderfollower.data_helpers import getEvalStatistics, getBestStatistics
 import numpy as np
 from typing import Optional
 from enum import IntEnum
