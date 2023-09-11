@@ -195,9 +195,9 @@ class CCEA:
         self.genome_uid = 0
 
         # Variables for saving data throughout training
-        self.teams_in_evaluation = []
-        self.populations_through_generations = []
-        self.final_evaluation_teams = []
+        # self.teams_in_evaluation = []
+        # self.populations_through_generations = []
+        # self.final_evaluation_teams = []
 
         self.trial_path = trial_path
         # Num followers is a helpful variable for saving trajectories
@@ -430,11 +430,11 @@ class CCEA:
                 pass
         # Save the evaluated team data
 
-        self.final_evaluation_teams.append(deepcopy(self.evaluation_team))
+        # self.final_evaluation_teams.append(deepcopy(self.evaluation_team))
 
         # Save all the team data during evaluation
-        self.teams_in_evaluation.append(deepcopy(self.teams))
-        self.populations_through_generations.append(deepcopy(self.population))
+        # self.teams_in_evaluation.append(deepcopy(self.teams))
+        # self.populations_through_generations.append(deepcopy(self.population))
 
         # Save the team with the highest fitness. Both a filtered one and the current best
         self.teams.sort(reverse=True)
@@ -632,11 +632,11 @@ class CCEA:
         # what we saved for iteration 0
         self.saveGeneration()
 
-    def getFinalMetrics(self):
-        return self.best_fitness_list, self.best_fitness_list_unfiltered, self.best_agent_fitness_lists_unfiltered, \
-               self.average_fitness_list_unfiltered, self.average_agent_fitness_lists_unfiltered, \
-               self.population, self.iterations, self.best_team_data, \
-               self.teams_in_evaluation, self.populations_through_generations, self.final_evaluation_teams
+    # def getFinalMetrics(self):
+    #     return self.best_fitness_list, self.best_fitness_list_unfiltered, self.best_agent_fitness_lists_unfiltered, \
+    #            self.average_fitness_list_unfiltered, self.average_agent_fitness_lists_unfiltered, \
+    #            self.population, self.iterations, self.best_team_data, \
+    #            self.teams_in_evaluation, self.populations_through_generations, self.final_evaluation_teams
 
     def saveFitnesses(self):
         # Save bests
