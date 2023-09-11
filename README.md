@@ -14,3 +14,17 @@ The folders are organized as follows:
 - results: folder for saving results to
 - scratch: random scripts for testing different ideas, libraries, or python functions
 - tests: tests for different parts of the library
+
+## Install
+
+Go to the base folder of this repository and run
+
+`pip install -e .`
+
+Then import the library in python using
+
+`import leaderfollower`
+
+To get specific classes from different modules, use the following syntax
+
+`from leaderfollower.ccea_lib import CCEA`
