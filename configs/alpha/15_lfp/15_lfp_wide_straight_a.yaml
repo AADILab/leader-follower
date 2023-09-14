@@ -1,5 +1,5 @@
 # This is a config where there are
-# 5 leaders, followers, pois
+# 15 leaders, followers, pois
 # Leaders must just learn to drive straight to get their follower to their poi
 # Not much room for leaders to interact with each other or trade followers or anything like that
 CCEA:
@@ -13,27 +13,47 @@ CCEA:
           heading_rule: FixedStart
           velocity_fraction: 0.0
           start_heading: !eval 3.14159/2
-          leader_positions: # 5 leaders
+          leader_positions: # 15 leaders
           - [ 10, 10.0 ]
           - [ 20, 10.0 ]
           - [ 30, 10.0 ]
           - [ 40, 10.0 ]
           - [ 50, 10.0 ]
-          follower_positions: # 5 followers. One per leader
+          - [ 60, 10.0 ]
+          - [ 70, 10.0 ]
+          - [ 80, 10.0 ]
+          - [ 90, 10.0 ]
+          - [ 100, 10.0 ]
+          - [ 110, 10.0 ]
+          - [ 120, 10.0 ]
+          - [ 130, 10.0 ]
+          - [ 140, 10.0 ]
+          - [ 150, 10.0 ]
+          follower_positions: # 15 followers. One per leader
           - [ 10, 20.0 ]
           - [ 20, 20.0 ]
           - [ 30, 20.0 ]
           - [ 40, 20.0 ]
           - [ 50, 20.0 ]
+          - [ 60, 20.0 ]
+          - [ 70, 20.0 ]
+          - [ 80, 20.0 ]
+          - [ 90, 20.0 ]
+          - [ 100, 20.0 ]
+          - [ 110, 20.0 ]
+          - [ 120, 20.0 ]
+          - [ 130, 20.0 ]
+          - [ 140, 20.0 ]
+          - [ 150, 20.0 ]
         BoidsColony:
           dt: !eval 1/5
           radius_attraction: !eval 5
           radius_orientation: !eval 3
           radius_repulsion: !eval   2
-          attraction_multiplier: 1
-          orientation_multiplier: 1
-          repulsion_multiplier: 1
-          wall_avoidance_multiplier: 0
+          attraction_multiplier: 2
+          orientation_multiplier: 2
+          repulsion_multiplier: 2
+          wall_avoidance_multiplier: 1
         ObservationManager:
           num_poi_bins: 4
           num_swarm_bins: 4
@@ -50,12 +70,22 @@ CCEA:
           which_D: DFollow
           follower_switch: UseFollowersOnly
         POISpawner:
-          positions:
+          positions: # 15 pois
           - [ 10, 30.0 ]
           - [ 20, 30.0 ]
           - [ 30, 30.0 ]
           - [ 40, 30.0 ]
           - [ 50, 30.0 ]
+          - [ 60, 30.0 ]
+          - [ 70, 30.0 ]
+          - [ 80, 30.0 ]
+          - [ 90, 30.0 ]
+          - [ 100, 30.0 ]
+          - [ 110, 30.0 ]
+          - [ 120, 30.0 ]
+          - [ 130, 30.0 ]
+          - [ 140, 30.0 ]
+          - [ 150, 30.0 ]
           poi_spawn_rule: Set
         Renderer:
           leader_colors:
@@ -83,10 +113,10 @@ CCEA:
           max_angular_velocity: 1.570795
           max_velocity: 10
           min_velocity: 0
-          num_followers: 5
-          num_leaders: 5
+          num_followers: 15
+          num_leaders: 15
         map_dimensions:
-          x: 60
+          x: 160
           y: 40
       init_seed: 1
       max_steps: !eval 5*10

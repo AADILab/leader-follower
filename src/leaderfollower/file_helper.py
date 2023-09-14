@@ -43,12 +43,15 @@ def generateTeamDict(team_dir: str):
 
     return team_dict
 
-def loadTrialData(trialname: str, computername: Optional[str], load_populations=True, load_evaluation_teams=True, load_training_teams=True):
+def loadTrialData(trialname: str, computername: Optional[str], load_populations=True, load_evaluation_teams=True, load_training_teams=True, abs_results_path: Optional[str]=None):
     """This loads in the data for a trial assuming there is a folder for the trial with an npz file for each generation"""
     if computername is None:
         computername = getHostName()
 
-    trial_path = join("results", computername, "trials", trialname)
+    results_path = "results"
+    if abs_results_path is not None:
+        results_path = join(abs_results_path, results_path)
+    trial_path = join(results_path, computername, "trials", trialname)
 
     # Set up list of generation npz files so we can traverse them 
     files_list = listdir(path=trial_path)
@@ -126,17 +129,17 @@ def loadTrialData(trialname: str, computername: Optional[str], load_populations=
     
     return trial_data
 
-def loadMultiTrialsData(trialnames: List[str], computername: str, load_populations = True, load_evaluation_teams=True, load_training_teams=True):
+def loadMultiTrialsData(trialnames: List[str], computername: str, load_populations = True, load_evaluation_teams=True, load_training_teams=True, abs_results_path: Optional[str]=None):
     """A batch is a set of trials that were all run with exactly the same parameters. They are a subset of trials run in an experiment (computer) folder. A batch can include different variants of reward shaping though"""
     batch_data = []
     for trialname in trialnames:
-        batch_data.append(loadTrialData(trialname=trialname,computername=computername, load_populations=load_populations, load_evaluation_teams=load_evaluation_teams, load_training_teams=load_training_teams))
+        batch_data.append(loadTrialData(trialname=trialname,computername=computername, load_populations=load_populations, load_evaluation_teams=load_evaluation_teams, load_training_teams=load_training_teams, abs_results_path=abs_results_path))
     return batch_data
 
 def loadExperimentData(computername: str, load_populations = True, load_evaluation_teams=True, load_training_teams=True):
     """This just loads in all of the trials from a particular experiment (computername)"""
     trialnames = listdir(join("results", computername))
-    return loadBatchData(trialnames=trialnames, load_populations=load_populations, load_evaluation_teams=load_evaluation_teams, load_training_teams=load_training_teams)
+    return loadMultiTrialsData(trialnames=trialnames, load_populations=load_populations, load_evaluation_teams=load_evaluation_teams, load_training_teams=load_training_teams)
 
 def loadTrialDataMultiFile(trialname: str, computername: Optional[str]):
     """This is legacy code for a brief setup I had where each generation had several npz files saving seperate pieces of data"""
@@ -293,10 +296,14 @@ def loadConfigDir(config_dir: str):
 
     return myaml.safe_load(config_dir)
 
-def loadConfigData(trialname: str, computername: Optional[str]) -> Dict:
+def loadConfigData(trialname: str, computername: Optional[str], abs_results_path: Optional[str]=None) -> Dict:
     if computername is None:
         computername = getHostName()
-    trial_path = join("results", computername, "trials", trialname)
+
+    results_path = "results"
+    if abs_results_path is not None:
+        results_path = join(abs_results_path, results_path)
+    trial_path = join(results_path, computername, "trials", trialname)
 
     # Get the config file
     config_dir = join(trial_path, "config.yaml")
@@ -312,7 +319,7 @@ def setupInitialPopulation(config: Dict):
     else:
         return None
 
-def loadBatch(computername: str, start_trial_num: int, num_stat_runs: int, tested_G: bool, tested_D: bool, tested_Dfollow: bool):
+def loadBatch(computername: str, start_trial_num: int, num_stat_runs: int, tested_G: bool, tested_D: bool, tested_Dfollow: bool, load_populations: bool = False, load_evaluation_teams: bool = True, load_training_teams: bool = False, abs_results_path: Optional[str]=None):
     # Generate trial names
     trial_num = start_trial_num
     if tested_Dfollow: 
@@ -329,17 +336,17 @@ def loadBatch(computername: str, start_trial_num: int, num_stat_runs: int, teste
 
     # Load in those trials
     if tested_Dfollow: 
-        trial_datas_Dfollow = loadMultiTrialsData(trialnames=trials_Dfollow, computername=computername, load_populations=False, load_evaluation_teams=True, load_training_teams=True)
+        trial_datas_Dfollow = loadMultiTrialsData(trialnames=trials_Dfollow, computername=computername, load_populations=load_populations, load_evaluation_teams=load_evaluation_teams, load_training_teams=load_training_teams, abs_results_path=abs_results_path)
         num_generations = len(trial_datas_Dfollow[0])
     else:
         trial_datas_Dfollow = None
     if tested_D: 
-        trial_datas_D = loadMultiTrialsData(trialnames=trials_D, computername=computername, load_populations=False, load_evaluation_teams=True, load_training_teams=True)
+        trial_datas_D = loadMultiTrialsData(trialnames=trials_D, computername=computername, load_populations=load_populations, load_evaluation_teams=load_evaluation_teams, load_training_teams=load_training_teams, abs_results_path=abs_results_path)
         num_generations = len(trial_datas_D[0])
     else:
         trial_datas_D = None
     if tested_G: 
-        trial_datas_G = loadMultiTrialsData(trialnames=trials_G, computername=computername, load_populations=False, load_evaluation_teams=True, load_training_teams=True)
+        trial_datas_G = loadMultiTrialsData(trialnames=trials_G, computername=computername, load_populations=load_populations, load_evaluation_teams=load_evaluation_teams, load_training_teams=load_training_teams, abs_results_path=abs_results_path)
         num_generations = len(trial_datas_G[0])
     else:
         trial_datas_G = None

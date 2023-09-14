@@ -8,8 +8,6 @@ import sys; sys.path.append("/home/gonzaeve/boids/leader-follower")
 from leaderfollower.file_helper import loadConfig, loadConfigData
 from leaderfollower.learn_helpers import runExperiment
 
-from guppy import hpy
-
 parser = argparse.ArgumentParser(description="Run specified configurations.")
 parser.add_argument('experiment_name', type=str, help="Folder for configurations")
 parser.add_argument('start_num', type=int, help="Which config to start with (inclusive)")
@@ -25,9 +23,6 @@ while trial_list[-1] < args.end_num:
     next_trial = trial_list[-1]+1
     trial_list.append(next_trial)
 
-h = hpy()
-print(h.heap())
-
 # Run all of those trials
 for trial_num in trial_list:
     if args.legacy:
@@ -36,5 +31,3 @@ for trial_num in trial_list:
         config = loadConfigData(trialname="trial_"+str(trial_num), computername=args.experiment_name)
     config["CCEA"]["num_workers"] = args.num_workers
     runExperiment(config, computername=args.experiment_name, trial_num=str(trial_num), save_trial_only=False)
-    h = hpy()
-    print(h.heap())
