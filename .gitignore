@@ -1,4 +1,12 @@
 lib/__pycache__/*
 __pycache__/*
 */__pycache__/*
+src/leaderfollower/__pycache__/*
 results/*
+*pyc
+figures/pdf/*
+figures/png/*
+figures/svg/*
+results
+results/*
+figures/*
